@@ -3,11 +3,12 @@ import { initTelegram } from './telegram.js'
 import Feed from './Feed.jsx'
 
 export default function App() {
-  const [, setUser] = useState(null)
+  const [tgId, setTgId] = useState(null)
 
   useEffect(() => {
-    setUser(initTelegram())
+    const user = initTelegram()
+    setTgId(user?.id ?? null)
   }, [])
 
-  return <Feed />
+  return <Feed tgId={tgId} />
 }

@@ -13,7 +13,7 @@ const CATEGORY_ICON = {
 const AMOUNTS = [10, 50, 100]
 
 const ERRORS = {
-  ALREADY_VOTED: 'Уже голосовал за этот образ',
+  ALREADY_VOTED: 'Ты уже оценил этот образ',
   NOT_ENOUGH_CREDITS: 'Не хватает кредитов',
   CANNOT_VOTE_OWN: 'Нельзя голосовать за свой образ',
   AUTH_FAILED: 'Не удалось подтвердить вход',
@@ -32,12 +32,13 @@ async function castVote(postId, amount) {
   }
 }
 
-export default function PostCard({ post }) {
+export default function PostCard({ post, alreadyVoted }) {
   const author = post.users || {}
   const items = (post.post_items || []).map((pi) => pi.items).filter(Boolean)
 
   const [score, setScore] = useState(post.score)
-  const [voted, setVoted] = useState(false)
+  const [votedLocal, setVotedLocal] = useState(false)
+  const voted = votedLocal || alreadyVoted
   const [picking, setPicking] = useState(false)
   const [busy, setBusy] = useState(false)
   const [toast, setToast] = useState(null)
@@ -57,19 +58,19 @@ export default function PostCard({ post }) {
 
     if (res.ok) {
       setScore(res.new_score)
-      setVoted(true)
+      setVotedLocal(true)
       const id = Date.now()
       setDrips((d) => [...d, { id, amount }])
       setTimeout(() => setDrips((d) => d.filter((x) => x.id !== id)), 900)
       flash(`Осталось ${res.remaining_credits} кредитов`)
     } else {
-      if (res.code === 'ALREADY_VOTED') setVoted(true)
+      if (res.code === 'ALREADY_VOTED') setVotedLocal(true)
       flash(ERRORS[res.code] || 'Не получилось, попробуй ещё раз')
     }
   }
 
   function onCoin() {
-    if (voted) return flash('Уже голосовал')
+    if (voted) return flash('Уже оценил')
     setPicking((p) => !p)
   }
 

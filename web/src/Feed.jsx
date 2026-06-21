@@ -7,8 +7,9 @@ const SELECT =
   'users(username, avatar_url, style_score), ' +
   'post_items(items(name, brand, category))'
 
-export default function Feed() {
+export default function Feed({ tgId }) {
   const [posts, setPosts] = useState(null)
+  const [votedIds, setVotedIds] = useState(new Set())
   const [error, setError] = useState(null)
 
   useEffect(() => {
@@ -22,6 +23,27 @@ export default function Feed() {
       })
   }, [])
 
+  useEffect(() => {
+    if (!tgId) return
+    let active = true
+    ;(async () => {
+      const { data: u } = await supabase
+        .from('users')
+        .select('id')
+        .eq('telegram_id', tgId)
+        .maybeSingle()
+      if (!u || !active) return
+      const { data: v } = await supabase
+        .from('votes')
+        .select('post_id')
+        .eq('voter_id', u.id)
+      if (v && active) setVotedIds(new Set(v.map((r) => r.post_id)))
+    })()
+    return () => {
+      active = false
+    }
+  }, [tgId])
+
   if (error) return <div className="state">Лента не загрузилась. {error}</div>
   if (!posts) return <div className="state">Загружаем ленту…</div>
   if (posts.length === 0)
@@ -30,7 +52,7 @@ export default function Feed() {
   return (
     <div className="feed">
       {posts.map((post) => (
-        <PostCard key={post.id} post={post} />
+        <PostCard key={post.id} post={post} alreadyVoted={votedIds.has(post.id)} />
       ))}
     </div>
   )
