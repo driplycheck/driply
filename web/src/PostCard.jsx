@@ -16,20 +16,24 @@ const ERRORS = {
   ALREADY_VOTED: 'Уже голосовал за этот образ',
   NOT_ENOUGH_CREDITS: 'Не хватает кредитов',
   CANNOT_VOTE_OWN: 'Нельзя голосовать за свой образ',
-  AUTH_FAILED: 'Не удалось подтвердить вход',
-  NO_BOT_TOKEN: 'Сервер не настроен (BOT_TOKEN)',
 }
 
 async function castVote(postId, amount) {
-  const { data, error } = await supabase.functions.invoke('quick-handler', {
-    body: { initData: getInitData(), post_id: postId, amount },
-  })
-  if (!error) return { ok: true, ...data }
   try {
-    const ctx = await error.context.json()
-    return { ok: false, code: ctx.error }
-  } catch {
-    return { ok: false, code: 'NETWORK' }
+    const { data, error } = await supabase.functions.invoke('quick-handler', {
+      body: { initData: getInitData(), post_id: postId, amount },
+    })
+    if (!error) return { ok: true, ...data }
+    let detail = error.name || 'ERR'
+    try {
+      const ctx = await error.context.json()
+      detail += ' | ' + (ctx.error || JSON.stringify(ctx))
+    } catch {
+      detail += ' | (нет тела ответа)'
+    }
+    return { ok: false, code: detail }
+  } catch (e) {
+    return { ok: false, code: 'THROW: ' + (e?.message || String(e)) }
   }
 }
 
@@ -44,9 +48,9 @@ export default function PostCard({ post }) {
   const [toast, setToast] = useState(null)
   const [drips, setDrips] = useState([])
 
-  function flash(msg) {
+  function flash(msg, ms = 2200) {
     setToast(msg)
-    setTimeout(() => setToast(null), 2200)
+    setTimeout(() => setToast(null), ms)
   }
 
   async function vote(amount) {
@@ -65,7 +69,7 @@ export default function PostCard({ post }) {
       flash(`Осталось ${res.remaining_credits} кредитов`)
     } else {
       if (res.code === 'ALREADY_VOTED') setVoted(true)
-      flash(ERRORS[res.code] || 'Что-то пошло не так')
+      flash(ERRORS[res.code] || ('Ошибка: ' + res.code), 6000)
     }
   }
 
@@ -126,7 +130,14 @@ export default function PostCard({ post }) {
         <span className="vote__score">{score}</span>
       </div>
 
-      {toast && <div className="toast">{toast}</div>}
+      {toast && (
+        <div
+          className="toast"
+          style={{ whiteSpace: 'normal', maxWidth: '82vw', textAlign: 'center', lineHeight: 1.3 }}
+        >
+          {toast}
+        </div>
+      )}
     </section>
   )
 }
