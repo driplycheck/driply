@@ -5,9 +5,13 @@ export function initTelegram() {
   if (!tg) return null
   tg.ready()
   tg.expand()
-  // prevent Telegram's swipe-to-close from fighting the vertical feed
   if (tg.disableVerticalSwipes) tg.disableVerticalSwipes()
   if (tg.setHeaderColor) tg.setHeaderColor('#0a0a0b')
   if (tg.setBackgroundColor) tg.setBackgroundColor('#0a0a0b')
   return tg.initDataUnsafe?.user ?? null
+}
+
+// raw signed string for server-side validation
+export function getInitData() {
+  return tg?.initData ?? ''
 }
