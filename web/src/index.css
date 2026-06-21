@@ -1,20 +1,166 @@
-:root { color-scheme: light dark; }
-* { box-sizing: border-box; }
-body {
-  margin: 0;
-  font-family: -apple-system, system-ui, sans-serif;
-  background: var(--tg-theme-bg-color, #0f0f12);
-  color: var(--tg-theme-text-color, #ffffff);
+:root {
+  --bg: #0a0a0b;
+  --text: #ffffff;
+  --muted: #9a9aa3;
+  --gold: #f4c430;
+  --gold-soft: rgba(244, 196, 48, 0.16);
+  --font-display: 'Unbounded', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
 }
-.screen {
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body, #root { height: 100%; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+}
+
+.state {
   min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 32px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 15px;
+}
+
+/* vertical snap feed */
+.feed {
+  height: 100dvh;
+  overflow-y: scroll;
+  scroll-snap-type: y mandatory;
+  scrollbar-width: none;
+}
+.feed::-webkit-scrollbar { display: none; }
+
+.card {
+  position: relative;
+  height: 100dvh;
+  scroll-snap-align: start;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+.card__bg {
+  position: absolute;
+  inset: 0;
+  background-image: var(--img);
+  background-size: cover;
+  background-position: center;
+}
+.card__scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.85) 0%,
+    rgba(0, 0, 0, 0.08) 42%,
+    rgba(0, 0, 0, 0.4) 100%
+  );
+}
+
+.card__top {
+  position: relative;
+  padding: calc(env(safe-area-inset-top) + 14px) 16px 0;
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--gold);
+  background: var(--gold-soft);
+  border: 1px solid rgba(244, 196, 48, 0.35);
+  padding: 6px 12px;
+  border-radius: 999px;
+  backdrop-filter: blur(8px);
+}
+
+.card__bottom {
+  position: relative;
+  padding: 16px 86px 30px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.author { display: flex; align-items: center; gap: 10px; }
+.author__ava {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--gold);
+}
+.author__name { font-weight: 600; font-size: 16px; }
+.caption { font-size: 15px; line-height: 1.35; color: #ececf0; }
+
+.tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.tag {
+  font-size: 12px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  padding: 6px 10px;
+  border-radius: 10px;
+  backdrop-filter: blur(6px);
+}
+
+.rail {
+  position: absolute;
+  right: 14px;
+  bottom: 38px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
   gap: 8px;
-  padding: 24px;
-  text-align: center;
 }
-h1 { margin: 0; font-size: 40px; letter-spacing: -1px; }
-.muted { opacity: 0.5; font-size: 14px; }
+.vote {
+  position: relative;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  border: none;
+  background: var(--gold);
+  color: #1a1300;
+  font-size: 24px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(244, 196, 48, 0.35);
+  transition: transform 0.12s ease;
+}
+.vote:active { transform: scale(0.88); }
+.vote__score {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--gold);
+}
+.drip {
+  position: absolute;
+  left: 50%;
+  top: -6px;
+  transform: translateX(-50%);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--gold);
+  pointer-events: none;
+  animation: drip 0.9s ease-out forwards;
+}
+@keyframes drip {
+  0%   { opacity: 0; transform: translate(-50%, 0) scale(0.8); }
+  25%  { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -46px) scale(1.1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drip { animation: none; opacity: 0; }
+}
