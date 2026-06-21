@@ -1,4 +1,4 @@
-# Secrets — НИКОГДА не коммитим
+# Secrets — NEVER commit
 .env
 .env.*
 !.env.example
@@ -20,5 +20,3 @@ venv/
 .DS_Store
 .idea/
 .vscode/
-vite.config.ts.timestamp-*
-.vite/

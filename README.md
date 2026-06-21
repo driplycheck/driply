@@ -12,23 +12,23 @@ searchable library — find any piece by name and see who wore it.
 
 ## Core features (MVP)
 - Vertical outfit feed
-- Style voting with a two-currency economy (daily credits → style score)
+- Style voting with a two-currency economy (daily credits -> style score)
 - Global ranking
 - Item tagging by category (top / bottoms / shoes / accessory / other)
 - Searchable item library
 
 ## Tech stack
-- **Frontend:** React (Telegram Mini App)
+- **Frontend:** React + Vite (Telegram Mini App)
 - **Backend:** Supabase (Postgres, Storage, auth via Telegram initData)
 - **Bot / entry point:** Python (aiogram)
 - **Deploy:** Vercel (frontend), auto-deploy from `main`
 
 ## Structure
-\`\`\`
+```
 /web        React Telegram Mini App
 /bot        aiogram bot (entry point + notifications)
 /supabase   SQL schema & migrations
-\`\`\`
+```
 
 ## Setup
 Setup instructions are added as the project is built.
