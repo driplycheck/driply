@@ -32,9 +32,10 @@ async function castVote(postId, amount) {
   }
 }
 
-export default function PostCard({ post, alreadyVoted }) {
+export default function PostCard({ post, alreadyVoted, onOpenProfile }) {
   const author = post.users || {}
   const items = (post.post_items || []).map((pi) => pi.items).filter(Boolean)
+  const authorName = author.display_name || '@' + (author.username || 'user')
 
   const [score, setScore] = useState(post.score)
   const [votedLocal, setVotedLocal] = useState(false)
@@ -74,6 +75,10 @@ export default function PostCard({ post, alreadyVoted }) {
     setPicking((p) => !p)
   }
 
+  function openProfile() {
+    if (author.id) onOpenProfile(author.id)
+  }
+
   return (
     <section className="card" style={{ '--img': `url(${post.media_url})` }}>
       <div className="card__bg" />
@@ -84,11 +89,11 @@ export default function PostCard({ post, alreadyVoted }) {
       </header>
 
       <div className="card__bottom">
-        <div className="author">
+        <div className="author" onClick={openProfile} style={{ cursor: 'pointer' }}>
           {author.avatar_url && (
             <img className="author__ava" src={author.avatar_url} alt="" />
           )}
-          <span className="author__name">@{author.username}</span>
+          <span className="author__name">{authorName}</span>
         </div>
         {post.caption && <p className="caption">{post.caption}</p>}
         {items.length > 0 && (

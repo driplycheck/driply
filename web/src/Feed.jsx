@@ -4,10 +4,10 @@ import PostCard from './PostCard.jsx'
 
 const SELECT =
   'id, media_url, caption, score, ' +
-  'users(username, avatar_url, style_score), ' +
+  'users(id, username, display_name, avatar_url, style_score), ' +
   'post_items(items(name, brand, category))'
 
-export default function Feed({ tgId }) {
+export default function Feed({ tgId, onOpenProfile }) {
   const [posts, setPosts] = useState(null)
   const [votedIds, setVotedIds] = useState(new Set())
   const [error, setError] = useState(null)
@@ -52,7 +52,12 @@ export default function Feed({ tgId }) {
   return (
     <div className="feed">
       {posts.map((post) => (
-        <PostCard key={post.id} post={post} alreadyVoted={votedIds.has(post.id)} />
+        <PostCard
+          key={post.id}
+          post={post}
+          alreadyVoted={votedIds.has(post.id)}
+          onOpenProfile={onOpenProfile}
+        />
       ))}
     </div>
   )
