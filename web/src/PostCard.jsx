@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { supabase } from './supabase.js'
 import { getInitData } from './telegram.js'
+import { avatarTier } from './tiers.js'
 
 const CATEGORY_ICON = {
   top: '👕',
@@ -91,7 +92,7 @@ export default function PostCard({ post, alreadyVoted, onOpenProfile }) {
       <div className="card__bottom">
         <div className="author" onClick={openProfile} style={{ cursor: 'pointer' }}>
           {author.avatar_url && (
-            <img className="author__ava" src={author.avatar_url} alt="" />
+            <img className={`author__ava ${avatarTier(author.style_score)}`} src={author.avatar_url} alt="" />
           )}
           <span className="author__name">{authorName}</span>
         </div>

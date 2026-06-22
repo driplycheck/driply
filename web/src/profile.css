@@ -30,7 +30,7 @@
   height: 88px;
   border-radius: 50%;
   object-fit: cover;
-  border: 3px solid var(--gold);
+  
 }
 .profile__name { font-size: 22px; font-weight: 700; }
 .profile__handle { color: var(--muted); font-size: 14px; }

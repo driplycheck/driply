@@ -1,0 +1,59 @@
+.onb {
+  position: fixed;
+  inset: 0;
+  background: #0a0a0b;
+  z-index: 110;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.onb__body {
+  width: 100%;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.onb__title {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 700;
+  margin: 0;
+}
+.onb__sub { color: var(--muted); font-size: 14px; margin: 6px 0 24px; }
+.onb__ava {
+  width: 104px;
+  height: 104px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.05);
+}
+.onb__ava img { width: 100%; height: 100%; object-fit: cover; }
+.onb__plus { font-size: 34px; color: var(--muted); }
+.onb__avahint { color: var(--muted); font-size: 12px; margin: 10px 0 22px; }
+.onb__nick { text-align: center; font-size: 17px; }
+.onb__btn {
+  margin-top: 20px;
+  width: 100%;
+  padding: 15px;
+  border: none;
+  border-radius: 14px;
+  background: var(--gold);
+  color: #1a1300;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 16px;
+  cursor: pointer;
+}
+.onb__btn:disabled { opacity: 0.45; }
+
+/* Кольцо-статус — глобальные классы для аватарок везде */
+.tier-base   { box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.22); }
+.tier-bronze { box-shadow: 0 0 0 2px #cd7f32; }
+.tier-silver { box-shadow: 0 0 0 2px #d0d0d8, 0 0 8px rgba(208, 208, 216, 0.45); }
+.tier-gold   { box-shadow: 0 0 0 2px var(--gold), 0 0 14px rgba(244, 196, 48, 0.7); }

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from './supabase.js'
+import { avatarTier } from './tiers.js'
 
 export default function Profile({ userId, onClose }) {
   const [user, setUser] = useState(null)
@@ -53,7 +54,7 @@ export default function Profile({ userId, onClose }) {
         <div className="profile__body">
           <div className="profile__head">
             {user.avatar_url && (
-              <img className="profile__ava" src={user.avatar_url} alt="" />
+              <img className={`profile__ava ${avatarTier(user.style_score)}`} src={user.avatar_url} alt="" />
             )}
             <div className="profile__name">{displayName}</div>
             {user.username && <div className="profile__handle">@{user.username}</div>}
