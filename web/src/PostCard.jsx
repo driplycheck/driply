@@ -124,12 +124,12 @@ export default function PostCard({ post, alreadyVoted, onOpenProfile }) {
           onClick={onCoin}
           aria-label="Оценить образ"
         >
-          <span className="vote__coin">{voted ? '✓' : busy ? '…' : '◉'}</span>
+          <span className="vote__coin">{voted ? '✓' : busy ? '…' : ''}</span>
           {drips.map((d) => (
             <span className="drip" key={d.id}>+{d.amount}</span>
           ))}
         </button>
-        <span className="vote__score">{score}</span>
+        <span className="vote__score">★ {score}</span>
       </div>
 
       {toast && <div className="toast">{toast}</div>}

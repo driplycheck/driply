@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from './supabase.js'
 import { avatarTier } from './tiers.js'
 
-export default function Profile({ userId, onClose }) {
+export default function Profile({ userId, selfId, onClose, onEdit }) {
   const [user, setUser] = useState(null)
   const [rank, setRank] = useState(null)
   const [posts, setPosts] = useState([])
@@ -13,7 +13,7 @@ export default function Profile({ userId, onClose }) {
     ;(async () => {
       const { data: u } = await supabase
         .from('users')
-        .select('id, username, display_name, avatar_url, style_score')
+        .select('id, username, display_name, avatar_url, bio, style_score')
         .eq('id', userId)
         .maybeSingle()
       if (!active) return
@@ -38,6 +38,7 @@ export default function Profile({ userId, onClose }) {
     }
   }, [userId])
 
+  const isSelf = user && selfId && user.id === selfId
   const displayName =
     user?.display_name || (user?.username ? '@' + user.username : 'user')
 
@@ -45,6 +46,9 @@ export default function Profile({ userId, onClose }) {
     <div className="profile">
       <header className="profile__top">
         <button className="profile__close" onClick={onClose}>‹ Назад</button>
+        {isSelf && (
+          <button className="profile__settings" onClick={onEdit} aria-label="Настройки">⚙</button>
+        )}
       </header>
       {loading ? (
         <div className="state">Загрузка…</div>
@@ -58,6 +62,7 @@ export default function Profile({ userId, onClose }) {
             )}
             <div className="profile__name">{displayName}</div>
             {user.username && <div className="profile__handle">@{user.username}</div>}
+            {user.bio && <p className="profile__bio">{user.bio}</p>}
           </div>
           <div className="profile__stats">
             <div className="stat">
