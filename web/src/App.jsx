@@ -15,6 +15,7 @@ import './profile.css'
 import './onboarding.css'
 import './settings.css'
 import './search.css'
+import './feed.css'
 
 export default function App() {
   const [tgUser, setTgUser] = useState(null)
@@ -76,7 +77,7 @@ export default function App() {
     <>
       <Feed
         key={feedKey}
-        tgId={tgUser?.id ?? null}
+        selfId={profile?.id ?? null}
         onOpenProfile={setProfileUserId}
         onPost={() => setComposerOpen(true)}
       />
