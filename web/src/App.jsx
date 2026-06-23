@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { initTelegram } from './telegram.js'
 import { supabase } from './supabase.js'
 import { avatarTier } from './tiers.js'
+import { loadLang, saveLang, setActiveLang } from './i18n.js'
 import Feed from './Feed.jsx'
 import PostComposer from './PostComposer.jsx'
 import Profile from './Profile.jsx'
@@ -20,6 +21,7 @@ import './feed.css'
 export default function App() {
   const [tgUser, setTgUser] = useState(null)
   const [profile, setProfile] = useState(undefined)
+  const [lang, setLang] = useState(loadLang())
   const [composerOpen, setComposerOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
@@ -28,6 +30,8 @@ export default function App() {
   const [profileUserId, setProfileUserId] = useState(null)
   const [profileKey, setProfileKey] = useState(0)
   const [openPostId, setOpenPostId] = useState(null)
+
+  setActiveLang(lang)
 
   useEffect(() => {
     const u = initTelegram()
@@ -41,30 +45,18 @@ export default function App() {
       .then(({ data }) => setProfile(data?.display_name ? data : null))
   }, [])
 
-  function onPosted() {
-    setComposerOpen(false)
-    setFeedKey((k) => k + 1)
+  function changeLang(code) {
+    saveLang(code)
+    setActiveLang(code)
+    setLang(code)
   }
 
-  function onSaved(update) {
-    setProfile((p) => ({ ...p, ...update }))
-    setEditOpen(false)
-    setProfileKey((k) => k + 1)
-  }
-
-  function onSettingsChanged(update) {
-    setProfile((p) => ({ ...p, ...update }))
-    setProfileKey((k) => k + 1)
-  }
-
+  function onPosted() { setComposerOpen(false); setFeedKey((k) => k + 1) }
+  function onSaved(update) { setProfile((p) => ({ ...p, ...update })); setEditOpen(false); setProfileKey((k) => k + 1) }
+  function onSettingsChanged(update) { setProfile((p) => ({ ...p, ...update })); setProfileKey((k) => k + 1) }
   function openProfileFromSearch(id) { setSearchOpen(false); setProfileUserId(id) }
   function openPostFromSearch(id) { setSearchOpen(false); setOpenPostId(id) }
-
-  function onPostDeleted() {
-    setOpenPostId(null)
-    setFeedKey((k) => k + 1)
-    setProfileKey((k) => k + 1)
-  }
+  function onPostDeleted() { setOpenPostId(null); setFeedKey((k) => k + 1); setProfileKey((k) => k + 1) }
 
   if (profile === undefined) return <div className="state">Загрузка…</div>
 
@@ -115,6 +107,7 @@ export default function App() {
           userId={profileUserId}
           selfId={profile?.id}
           onClose={() => setProfileUserId(null)}
+          onOpenProfile={setProfileUserId}
           onOpenSettings={() => setSettingsOpen(true)}
           onOpenPost={setOpenPostId}
           onFollowChanged={() => setFeedKey((k) => k + 1)}
@@ -123,6 +116,8 @@ export default function App() {
       {settingsOpen && profile && (
         <Settings
           me={profile}
+          lang={lang}
+          onLang={changeLang}
           onClose={() => setSettingsOpen(false)}
           onEditProfile={() => setEditOpen(true)}
           onChanged={onSettingsChanged}

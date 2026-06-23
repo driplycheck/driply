@@ -59,3 +59,17 @@
   transition: transform 0.16s ease;
 }
 .toggle--on .toggle__knob { transform: translateX(20px); }
+
+.srow--col { flex-direction: column; align-items: stretch; gap: 12px; }
+.langrow { display: flex; gap: 8px; }
+.langopt {
+  flex: 1;
+  padding: 11px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+}
+.langopt--on { background: var(--gold); color: #1a1300; border-color: var(--gold); font-weight: 700; }

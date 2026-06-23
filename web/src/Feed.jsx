@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from './supabase.js'
+import { t } from './i18n.js'
 import PostCard from './PostCard.jsx'
 
 const SELECT =
@@ -45,8 +46,8 @@ export default function Feed({ selfId, onOpenProfile, onPost }) {
   return (
     <>
       <div className="feed-tabs">
-        <button className={`feed-tab ${tab === 'all' ? 'feed-tab--on' : ''}`} onClick={() => setTab('all')}>Все</button>
-        <button className={`feed-tab ${tab === 'following' ? 'feed-tab--on' : ''}`} onClick={() => setTab('following')}>Подписки</button>
+        <button className={`feed-tab ${tab === 'all' ? 'feed-tab--on' : ''}`} onClick={() => setTab('all')}>{t('tab_all')}</button>
+        <button className={`feed-tab ${tab === 'following' ? 'feed-tab--on' : ''}`} onClick={() => setTab('following')}>{t('tab_following')}</button>
       </div>
 
       {error ? (

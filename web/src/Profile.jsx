@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from './supabase.js'
 import { getInitData } from './telegram.js'
 import { avatarTier } from './tiers.js'
+import { t } from './i18n.js'
 import FollowList from './FollowList.jsx'
 
 export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpenPost, onOpenProfile, onFollowChanged }) {
@@ -51,14 +52,21 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
     return () => { active = false }
   }, [userId, selfId])
 
-  async function toggleFollow() {
+  async function setFollowState(want) {
     if (busyFollow) return
     setBusyFollow(true)
+    setFollowing(want)
+    setFollowers((n) => Math.max(0, n + (want ? 1 : -1)))
     const { data, error } = await supabase.functions.invoke('quick-handler', {
-      body: { action: 'toggle_follow', initData: getInitData(), target_id: userId },
+      body: { action: 'set_follow', initData: getInitData(), target_id: userId, follow: want },
     })
     setBusyFollow(false)
-    if (!error && data) {
+    if (error) {
+      setFollowing(!want)
+      setFollowers((n) => Math.max(0, n + (want ? -1 : 1)))
+      return
+    }
+    if (data) {
       setFollowing(data.following)
       setFollowers(data.followers)
       onFollowChanged?.()
@@ -77,7 +85,7 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
   return (
     <div className="profile">
       <header className="profile__top">
-        <button className="profile__close" onClick={onClose}>‹ Назад</button>
+        <button className="profile__close" onClick={onClose}>{t('back')}</button>
         {isSelf && (
           <button className="profile__settings" onClick={onOpenSettings} aria-label="Настройки">⚙</button>
         )}
@@ -97,19 +105,19 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
             {user.bio && <p className="profile__bio">{user.bio}</p>}
             <div className="profile__follows">
               <button className="flink" onClick={() => setListMode('followers')}>
-                <b>{followers}</b> подписчиков
+                <b>{followers}</b> {t('followers')}
               </button>
               <span className="flink__dot">·</span>
               <button className="flink" onClick={() => setListMode('following')}>
-                <b>{followingCount}</b> подписок
+                <b>{followingCount}</b> {t('following_cnt')}
               </button>
             </div>
             {!isSelf && (
               <button
                 className={`follow-btn ${following ? 'follow-btn--on' : ''}`}
-                onClick={toggleFollow} disabled={busyFollow}
+                onClick={() => setFollowState(!following)} disabled={busyFollow}
               >
-                {following ? 'Отписаться' : 'Подписаться'}
+                {following ? t('unfollow') : t('follow')}
               </button>
             )}
           </div>
