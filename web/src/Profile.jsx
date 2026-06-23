@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from './supabase.js'
+import { getInitData } from './telegram.js'
 import { avatarTier } from './tiers.js'
 
 export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpenPost }) {
@@ -7,6 +8,10 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
   const [rank, setRank] = useState(null)
   const [posts, setPosts] = useState([])
   const [loading, setLoading] = useState(true)
+  const [followers, setFollowers] = useState(0)
+  const [followingCount, setFollowingCount] = useState(0)
+  const [following, setFollowing] = useState(false)
+  const [busyFollow, setBusyFollow] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -19,26 +24,49 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
       if (!active) return
       setUser(u)
       if (u) {
-        const { count } = await supabase
-          .from('users')
-          .select('*', { count: 'exact', head: true })
+        const { count: higher } = await supabase
+          .from('users').select('*', { count: 'exact', head: true })
           .gt('style_score', u.style_score)
-        if (active) setRank((count ?? 0) + 1)
+        if (active) setRank((higher ?? 0) + 1)
+
         const { data: p } = await supabase
-          .from('posts')
-          .select('id, media_url, score')
-          .eq('user_id', userId)
-          .order('created_at', { ascending: false })
+          .from('posts').select('id, media_url, score')
+          .eq('user_id', userId).order('created_at', { ascending: false })
         if (active) setPosts(p || [])
+
+        const [{ count: fr }, { count: fg }] = await Promise.all([
+          supabase.from('follows').select('*', { count: 'exact', head: true }).eq('following_id', userId),
+          supabase.from('follows').select('*', { count: 'exact', head: true }).eq('follower_id', userId),
+        ])
+        if (active) { setFollowers(fr ?? 0); setFollowingCount(fg ?? 0) }
+
+        if (selfId && selfId !== userId) {
+          const { data: rel } = await supabase
+            .from('follows').select('follower_id')
+            .eq('follower_id', selfId).eq('following_id', userId).maybeSingle()
+          if (active) setFollowing(!!rel)
+        }
       }
       if (active) setLoading(false)
     })()
     return () => { active = false }
-  }, [userId])
+  }, [userId, selfId])
+
+  async function toggleFollow() {
+    if (busyFollow) return
+    setBusyFollow(true)
+    const { data, error } = await supabase.functions.invoke('quick-handler', {
+      body: { action: 'toggle_follow', initData: getInitData(), target_id: userId },
+    })
+    setBusyFollow(false)
+    if (!error && data) {
+      setFollowing(data.following)
+      setFollowers(data.followers)
+    }
+  }
 
   const isSelf = user && selfId && user.id === selfId
-  const displayName =
-    user?.display_name || (user?.username ? '@' + user.username : 'user')
+  const displayName = user?.display_name || (user?.username ? '@' + user.username : 'user')
   const showHandle = user?.username && (isSelf || !user.hide_username)
 
   return (
@@ -62,6 +90,16 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
             <div className="profile__name">{displayName}</div>
             {showHandle && <div className="profile__handle">@{user.username}</div>}
             {user.bio && <p className="profile__bio">{user.bio}</p>}
+            <div className="profile__follows">{followers} подписчиков · {followingCount} подписок</div>
+            {!isSelf && (
+              <button
+                className={`follow-btn ${following ? 'follow-btn--on' : ''}`}
+                onClick={toggleFollow}
+                disabled={busyFollow}
+              >
+                {following ? 'Отписаться' : 'Подписаться'}
+              </button>
+            )}
           </div>
           <div className="profile__stats">
             <div className="stat">
@@ -80,12 +118,9 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
           {posts.length > 0 ? (
             <div className="grid">
               {posts.map((p) => (
-                <button
-                  className="grid__item"
-                  key={p.id}
+                <button className="grid__item" key={p.id}
                   style={{ backgroundImage: `url(${p.media_url})` }}
-                  onClick={() => onOpenPost(p.id)}
-                >
+                  onClick={() => onOpenPost(p.id)}>
                   <span className="grid__score">★ {p.score}</span>
                 </button>
               ))}

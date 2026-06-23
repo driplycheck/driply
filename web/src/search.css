@@ -1,0 +1,85 @@
+.search-btn {
+  position: fixed;
+  top: calc(env(safe-area-inset-top) + 12px);
+  right: 64px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: linear-gradient(160deg, rgba(42, 42, 50, 0.9), rgba(17, 17, 21, 0.9));
+  color: #fff;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  z-index: 50;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+.search-btn:active { transform: scale(0.9); }
+
+.search {
+  position: fixed;
+  inset: 0;
+  background: #0a0a0b;
+  z-index: 96;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.search__top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: calc(env(safe-area-inset-top) + 12px) 16px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.search__close { background: none; border: none; color: #fff; font-size: 17px; cursor: pointer; flex: none; }
+.search__title { font-weight: 600; font-size: 16px; }
+.search__spacer { flex: 1; }
+.search__input { flex: 1; }
+.search__body { flex: 1; overflow-y: auto; padding: 12px 16px 40px; }
+
+.ssection { margin-bottom: 18px; }
+.ssection__h { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin: 4px 4px 10px; }
+.sresult {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 9px 4px;
+  cursor: pointer;
+  text-align: left;
+}
+.sresult:active { opacity: 0.6; }
+.sresult__ava { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; flex: none; }
+.sresult__icon {
+  width: 44px; height: 44px; flex: none;
+  border-radius: 12px;
+  display: grid; place-items: center;
+  background: var(--gold-soft);
+  font-size: 20px;
+}
+.sresult__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.sresult__name { font-size: 15px; color: #fff; font-weight: 600; }
+.sresult__sub { font-size: 13px; color: var(--muted); }
+
+.profile__follows { color: #d8d8de; font-size: 13px; margin-top: 4px; }
+.follow-btn {
+  margin-top: 12px;
+  padding: 9px 26px;
+  border-radius: 999px;
+  border: none;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  background: var(--gold);
+  color: #1a1300;
+}
+.follow-btn--on {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+.follow-btn:disabled { opacity: 0.5; }

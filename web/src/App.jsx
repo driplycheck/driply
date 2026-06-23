@@ -7,18 +7,21 @@ import PostComposer from './PostComposer.jsx'
 import Profile from './Profile.jsx'
 import PostView from './PostView.jsx'
 import Settings from './Settings.jsx'
+import Search from './Search.jsx'
 import Onboarding from './Onboarding.jsx'
 import EditProfile from './EditProfile.jsx'
 import './composer.css'
 import './profile.css'
 import './onboarding.css'
 import './settings.css'
+import './search.css'
 
 export default function App() {
   const [tgUser, setTgUser] = useState(null)
   const [profile, setProfile] = useState(undefined)
   const [composerOpen, setComposerOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
   const [feedKey, setFeedKey] = useState(0)
   const [profileUserId, setProfileUserId] = useState(null)
@@ -53,6 +56,16 @@ export default function App() {
     setProfileKey((k) => k + 1)
   }
 
+  function openProfileFromSearch(id) {
+    setSearchOpen(false)
+    setProfileUserId(id)
+  }
+
+  function openPostFromSearch(id) {
+    setSearchOpen(false)
+    setOpenPostId(id)
+  }
+
   if (profile === undefined) return <div className="state">Загрузка…</div>
 
   if (profile === null && tgUser?.id) {
@@ -68,6 +81,14 @@ export default function App() {
         onPost={() => setComposerOpen(true)}
       />
 
+      <button className="search-btn" onClick={() => setSearchOpen(true)} aria-label="Поиск">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+          strokeWidth="2" strokeLinecap="round">
+          <circle cx="11" cy="11" r="7" />
+          <path d="M21 21l-4.3-4.3" />
+        </svg>
+      </button>
+
       {profile?.avatar_url && (
         <button
           className={`me ${avatarTier(profile.style_score)}`}
@@ -78,6 +99,13 @@ export default function App() {
         </button>
       )}
 
+      {searchOpen && (
+        <Search
+          onClose={() => setSearchOpen(false)}
+          onOpenProfile={openProfileFromSearch}
+          onOpenPost={openPostFromSearch}
+        />
+      )}
       {composerOpen && (
         <PostComposer onClose={() => setComposerOpen(false)} onPosted={onPosted} />
       )}
