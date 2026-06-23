@@ -6,16 +6,19 @@ import Feed from './Feed.jsx'
 import PostComposer from './PostComposer.jsx'
 import Profile from './Profile.jsx'
 import PostView from './PostView.jsx'
+import Settings from './Settings.jsx'
 import Onboarding from './Onboarding.jsx'
 import EditProfile from './EditProfile.jsx'
 import './composer.css'
 import './profile.css'
 import './onboarding.css'
+import './settings.css'
 
 export default function App() {
   const [tgUser, setTgUser] = useState(null)
   const [profile, setProfile] = useState(undefined)
   const [composerOpen, setComposerOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
   const [feedKey, setFeedKey] = useState(0)
   const [profileUserId, setProfileUserId] = useState(null)
@@ -28,7 +31,7 @@ export default function App() {
     if (!u?.id) { setProfile(null); return }
     supabase
       .from('users')
-      .select('id, display_name, avatar_url, bio, style_score')
+      .select('id, display_name, avatar_url, bio, style_score, hide_username')
       .eq('telegram_id', u.id)
       .maybeSingle()
       .then(({ data }) => setProfile(data?.display_name ? data : null))
@@ -42,6 +45,11 @@ export default function App() {
   function onSaved(update) {
     setProfile((p) => ({ ...p, ...update }))
     setEditOpen(false)
+    setProfileKey((k) => k + 1)
+  }
+
+  function onSettingsChanged(update) {
+    setProfile((p) => ({ ...p, ...update }))
     setProfileKey((k) => k + 1)
   }
 
@@ -79,8 +87,16 @@ export default function App() {
           userId={profileUserId}
           selfId={profile?.id}
           onClose={() => setProfileUserId(null)}
-          onEdit={() => setEditOpen(true)}
+          onOpenSettings={() => setSettingsOpen(true)}
           onOpenPost={setOpenPostId}
+        />
+      )}
+      {settingsOpen && profile && (
+        <Settings
+          me={profile}
+          onClose={() => setSettingsOpen(false)}
+          onEditProfile={() => setEditOpen(true)}
+          onChanged={onSettingsChanged}
         />
       )}
       {openPostId && (

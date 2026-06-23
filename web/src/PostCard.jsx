@@ -28,6 +28,16 @@ function PlusMark() {
   )
 }
 
+function HangerMark() {
+  return (
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor"
+      strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M12 6.2a1.9 1.9 0 1 1 1.4 1.8c-.55.17-.9.6-.9 1.1v.5" />
+      <path d="M12 9.8 3.6 15.4c-.9.6-.5 2 .6 2h15.6c1.1 0 1.5-1.4.6-2L12 9.8z" />
+    </svg>
+  )
+}
+
 async function castVote(postId, amount) {
   const { data, error } = await supabase.functions.invoke('quick-handler', {
     body: { initData: getInitData(), post_id: postId, amount },
@@ -125,7 +135,7 @@ export default function PostCard({ post, alreadyVoted, onOpenProfile, onPost }) 
             className={`menu__btn ${showItems ? 'menu__btn--on' : ''}`}
             onClick={() => setShowItems((s) => !s)}
             aria-label="Вещи на фото"
-          >🏷️</button>
+          ><HangerMark /></button>
         )}
         <div className="votewrap">
           {picking && !voted && (

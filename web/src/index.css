@@ -41,6 +41,7 @@ body {
   position: relative;
   height: 100dvh;
   scroll-snap-align: start;
+  scroll-snap-stop: always;
   overflow: hidden;
   display: flex;
   flex-direction: column;
