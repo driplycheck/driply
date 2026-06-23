@@ -7,6 +7,9 @@ const DICT = {
     tab_all: 'Все', tab_following: 'Подписки',
     follow: 'Подписаться', unfollow: 'Отписаться',
     followers: 'подписчиков', following_cnt: 'подписок',
+    share_story: 'Поделиться в Stories',
+    share_unsupported: 'Обнови Telegram, чтобы делиться в Stories',
+    share_failed: 'Не получилось, попробуй ещё раз',
   },
   en: {
     back: '‹ Back', settings: 'Settings', edit_profile: 'Edit profile',
@@ -16,6 +19,9 @@ const DICT = {
     tab_all: 'All', tab_following: 'Following',
     follow: 'Follow', unfollow: 'Unfollow',
     followers: 'followers', following_cnt: 'following',
+    share_story: 'Share to Stories',
+    share_unsupported: 'Update Telegram to share to Stories',
+    share_failed: 'Failed, try again',
   },
 }
 

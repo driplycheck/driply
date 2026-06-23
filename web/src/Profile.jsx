@@ -3,6 +3,7 @@ import { supabase } from './supabase.js'
 import { getInitData } from './telegram.js'
 import { avatarTier } from './tiers.js'
 import { t } from './i18n.js'
+import { shareRankCard } from './storyCard.js'
 import FollowList from './FollowList.jsx'
 
 export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpenPost, onOpenProfile, onFollowChanged }) {
@@ -15,6 +16,8 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
   const [following, setFollowing] = useState(false)
   const [busyFollow, setBusyFollow] = useState(false)
   const [listMode, setListMode] = useState(null)
+  const [busyShare, setBusyShare] = useState(false)
+  const [toast, setToast] = useState(null)
 
   useEffect(() => {
     let active = true
@@ -52,6 +55,8 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
     return () => { active = false }
   }, [userId, selfId])
 
+  function flash(m) { setToast(m); setTimeout(() => setToast(null), 2500) }
+
   async function setFollowState(want) {
     if (busyFollow) return
     setBusyFollow(true)
@@ -71,6 +76,14 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
       setFollowers(data.followers)
       onFollowChanged?.()
     }
+  }
+
+  async function share() {
+    if (busyShare || !user) return
+    setBusyShare(true)
+    const res = await shareRankCard({ user, rank, postsCount: posts.length })
+    setBusyShare(false)
+    if (!res.ok) flash(res.reason === 'unsupported' ? t('share_unsupported') : t('share_failed'))
   }
 
   function openPerson(id) {
@@ -112,7 +125,11 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
                 <b>{followingCount}</b> {t('following_cnt')}
               </button>
             </div>
-            {!isSelf && (
+            {isSelf ? (
+              <button className="story-btn" onClick={share} disabled={busyShare}>
+                {busyShare ? '…' : t('share_story')}
+              </button>
+            ) : (
               <button
                 className={`follow-btn ${following ? 'follow-btn--on' : ''}`}
                 onClick={() => setFollowState(!following)} disabled={busyFollow}
@@ -141,6 +158,8 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
           )}
         </div>
       )}
+
+      {toast && <div className="ptoast">{toast}</div>}
 
       {listMode && (
         <FollowList
