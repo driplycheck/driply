@@ -7,7 +7,7 @@ const SELECT =
   'users(id, username, display_name, avatar_url, style_score), ' +
   'post_items(items(name, brand, category))'
 
-export default function Feed({ tgId, onOpenProfile }) {
+export default function Feed({ tgId, onOpenProfile, onPost }) {
   const [posts, setPosts] = useState(null)
   const [votedIds, setVotedIds] = useState(new Set())
   const [error, setError] = useState(null)
@@ -39,9 +39,7 @@ export default function Feed({ tgId, onOpenProfile }) {
         .eq('voter_id', u.id)
       if (v && active) setVotedIds(new Set(v.map((r) => r.post_id)))
     })()
-    return () => {
-      active = false
-    }
+    return () => { active = false }
   }, [tgId])
 
   if (error) return <div className="state">Лента не загрузилась. {error}</div>
@@ -57,6 +55,7 @@ export default function Feed({ tgId, onOpenProfile }) {
           post={post}
           alreadyVoted={votedIds.has(post.id)}
           onOpenProfile={onOpenProfile}
+          onPost={onPost}
         />
       ))}
     </div>

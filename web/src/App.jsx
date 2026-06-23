@@ -23,10 +23,7 @@ export default function App() {
   useEffect(() => {
     const u = initTelegram()
     setTgUser(u)
-    if (!u?.id) {
-      setProfile(null)
-      return
-    }
+    if (!u?.id) { setProfile(null); return }
     supabase
       .from('users')
       .select('id, display_name, avatar_url, bio, style_score')
@@ -54,7 +51,12 @@ export default function App() {
 
   return (
     <>
-      <Feed key={feedKey} tgId={tgUser?.id ?? null} onOpenProfile={setProfileUserId} />
+      <Feed
+        key={feedKey}
+        tgId={tgUser?.id ?? null}
+        onOpenProfile={setProfileUserId}
+        onPost={() => setComposerOpen(true)}
+      />
 
       {profile?.avatar_url && (
         <button
@@ -65,10 +67,6 @@ export default function App() {
           <img src={profile.avatar_url} alt="" />
         </button>
       )}
-
-      <button className="drip-btn" onClick={() => setComposerOpen(true)} aria-label="Выложить образ">
-        +
-      </button>
 
       {composerOpen && (
         <PostComposer onClose={() => setComposerOpen(false)} onPosted={onPosted} />
