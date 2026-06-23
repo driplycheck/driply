@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react'
 import { supabase } from './supabase.js'
 import { getInitData } from './telegram.js'
 import { avatarTier } from './tiers.js'
+import FollowList from './FollowList.jsx'
 
-export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpenPost, onFollowChanged }) {
+export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpenPost, onOpenProfile, onFollowChanged }) {
   const [user, setUser] = useState(null)
   const [rank, setRank] = useState(null)
   const [posts, setPosts] = useState([])
@@ -12,6 +13,7 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
   const [followingCount, setFollowingCount] = useState(0)
   const [following, setFollowing] = useState(false)
   const [busyFollow, setBusyFollow] = useState(false)
+  const [listMode, setListMode] = useState(null)
 
   useEffect(() => {
     let active = true
@@ -63,6 +65,11 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
     }
   }
 
+  function openPerson(id) {
+    setListMode(null)
+    if (id !== userId) onOpenProfile?.(id)
+  }
+
   const isSelf = user && selfId && user.id === selfId
   const displayName = user?.display_name || (user?.username ? '@' + user.username : 'user')
   const showHandle = user?.username && (isSelf || !user.hide_username)
@@ -88,7 +95,15 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
             <div className="profile__name">{displayName}</div>
             {showHandle && <div className="profile__handle">@{user.username}</div>}
             {user.bio && <p className="profile__bio">{user.bio}</p>}
-            <div className="profile__follows">{followers} подписчиков · {followingCount} подписок</div>
+            <div className="profile__follows">
+              <button className="flink" onClick={() => setListMode('followers')}>
+                <b>{followers}</b> подписчиков
+              </button>
+              <span className="flink__dot">·</span>
+              <button className="flink" onClick={() => setListMode('following')}>
+                <b>{followingCount}</b> подписок
+              </button>
+            </div>
             {!isSelf && (
               <button
                 className={`follow-btn ${following ? 'follow-btn--on' : ''}`}
@@ -117,6 +132,15 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
             <div className="state">Пока нет образов</div>
           )}
         </div>
+      )}
+
+      {listMode && (
+        <FollowList
+          userId={userId}
+          mode={listMode}
+          onClose={() => setListMode(null)}
+          onOpenProfile={openPerson}
+        />
       )}
     </div>
   )
