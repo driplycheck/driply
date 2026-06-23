@@ -28,16 +28,9 @@ export default function Feed({ selfId, onOpenProfile, onPost }) {
     ;(async () => {
       if (tab === 'following') {
         if (!selfId) { if (active) setPosts([]); return }
-        const { data: fl } = await supabase
-          .from('follows').select('following_id').eq('follower_id', selfId)
-        const ids = (fl || []).map((r) => r.following_id)
-        if (ids.length === 0) { if (active) setPosts([]); return }
-        const { data, error } = await supabase
-          .from('posts').select(SELECT)
-          .in('user_id', ids)
-          .order('created_at', { ascending: false })
+        const { data, error } = await supabase.rpc('following_feed', { p_uid: selfId })
         if (!active) return
-        if (error) setError(error.message); else setPosts(data)
+        if (error) setError(error.message); else setPosts(data || [])
         return
       }
       const { data, error } = await supabase
