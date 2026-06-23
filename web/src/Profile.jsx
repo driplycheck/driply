@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from './supabase.js'
 import { avatarTier } from './tiers.js'
 
-export default function Profile({ userId, selfId, onClose, onEdit }) {
+export default function Profile({ userId, selfId, onClose, onEdit, onOpenPost }) {
   const [user, setUser] = useState(null)
   const [rank, setRank] = useState(null)
   const [posts, setPosts] = useState([])
@@ -33,9 +33,7 @@ export default function Profile({ userId, selfId, onClose, onEdit }) {
       }
       if (active) setLoading(false)
     })()
-    return () => {
-      active = false
-    }
+    return () => { active = false }
   }, [userId])
 
   const isSelf = user && selfId && user.id === selfId
@@ -81,13 +79,14 @@ export default function Profile({ userId, selfId, onClose, onEdit }) {
           {posts.length > 0 ? (
             <div className="grid">
               {posts.map((p) => (
-                <div
+                <button
                   className="grid__item"
                   key={p.id}
                   style={{ backgroundImage: `url(${p.media_url})` }}
+                  onClick={() => onOpenPost(p.id)}
                 >
                   <span className="grid__score">★ {p.score}</span>
-                </div>
+                </button>
               ))}
             </div>
           ) : (

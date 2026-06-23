@@ -20,6 +20,14 @@ function DripMark() {
   )
 }
 
+function PlusMark() {
+  return (
+    <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+      <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
+    </svg>
+  )
+}
+
 async function castVote(postId, amount) {
   const { data, error } = await supabase.functions.invoke('quick-handler', {
     body: { initData: getInitData(), post_id: postId, amount },
@@ -109,7 +117,9 @@ export default function PostCard({ post, alreadyVoted, onOpenProfile, onPost }) 
       </div>
 
       <div className="menu">
-        <button className="menu__btn" onClick={onPost} aria-label="Выложить образ">+</button>
+        <button className="menu__btn menu__btn--post" onClick={onPost} aria-label="Выложить образ">
+          <PlusMark />
+        </button>
         {items.length > 0 && (
           <button
             className={`menu__btn ${showItems ? 'menu__btn--on' : ''}`}

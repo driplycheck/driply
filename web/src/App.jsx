@@ -5,6 +5,7 @@ import { avatarTier } from './tiers.js'
 import Feed from './Feed.jsx'
 import PostComposer from './PostComposer.jsx'
 import Profile from './Profile.jsx'
+import PostView from './PostView.jsx'
 import Onboarding from './Onboarding.jsx'
 import EditProfile from './EditProfile.jsx'
 import './composer.css'
@@ -19,6 +20,7 @@ export default function App() {
   const [feedKey, setFeedKey] = useState(0)
   const [profileUserId, setProfileUserId] = useState(null)
   const [profileKey, setProfileKey] = useState(0)
+  const [openPostId, setOpenPostId] = useState(null)
 
   useEffect(() => {
     const u = initTelegram()
@@ -78,6 +80,15 @@ export default function App() {
           selfId={profile?.id}
           onClose={() => setProfileUserId(null)}
           onEdit={() => setEditOpen(true)}
+          onOpenPost={setOpenPostId}
+        />
+      )}
+      {openPostId && (
+        <PostView
+          postId={openPostId}
+          onClose={() => setOpenPostId(null)}
+          onOpenProfile={(id) => { setOpenPostId(null); setProfileUserId(id) }}
+          onPost={() => setComposerOpen(true)}
         />
       )}
       {editOpen && profile && (
