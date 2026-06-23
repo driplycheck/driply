@@ -23,27 +23,25 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
       if (!active) return
       setUser(u)
       if (u) {
-        const { count: higher } = await supabase
-          .from('users').select('*', { count: 'exact', head: true })
-          .gt('style_score', u.style_score)
-        if (active) setRank((higher ?? 0) + 1)
+        const { data: higher } = await supabase
+          .from('users').select('id').gt('style_score', u.style_score)
+        if (active) setRank((higher?.length ?? 0) + 1)
 
         const { data: p } = await supabase
           .from('posts').select('id, media_url, score')
           .eq('user_id', userId).order('created_at', { ascending: false })
         if (active) setPosts(p || [])
 
-        const [{ count: fr }, { count: fg }] = await Promise.all([
-          supabase.from('follows').select('*', { count: 'exact', head: true }).eq('following_id', userId),
-          supabase.from('follows').select('*', { count: 'exact', head: true }).eq('follower_id', userId),
+        const [{ data: frRows }, { data: fgRows }] = await Promise.all([
+          supabase.from('follows').select('follower_id').eq('following_id', userId),
+          supabase.from('follows').select('following_id').eq('follower_id', userId),
         ])
-        if (active) { setFollowers(fr ?? 0); setFollowingCount(fg ?? 0) }
-
-        if (selfId && selfId !== userId) {
-          const { data: rel } = await supabase
-            .from('follows').select('follower_id')
-            .eq('follower_id', selfId).eq('following_id', userId).maybeSingle()
-          if (active) setFollowing(!!rel)
+        if (active) {
+          setFollowers(frRows?.length ?? 0)
+          setFollowingCount(fgRows?.length ?? 0)
+          if (selfId && selfId !== userId) {
+            setFollowing((frRows || []).some((r) => r.follower_id === selfId))
+          }
         }
       }
       if (active) setLoading(false)
