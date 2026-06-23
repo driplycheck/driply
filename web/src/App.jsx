@@ -57,14 +57,13 @@ export default function App() {
     setProfileKey((k) => k + 1)
   }
 
-  function openProfileFromSearch(id) {
-    setSearchOpen(false)
-    setProfileUserId(id)
-  }
+  function openProfileFromSearch(id) { setSearchOpen(false); setProfileUserId(id) }
+  function openPostFromSearch(id) { setSearchOpen(false); setOpenPostId(id) }
 
-  function openPostFromSearch(id) {
-    setSearchOpen(false)
-    setOpenPostId(id)
+  function onPostDeleted() {
+    setOpenPostId(null)
+    setFeedKey((k) => k + 1)
+    setProfileKey((k) => k + 1)
   }
 
   if (profile === undefined) return <div className="state">Загрузка…</div>
@@ -118,6 +117,7 @@ export default function App() {
           onClose={() => setProfileUserId(null)}
           onOpenSettings={() => setSettingsOpen(true)}
           onOpenPost={setOpenPostId}
+          onFollowChanged={() => setFeedKey((k) => k + 1)}
         />
       )}
       {settingsOpen && profile && (
@@ -131,9 +131,11 @@ export default function App() {
       {openPostId && (
         <PostView
           postId={openPostId}
+          selfId={profile?.id}
           onClose={() => setOpenPostId(null)}
           onOpenProfile={(id) => { setOpenPostId(null); setProfileUserId(id) }}
           onPost={() => setComposerOpen(true)}
+          onDeleted={onPostDeleted}
         />
       )}
       {editOpen && profile && (

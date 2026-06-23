@@ -81,7 +81,7 @@
   border-radius: 12px;
   padding: 12px 14px;
   color: #fff;
-  font-size: 15px;
+  font-size: 16px;
   font-family: var(--font-body);
 }
 .field::placeholder { color: var(--muted); }

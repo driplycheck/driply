@@ -3,7 +3,7 @@ import { supabase } from './supabase.js'
 import { getInitData } from './telegram.js'
 import { avatarTier } from './tiers.js'
 
-export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpenPost }) {
+export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpenPost, onFollowChanged }) {
   const [user, setUser] = useState(null)
   const [rank, setRank] = useState(null)
   const [posts, setPosts] = useState([])
@@ -19,8 +19,7 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
       const { data: u } = await supabase
         .from('users')
         .select('id, username, display_name, avatar_url, bio, style_score, hide_username')
-        .eq('id', userId)
-        .maybeSingle()
+        .eq('id', userId).maybeSingle()
       if (!active) return
       setUser(u)
       if (u) {
@@ -62,6 +61,7 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
     if (!error && data) {
       setFollowing(data.following)
       setFollowers(data.followers)
+      onFollowChanged?.()
     }
   }
 
@@ -94,26 +94,16 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
             {!isSelf && (
               <button
                 className={`follow-btn ${following ? 'follow-btn--on' : ''}`}
-                onClick={toggleFollow}
-                disabled={busyFollow}
+                onClick={toggleFollow} disabled={busyFollow}
               >
                 {following ? 'Отписаться' : 'Подписаться'}
               </button>
             )}
           </div>
           <div className="profile__stats">
-            <div className="stat">
-              <div className="stat__num">★ {user.style_score}</div>
-              <div className="stat__lbl">очки стиля</div>
-            </div>
-            <div className="stat">
-              <div className="stat__num">#{rank}</div>
-              <div className="stat__lbl">в рейтинге</div>
-            </div>
-            <div className="stat">
-              <div className="stat__num">{posts.length}</div>
-              <div className="stat__lbl">образов</div>
-            </div>
+            <div className="stat"><div className="stat__num">★ {user.style_score}</div><div className="stat__lbl">очки стиля</div></div>
+            <div className="stat"><div className="stat__num">#{rank}</div><div className="stat__lbl">в рейтинге</div></div>
+            <div className="stat"><div className="stat__num">{posts.length}</div><div className="stat__lbl">образов</div></div>
           </div>
           {posts.length > 0 ? (
             <div className="grid">
