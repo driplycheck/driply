@@ -16,6 +16,15 @@ const ERRORS = {
   AUTH_FAILED: 'Не удалось подтвердить вход',
 }
 
+function DripMark({ size = 22, color = '#1a1300' }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true">
+      <path d="M12 2.5c4.2 5 6.5 8.2 6.5 11.3A6.5 6.5 0 0 1 12 20.3a6.5 6.5 0 0 1-6.5-6.5C5.5 10.7 7.8 7.5 12 2.5z"
+        fill={color} />
+    </svg>
+  )
+}
+
 async function castVote(postId, amount) {
   const { data, error } = await supabase.functions.invoke('quick-handler', {
     body: { initData: getInitData(), post_id: postId, amount },
@@ -29,7 +38,7 @@ async function castVote(postId, amount) {
   }
 }
 
-export default function PostCard({ post, alreadyVoted, onOpenProfile }) {
+export default function PostCard({ post, alreadyVoted, onOpenProfile, onPost }) {
   const author = post.users || {}
   const items = (post.post_items || []).map((pi) => pi.items).filter(Boolean)
   const authorName = author.display_name || '@' + (author.username || 'user')
@@ -101,14 +110,25 @@ export default function PostCard({ post, alreadyVoted, onOpenProfile }) {
       </div>
 
       <div className="rail">
-        <button className="railbtn" onClick={() => onOpenProfile && post.onPost?.()} style={{ display: 'none' }} />
+        <button className="railic" onClick={() => onPost?.()} aria-label="Выложить образ">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+        </button>
+
         {items.length > 0 && (
           <button
-            className={`hanger ${showItems ? 'hanger--on' : ''}`}
+            className={`railic ${showItems ? 'railic--on' : ''}`}
             onClick={() => setShowItems((s) => !s)}
             aria-label="Вещи на образе"
-          >🧷</button>
+          >
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 4a2 2 0 0 0-1 3.7L12 9l1-1.3A2 2 0 0 0 12 4z" />
+              <path d="M12 9c-1 1.5-7 4.5-8.5 6.5C2 17 3 19 5 19h14c2 0 3-2 1.5-3.5C19 13.5 13 10.5 12 9z" />
+            </svg>
+          </button>
         )}
+
         {picking && !voted && (
           <div className="picker">
             {AMOUNTS.map((a) => (
@@ -116,18 +136,23 @@ export default function PostCard({ post, alreadyVoted, onOpenProfile }) {
             ))}
           </div>
         )}
+
         <button
           className={`vote ${voted ? 'vote--done' : ''}`}
           disabled={busy}
           onClick={onCoin}
           aria-label="Оценить образ"
         >
-          <span className="vote__coin">{voted ? '✓' : busy ? '…' : ''}</span>
+          <span className="vote__coin">
+            {voted ? '✓' : busy ? '…' : <DripMark size={22} color="#1a1300" />}
+          </span>
           {drips.map((d) => (
             <span className="drip" key={d.id}>+{d.amount}</span>
           ))}
         </button>
-        <span className="vote__score">★ {score}</span>
+        <span className="vote__score">
+          <DripMark size={13} color="#f4c430" /> {score}
+        </span>
       </div>
 
       {toast && <div className="toast">{toast}</div>}
