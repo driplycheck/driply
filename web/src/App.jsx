@@ -3,6 +3,7 @@ import { initTelegram } from './telegram.js'
 import { supabase } from './supabase.js'
 import { avatarTier } from './tiers.js'
 import { loadLang, saveLang, setActiveLang } from './i18n.js'
+import { loadSide, saveSide, setActiveSide } from './side.js'
 import Feed from './Feed.jsx'
 import PostComposer from './PostComposer.jsx'
 import Profile from './Profile.jsx'
@@ -22,6 +23,7 @@ export default function App() {
   const [tgUser, setTgUser] = useState(null)
   const [profile, setProfile] = useState(undefined)
   const [lang, setLang] = useState(loadLang())
+  const [side, setSide] = useState(loadSide())
   const [composerOpen, setComposerOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
@@ -32,6 +34,7 @@ export default function App() {
   const [openPostId, setOpenPostId] = useState(null)
 
   setActiveLang(lang)
+  setActiveSide(side)
 
   useEffect(() => {
     const u = initTelegram()
@@ -45,11 +48,8 @@ export default function App() {
       .then(({ data }) => setProfile(data?.display_name ? data : null))
   }, [])
 
-  function changeLang(code) {
-    saveLang(code)
-    setActiveLang(code)
-    setLang(code)
-  }
+  function changeLang(code) { saveLang(code); setActiveLang(code); setLang(code) }
+  function changeSide(s) { saveSide(s); setActiveSide(s); setSide(s) }
 
   function onPosted() { setComposerOpen(false); setFeedKey((k) => k + 1) }
   function onSaved(update) { setProfile((p) => ({ ...p, ...update })); setEditOpen(false); setProfileKey((k) => k + 1) }
@@ -58,6 +58,16 @@ export default function App() {
   function openPostFromSearch(id) { setSearchOpen(false); setOpenPostId(id) }
   function onPostDeleted() { setOpenPostId(null); setFeedKey((k) => k + 1); setProfileKey((k) => k + 1) }
 
+  // переход в чужой профиль из любого места: сначала закрываем текущий профиль,
+  // потом открываем новый — без промежуточного показа своего
+  function goProfile(id) {
+    setProfileUserId(null)
+    requestAnimationFrame(() => {
+      setProfileKey((k) => k + 1)
+      setProfileUserId(id)
+    })
+  }
+
   if (profile === undefined) return <div className="state">Загрузка…</div>
 
   if (profile === null && tgUser?.id) {
@@ -65,7 +75,7 @@ export default function App() {
   }
 
   return (
-    <>
+    <div className={`app side-${side}`}>
       <Feed
         key={feedKey}
         selfId={profile?.id ?? null}
@@ -107,7 +117,7 @@ export default function App() {
           userId={profileUserId}
           selfId={profile?.id}
           onClose={() => setProfileUserId(null)}
-          onOpenProfile={setProfileUserId}
+          onOpenProfile={goProfile}
           onOpenSettings={() => setSettingsOpen(true)}
           onOpenPost={setOpenPostId}
           onFollowChanged={() => setFeedKey((k) => k + 1)}
@@ -118,6 +128,8 @@ export default function App() {
           me={profile}
           lang={lang}
           onLang={changeLang}
+          side={side}
+          onSide={changeSide}
           onClose={() => setSettingsOpen(false)}
           onEditProfile={() => setEditOpen(true)}
           onChanged={onSettingsChanged}
@@ -136,6 +148,6 @@ export default function App() {
       {editOpen && profile && (
         <EditProfile me={profile} onClose={() => setEditOpen(false)} onSaved={onSaved} />
       )}
-    </>
+    </div>
   )
 }

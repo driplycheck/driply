@@ -25,7 +25,7 @@ export default function Settings({ me, lang, onLang, side, onSide, onClose, onEd
 
   return (
     <div className="settings">
-      <header class="settings__top" className="settings__top">
+      <header className="settings__top">
         <button className="settings__close" onClick={onClose}>{t('back')}</button>
         <span className="settings__title">{t('settings')}</span>
         <span className="settings__spacer" />
