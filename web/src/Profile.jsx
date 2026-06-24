@@ -6,7 +6,7 @@ import { t } from './i18n.js'
 import { shareRankCard } from './storyCard.js'
 import FollowList from './FollowList.jsx'
 
-export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpenPost, onOpenProfile, onFollowChanged }) {
+export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpenPost, onOpenProfile, onOpenArchive, onFollowChanged }) {
   const [user, setUser] = useState(null)
   const [rank, setRank] = useState(null)
   const [posts, setPosts] = useState([])
@@ -140,6 +140,9 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
               >
                 {following ? t('unfollow') : t('follow')}
               </button>
+            )}
+            {isSelf && (
+              <button className="archive-btn" onClick={onOpenArchive}>История публикаций</button>
             )}
           </div>
           <div className="profile__stats">

@@ -12,6 +12,7 @@ import Settings from './Settings.jsx'
 import Search from './Search.jsx'
 import Onboarding from './Onboarding.jsx'
 import EditProfile from './EditProfile.jsx'
+import PostsArchive from './PostsArchive.jsx'
 import './composer.css'
 import './profile.css'
 import './onboarding.css'
@@ -32,6 +33,7 @@ export default function App() {
   const [profileUserId, setProfileUserId] = useState(null)
   const [profileKey, setProfileKey] = useState(0)
   const [openPostId, setOpenPostId] = useState(null)
+  const [archiveOpen, setArchiveOpen] = useState(false)
 
   setActiveLang(lang)
   setActiveSide(side)
@@ -119,6 +121,7 @@ export default function App() {
           onClose={() => setProfileUserId(null)}
           onOpenProfile={goProfile}
           onOpenSettings={() => setSettingsOpen(true)}
+          onOpenArchive={() => setArchiveOpen(true)}
           onOpenPost={setOpenPostId}
           onFollowChanged={() => setFeedKey((k) => k + 1)}
         />
@@ -143,6 +146,12 @@ export default function App() {
           onOpenProfile={(id) => { setOpenPostId(null); setProfileUserId(id) }}
           onPost={() => setComposerOpen(true)}
           onDeleted={onPostDeleted}
+        />
+      )}
+      {archiveOpen && (
+        <PostsArchive
+          onClose={() => setArchiveOpen(false)}
+          onChanged={() => { setFeedKey((k) => k + 1); setProfileKey((k) => k + 1) }}
         />
       )}
       {editOpen && profile && (

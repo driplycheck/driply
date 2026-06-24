@@ -110,3 +110,26 @@
   z-index: 130;
   max-width: 80%;
 }
+
+.archive-btn {
+  margin-top: 10px; padding: 9px 22px; border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.16); background: rgba(255,255,255,0.05);
+  color: #fff; font-family: var(--font-display); font-weight: 600; font-size: 14px; cursor: pointer;
+}
+.archive { position: fixed; inset: 0; z-index: 98; background: #0a0a0b; display: flex; flex-direction: column; overflow: hidden; }
+.archive__top { display: flex; align-items: center; justify-content: space-between; padding: calc(env(safe-area-inset-top) + 12px) 16px 12px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+.archive__close { background: none; border: none; color: #fff; font-size: 17px; cursor: pointer; width: 70px; text-align: left; }
+.archive__title { font-weight: 600; font-size: 16px; }
+.archive__spacer { width: 70px; }
+.archive__body { flex: 1; overflow-y: auto; padding: 12px 16px 40px; display: flex; flex-direction: column; gap: 12px; }
+.arow { display: flex; gap: 12px; align-items: center; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 10px; }
+.arow--hidden { opacity: 0.6; }
+.arow__thumb { width: 60px; height: 78px; border-radius: 10px; flex: none; background-size: cover; background-position: center; position: relative; }
+.arow__badge { position: absolute; bottom: 4px; left: 4px; background: rgba(0,0,0,0.7); color: #fff; font-size: 9px; padding: 1px 5px; border-radius: 6px; }
+.arow__mid { flex: 1; min-width: 0; }
+.arow__score { color: var(--gold); font-weight: 700; font-size: 14px; }
+.arow__cap { color: var(--muted); font-size: 12px; margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.arow__acts { display: flex; flex-direction: column; gap: 6px; flex: none; }
+.arow__btn { padding: 7px 12px; border-radius: 9px; border: 1px solid rgba(255,255,255,0.16); background: rgba(255,255,255,0.06); color: #fff; font-size: 12px; cursor: pointer; white-space: nowrap; }
+.arow__btn--del { border-color: rgba(255,77,79,0.5); color: #ff6b6d; }
+.confirm__yes--danger { background: #ff4d4f !important; color: #fff !important; }
