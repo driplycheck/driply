@@ -310,3 +310,8 @@ body {
 .railic--on { background: var(--gold); color: #1a1300; border-color: var(--gold); }
 .vote__score { display: inline-flex; align-items: center; gap: 5px; }
 .vote__coin { display: grid; place-items: center; }
+
+/* зеркалирование интерфейса для левшей */
+.side-left .rail { right: auto; left: 12px; }
+.side-left .card__bottom { padding: 16px 16px 36px 78px; }
+.side-left .feed-tabs { /* центр оставляем */ }

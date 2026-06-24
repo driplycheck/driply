@@ -3,7 +3,7 @@ import { supabase } from './supabase.js'
 import { getInitData } from './telegram.js'
 import { t, LANGS } from './i18n.js'
 
-export default function Settings({ me, lang, onLang, onClose, onEditProfile, onChanged }) {
+export default function Settings({ me, lang, onLang, side, onSide, onClose, onEditProfile, onChanged }) {
   const [hide, setHide] = useState(!!me.hide_username)
   const [busy, setBusy] = useState(false)
 
@@ -25,7 +25,7 @@ export default function Settings({ me, lang, onLang, onClose, onEditProfile, onC
 
   return (
     <div className="settings">
-      <header className="settings__top">
+      <header class="settings__top" className="settings__top">
         <button className="settings__close" onClick={onClose}>{t('back')}</button>
         <span className="settings__title">{t('settings')}</span>
         <span className="settings__spacer" />
@@ -43,6 +43,17 @@ export default function Settings({ me, lang, onLang, onClose, onEditProfile, onC
           <button className={`toggle ${hide ? 'toggle--on' : ''}`} onClick={toggleHide} disabled={busy} aria-label="hide">
             <span className="toggle__knob" />
           </button>
+        </div>
+        <div className="srow srow--col">
+          <div className="srow__label">{t('interface_side')}</div>
+          <div className="langrow">
+            <button className={`langopt ${side === 'left' ? 'langopt--on' : ''}`} onClick={() => onSide('left')}>
+              {t('side_left')}
+            </button>
+            <button className={`langopt ${side === 'right' ? 'langopt--on' : ''}`} onClick={() => onSide('right')}>
+              {t('side_right')}
+            </button>
+          </div>
         </div>
         <div className="srow srow--col">
           <div className="srow__label">{t('language')}</div>
