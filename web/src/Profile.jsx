@@ -20,14 +20,13 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
   const [toast, setToast] = useState(null)
 
   async function loadRelations() {
-    const [{ data: frRows }, { data: fgRows }] = await Promise.all([
-      supabase.from('follows').select('follower_id').eq('following_id', userId),
-      supabase.from('follows').select('following_id').eq('follower_id', userId),
-    ])
-    setFollowers(frRows?.length ?? 0)
-    setFollowingCount(fgRows?.length ?? 0)
-    if (selfId && selfId !== userId) {
-      setFollowing((frRows || []).some((r) => r.follower_id === selfId))
+    const { data } = await supabase.rpc('profile_relations', {
+      p_target: userId, p_viewer: selfId ?? 0,
+    })
+    if (data) {
+      setFollowers(data.followers ?? 0)
+      setFollowingCount(data.following ?? 0)
+      if (selfId && selfId !== userId) setFollowing(!!data.is_following)
     }
   }
 
@@ -75,6 +74,7 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
       setFollowing(!!data.following)
       setFollowers(data.followers ?? followers)
       onFollowChanged?.()
+      await loadRelations()
     }
   }
 
