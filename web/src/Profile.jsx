@@ -45,7 +45,7 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
         if (active) setRank((higher?.length ?? 0) + 1)
         const { data: p } = await supabase
           .from('posts').select('id, media_url, score')
-          .eq('user_id', userId).order('created_at', { ascending: false })
+          .eq('user_id', userId).eq('hidden', false).order('created_at', { ascending: false })
         if (active) setPosts(p || [])
         if (active) await loadRelations()
       }

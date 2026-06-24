@@ -37,6 +37,7 @@ export default function Feed({ selfId, onOpenProfile, onPost }) {
       }
       const { data, error } = await supabase
         .from('posts').select(SELECT)
+        .eq('hidden', false)
         .order('created_at', { ascending: false })
       if (!active) return
       if (error) setError(error.message); else setPosts(data)
