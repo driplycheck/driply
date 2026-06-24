@@ -253,7 +253,7 @@ body {
 .toast {
   position: absolute;
   left: 50%;
-  bottom: 130px;
+  bottom: 44px;
   transform: translateX(-50%);
   background: rgba(0, 0, 0, 0.82);
   color: #fff;
