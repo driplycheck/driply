@@ -95,8 +95,10 @@ export default function App() {
           aria-label="Мой профиль"
         >
           <img src={profile.avatar_url} alt="" />
-          <span className="me__balance">💧 {profile.daily_credits ?? 0}</span>
         </button>
+      )}
+      {profile && (
+        <div className="balance-pill">💧 {profile.daily_credits ?? 0}</div>
       )}
 
       {searchOpen && (
