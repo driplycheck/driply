@@ -15,6 +15,10 @@ export default function FollowList({ userId, mode, onClose, onOpenProfile }) {
     return () => { active = false }
   }, [userId, tab])
 
+  function pick(id) {
+    onOpenProfile(id)
+  }
+
   return (
     <div className="follist">
       <header className="follist__top">
@@ -38,7 +42,7 @@ export default function FollowList({ userId, mode, onClose, onOpenProfile }) {
           </div>
         ) : (
           people.map((u) => (
-            <button className="sresult" key={u.id} onClick={() => onOpenProfile(u.id)}>
+            <button className="sresult" key={u.id} onClick={() => pick(u.id)}>
               {u.avatar_url && (
                 <img className={`sresult__ava ${avatarTier(u.style_score)}`} src={u.avatar_url} alt="" />
               )}
