@@ -142,7 +142,7 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
               </button>
             )}
             {isSelf && (
-              <button className="archive-btn" onClick={onOpenArchive}>История публикаций</button>
+              <button className="archive-btn" onClick={onOpenArchive}>Архив публикаций</button>
             )}
           </div>
           <div className="profile__stats">

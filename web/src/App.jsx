@@ -44,7 +44,7 @@ export default function App() {
     if (!u?.id) { setProfile(null); return }
     supabase
       .from('users')
-      .select('id, display_name, avatar_url, bio, style_score, hide_username, daily_credits')
+      .select('id, display_name, avatar_url, bio, style_score, hide_username, daily_credits, notify_follows')
       .eq('telegram_id', u.id)
       .maybeSingle()
       .then(({ data }) => setProfile(data?.display_name ? data : null))
