@@ -311,7 +311,14 @@ body {
 .vote__score { display: inline-flex; align-items: center; gap: 5px; }
 .vote__coin { display: grid; place-items: center; }
 
-/* зеркалирование интерфейса для левшей */
-.side-left .rail { right: auto; left: 12px; }
+
+/* === расположение рейла и автора по выбранной стороне === */
+.side-right .rail { right: 12px; left: auto; }
+.side-right .card__bottom { padding: 16px 78px 36px 16px; }
+
+.side-left .rail { left: 12px; right: auto; }
 .side-left .card__bottom { padding: 16px 16px 36px 78px; }
-.side-left .feed-tabs { /* центр оставляем */ }
+.side-left .author,
+.side-left .caption,
+.side-left .tags { text-align: right; }
+.side-left .author { flex-direction: row-reverse; }

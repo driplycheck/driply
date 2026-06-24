@@ -61,11 +61,8 @@ export default function App() {
   // переход в чужой профиль из любого места: сначала закрываем текущий профиль,
   // потом открываем новый — без промежуточного показа своего
   function goProfile(id) {
-    setProfileUserId(null)
-    requestAnimationFrame(() => {
-      setProfileKey((k) => k + 1)
-      setProfileUserId(id)
-    })
+    setProfileKey((k) => k + 1)
+    setProfileUserId(id)
   }
 
   if (profile === undefined) return <div className="state">Загрузка…</div>
