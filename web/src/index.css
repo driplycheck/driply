@@ -311,14 +311,9 @@ body {
 .vote__score { display: inline-flex; align-items: center; gap: 5px; }
 .vote__coin { display: grid; place-items: center; }
 
-
-/* === расположение рейла и автора по выбранной стороне === */
+/* === сторона интерфейса: рейл + горизонтальная привязка автора (низ не трогаем) === */
+.card__bottom { align-items: flex-start; }
 .side-right .rail { right: 12px; left: auto; }
-.side-right .card__bottom { padding: 16px 78px 36px 16px; }
-
-.side-left .rail { left: 12px; right: auto; }
-.side-left .card__bottom { padding: 16px 16px 36px 78px; }
-.side-left .author,
-.side-left .caption,
-.side-left .tags { text-align: right; }
-.side-left .author { flex-direction: row-reverse; }
+.side-left  .rail { left: 12px;  right: auto; }
+.side-right .card__bottom { padding: 16px 78px 36px 16px; align-items: flex-start; }
+.side-left  .card__bottom { padding: 16px 16px 36px 78px; align-items: flex-end; text-align: right; }
