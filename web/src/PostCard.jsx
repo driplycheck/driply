@@ -3,39 +3,17 @@ import { supabase } from './supabase.js'
 import { getInitData } from './telegram.js'
 import { avatarTier } from './tiers.js'
 
-const CATEGORY_ICON = { top: '👕', bottoms: '👖', shoes: '👟', accessory: '🧢', other: '✨' }
+const CATEGORY_ICON = {
+  top: '👕', bottoms: '👖', shoes: '👟', accessory: '🧢', other: '✨',
+}
+
 const AMOUNTS = [10, 50, 100]
+
 const ERRORS = {
   ALREADY_VOTED: 'Ты уже оценил этот образ',
-  NOT_ENOUGH_CREDITS: 'Не хватает дрипов',
+  NOT_ENOUGH_CREDITS: 'Не хватает кредитов',
   CANNOT_VOTE_OWN: 'Нельзя голосовать за свой образ',
   AUTH_FAILED: 'Не удалось подтвердить вход',
-}
-
-function DripMark() {
-  return (
-    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-      <path d="M12 3c3.6 5.2 6 8.2 6 11.6A6 6 0 0 1 6 14.6C6 11.2 8.4 8.2 12 3z" fill="#2a1d00" />
-    </svg>
-  )
-}
-
-function PlusMark() {
-  return (
-    <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
-      <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
-    </svg>
-  )
-}
-
-function HangerMark() {
-  return (
-    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor"
-      strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M12 6.2a1.9 1.9 0 1 1 1.4 1.8c-.55.17-.9.6-.9 1.1v.5" />
-      <path d="M12 9.8 3.6 15.4c-.9.6-.5 2 .6 2h15.6c1.1 0 1.5-1.4.6-2L12 9.8z" />
-    </svg>
-  )
 }
 
 async function castVote(postId, amount) {
@@ -51,7 +29,7 @@ async function castVote(postId, amount) {
   }
 }
 
-export default function PostCard({ post, alreadyVoted, onOpenProfile, onPost }) {
+export default function PostCard({ post, alreadyVoted, onOpenProfile }) {
   const author = post.users || {}
   const items = (post.post_items || []).map((pi) => pi.items).filter(Boolean)
   const authorName = author.display_name || '@' + (author.username || 'user')
@@ -60,10 +38,10 @@ export default function PostCard({ post, alreadyVoted, onOpenProfile, onPost }) 
   const [votedLocal, setVotedLocal] = useState(false)
   const voted = votedLocal || alreadyVoted
   const [picking, setPicking] = useState(false)
-  const [showItems, setShowItems] = useState(false)
   const [busy, setBusy] = useState(false)
   const [toast, setToast] = useState(null)
   const [drips, setDrips] = useState([])
+  const [showItems, setShowItems] = useState(false)
 
   function flash(msg) {
     setToast(msg)
@@ -82,7 +60,7 @@ export default function PostCard({ post, alreadyVoted, onOpenProfile, onPost }) 
       const id = Date.now()
       setDrips((d) => [...d, { id, amount }])
       setTimeout(() => setDrips((d) => d.filter((x) => x.id !== id)), 900)
-      flash(`Осталось ${res.remaining_credits} дрипов`)
+      flash(`Осталось ${res.remaining_credits} кредитов`)
     } else {
       if (res.code === 'ALREADY_VOTED') setVotedLocal(true)
       flash(ERRORS[res.code] || 'Не получилось, попробуй ещё раз')
@@ -95,17 +73,13 @@ export default function PostCard({ post, alreadyVoted, onOpenProfile, onPost }) 
   }
 
   function openProfile() {
-    if (author.id) onOpenProfile(author.id)
+    if (author.id) onOpenProfile?.(author.id)
   }
 
   return (
     <section className="card" style={{ '--img': `url(${post.media_url})` }}>
       <div className="card__bg" />
       <div className="card__scrim" />
-
-      <header className="card__top">
-        <span className="badge">★ {author.style_score ?? 0}</span>
-      </header>
 
       <div className="card__bottom">
         <div className="author" onClick={openProfile} style={{ cursor: 'pointer' }}>
@@ -126,38 +100,34 @@ export default function PostCard({ post, alreadyVoted, onOpenProfile, onPost }) 
         )}
       </div>
 
-      <div className="menu">
-        <button className="menu__btn menu__btn--post" onClick={onPost} aria-label="Выложить образ">
-          <PlusMark />
-        </button>
+      <div className="rail">
+        <button className="railbtn" onClick={() => onOpenProfile && post.onPost?.()} style={{ display: 'none' }} />
         {items.length > 0 && (
           <button
-            className={`menu__btn ${showItems ? 'menu__btn--on' : ''}`}
+            className={`hanger ${showItems ? 'hanger--on' : ''}`}
             onClick={() => setShowItems((s) => !s)}
-            aria-label="Вещи на фото"
-          ><HangerMark /></button>
+            aria-label="Вещи на образе"
+          >🧷</button>
         )}
-        <div className="votewrap">
-          {picking && !voted && (
-            <div className="picker">
-              {AMOUNTS.map((a) => (
-                <button key={a} className="picker__opt" onClick={() => vote(a)}>+{a}</button>
-              ))}
-            </div>
-          )}
-          <button
-            className={`vote ${voted ? 'vote--done' : ''}`}
-            disabled={busy}
-            onClick={onCoin}
-            aria-label="Оценить образ"
-          >
-            <span className="vote__coin">{voted ? '✓' : busy ? '…' : <DripMark />}</span>
-            {drips.map((d) => (
-              <span className="drip" key={d.id}>+{d.amount}</span>
+        {picking && !voted && (
+          <div className="picker">
+            {AMOUNTS.map((a) => (
+              <button key={a} className="picker__opt" onClick={() => vote(a)}>+{a}</button>
             ))}
-          </button>
-          <span className="vote__score">★ {score}</span>
-        </div>
+          </div>
+        )}
+        <button
+          className={`vote ${voted ? 'vote--done' : ''}`}
+          disabled={busy}
+          onClick={onCoin}
+          aria-label="Оценить образ"
+        >
+          <span className="vote__coin">{voted ? '✓' : busy ? '…' : ''}</span>
+          {drips.map((d) => (
+            <span className="drip" key={d.id}>+{d.amount}</span>
+          ))}
+        </button>
+        <span className="vote__score">★ {score}</span>
       </div>
 
       {toast && <div className="toast">{toast}</div>}

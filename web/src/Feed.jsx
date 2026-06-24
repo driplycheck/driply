@@ -31,7 +31,8 @@ export default function Feed({ selfId, onOpenProfile, onPost }) {
         if (!selfId) { if (active) setPosts([]); return }
         const { data, error } = await supabase.rpc('following_feed', { p_uid: selfId })
         if (!active) return
-        if (error) setError(error.message); else setPosts(data || [])
+        if (error) { setError(error.message); setPosts([]) }
+        else setPosts(Array.isArray(data) ? data : [])
         return
       }
       const { data, error } = await supabase
@@ -57,7 +58,7 @@ export default function Feed({ selfId, onOpenProfile, onPost }) {
       ) : posts.length === 0 ? (
         <div className="state">
           {tab === 'following'
-            ? 'Пока пусто. Подпишись на кого-нибудь через поиск — их образы появятся здесь.'
+            ? 'Пока пусто. Подпишись на кого-нибудь — их образы появятся здесь.'
             : 'Пока пусто. Первый образ — за тобой.'}
         </div>
       ) : (

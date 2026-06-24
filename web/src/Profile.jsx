@@ -19,6 +19,18 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
   const [busyShare, setBusyShare] = useState(false)
   const [toast, setToast] = useState(null)
 
+  async function loadRelations() {
+    const [{ data: frRows }, { data: fgRows }] = await Promise.all([
+      supabase.from('follows').select('follower_id').eq('following_id', userId),
+      supabase.from('follows').select('following_id').eq('follower_id', userId),
+    ])
+    setFollowers(frRows?.length ?? 0)
+    setFollowingCount(fgRows?.length ?? 0)
+    if (selfId && selfId !== userId) {
+      setFollowing((frRows || []).some((r) => r.follower_id === selfId))
+    }
+  }
+
   useEffect(() => {
     let active = true
     ;(async () => {
@@ -32,23 +44,11 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
         const { data: higher } = await supabase
           .from('users').select('id').gt('style_score', u.style_score)
         if (active) setRank((higher?.length ?? 0) + 1)
-
         const { data: p } = await supabase
           .from('posts').select('id, media_url, score')
           .eq('user_id', userId).order('created_at', { ascending: false })
         if (active) setPosts(p || [])
-
-        const [{ data: frRows }, { data: fgRows }] = await Promise.all([
-          supabase.from('follows').select('follower_id').eq('following_id', userId),
-          supabase.from('follows').select('following_id').eq('follower_id', userId),
-        ])
-        if (active) {
-          setFollowers(frRows?.length ?? 0)
-          setFollowingCount(fgRows?.length ?? 0)
-          if (selfId && selfId !== userId) {
-            setFollowing((frRows || []).some((r) => r.follower_id === selfId))
-          }
-        }
+        if (active) await loadRelations()
       }
       if (active) setLoading(false)
     })()
@@ -72,8 +72,8 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
       return
     }
     if (data) {
-      setFollowing(data.following)
-      setFollowers(data.followers)
+      setFollowing(!!data.following)
+      setFollowers(data.followers ?? followers)
       onFollowChanged?.()
     }
   }
@@ -83,7 +83,11 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
     setBusyShare(true)
     const res = await shareRankCard({ user, rank, postsCount: posts.length })
     setBusyShare(false)
-    if (!res.ok) flash(res.reason === 'unsupported' ? t('share_unsupported') : t('share_failed'))
+    if (!res.ok) {
+      flash(res.reason === 'unsupported' ? t('share_unsupported') : t('share_failed'))
+    } else if (res.reward) {
+      flash(`+${res.reward} кредитов за историю 🔥`)
+    }
   }
 
   function openPerson(id) {
