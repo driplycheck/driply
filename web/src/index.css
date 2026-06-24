@@ -311,9 +311,22 @@ body {
 .vote__score { display: inline-flex; align-items: center; gap: 5px; }
 .vote__coin { display: grid; place-items: center; }
 
-/* === сторона интерфейса: рейл + горизонтальная привязка автора (низ не трогаем) === */
 .card__bottom { align-items: flex-start; }
-.side-right .rail { right: 12px; left: auto; }
-.side-left  .rail { left: 12px;  right: auto; }
-.side-right .card__bottom { padding: 16px 78px 36px 16px; align-items: flex-start; }
-.side-left  .card__bottom { padding: 16px 16px 36px 78px; align-items: flex-end; text-align: right; }
+
+/* === рейл (реальный класс .rail) + стороны === */
+.rail {
+  position: absolute;
+  bottom: calc(env(safe-area-inset-bottom) + 18px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  z-index: 20;
+}
+.app.side-right .rail { right: 12px; left: auto; }
+.app.side-left  .rail { left: 12px;  right: auto; }
+
+/* автор внизу, на уровне монеты; отступ со стороны рейла */
+.card__bottom { justify-content: flex-end; padding-bottom: 22px; }
+.app.side-right .card__bottom { padding: 16px 78px 22px 16px; align-items: flex-start; text-align: left; }
+.app.side-left  .card__bottom { padding: 16px 16px 22px 78px; align-items: flex-end; text-align: right; }
