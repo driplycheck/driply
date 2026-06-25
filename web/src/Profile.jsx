@@ -4,6 +4,7 @@ import { getInitData } from './telegram.js'
 import { avatarTier } from './tiers.js'
 import { t } from './i18n.js'
 import { shareRankCard } from './storyCard.js'
+import { tg } from './telegram.js'
 import FollowList from './FollowList.jsx'
 
 export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpenPost, onOpenProfile, onOpenArchive, onFollowChanged }) {
@@ -90,6 +91,14 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
     }
   }
 
+  function inviteFriend() {
+    const link = `https://t.me/Driplycheckbot?startapp=ref_${user.id}`
+    const text = t('invite_text')
+    if (tg && tg.openTelegramLink) {
+      tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`)
+    }
+  }
+
   function openPerson(id) {
     setListMode(null)
     if (id !== userId) onOpenProfile?.(id)
@@ -143,6 +152,9 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
             )}
             {isSelf && (
               <button className="archive-btn" onClick={onOpenArchive}>Архив публикаций</button>
+            )}
+            {isSelf && (
+              <button className="invite-btn" onClick={inviteFriend}>{t('invite_friend')}</button>
             )}
           </div>
           <div className="profile__stats">

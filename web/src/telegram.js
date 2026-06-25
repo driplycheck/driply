@@ -25,3 +25,7 @@ export function initTelegram() {
 export function getInitData() {
   return tg?.initData ?? ''
 }
+
+export function getStartParam() {
+  return tg?.initDataUnsafe?.start_param ?? ''
+}

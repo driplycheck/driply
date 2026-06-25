@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { initTelegram } from './telegram.js'
+import { initTelegram, getStartParam, getInitData } from './telegram.js'
 import { supabase } from './supabase.js'
 import { avatarTier } from './tiers.js'
 import { loadLang, saveLang, setActiveLang } from './i18n.js'
@@ -47,7 +47,18 @@ export default function App() {
       .select('id, display_name, avatar_url, bio, style_score, hide_username, daily_credits, notify_follows')
       .eq('telegram_id', u.id)
       .maybeSingle()
-      .then(({ data }) => setProfile(data?.display_name ? data : null))
+      .then(({ data }) => {
+        setProfile(data?.display_name ? data : null)
+        const sp = getStartParam()
+        if (sp && sp.startsWith('ref_')) {
+          const refId = Number(sp.slice(4))
+          if (refId) {
+            supabase.functions.invoke('quick-handler', {
+              body: { action: 'set_referrer', initData: getInitData(), ref_id: refId },
+            }).catch(() => {})
+          }
+        }
+      })
   }, [])
 
   function changeLang(code) { saveLang(code); setActiveLang(code); setLang(code) }
