@@ -182,8 +182,10 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
 
           </div>
           {user.badge && (
-            <div className={`status-plate status-plate--${user.badge}`}>
-              {user.badge === 'founder' ? '★ Основатель' : '💧 first drip'}
+            <div className="status-wrap">
+              <div className={`status-plate status-plate--${user.badge}`}>
+                {user.badge === 'founder' ? '★ Основатель' : '💧 first drip'}
+              </div>
             </div>
           )}
           <div className="profile__stats">
