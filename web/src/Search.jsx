@@ -17,9 +17,7 @@ export default function Search({ onClose, onOpenProfile, onOpenPost }) {
     const t = setTimeout(async () => {
       const like = `%${term}%`
       const [pu, it] = await Promise.all([
-        supabase.from('users')
-          .select('id, username, display_name, avatar_url, style_score, hide_username')
-          .or(`display_name.ilike.${like},username.ilike.${like}`).limit(20),
+        supabase.rpc('search_people', { p_uid: selfId ?? 0, p_q: q }).limit(20),
         supabase.from('items')
           .select('id, name, brand, category')
           .or(`name.ilike.${like},brand.ilike.${like}`).limit(20),
