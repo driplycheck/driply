@@ -38,7 +38,7 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
     ;(async () => {
       const { data: u } = await supabase
         .from('users')
-        .select('id, username, display_name, avatar_url, bio, style_score, hide_username, is_founder')
+        .select('id, username, display_name, avatar_url, bio, style_score, hide_username, badge')
         .eq('id', userId).maybeSingle()
       if (!active) return
       setUser(u)
@@ -157,7 +157,7 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
             {user.avatar_url && (
               <img className={`profile__ava ${avatarTier(user.style_score)}`} src={user.avatar_url} alt="" />
             )}
-            <div className="profile__name">{displayName}{user.is_founder && <span className="founder-badge">★ Основатель</span>}</div>
+            <div className="profile__name">{displayName}</div>
             {showHandle && <div className="profile__handle">@{user.username}</div>}
             {user.bio && <p className="profile__bio">{user.bio}</p>}
             <div className="profile__follows">
@@ -181,6 +181,11 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
 
 
           </div>
+          {user.badge && (
+            <div className={`status-plate status-plate--${user.badge}`}>
+              {user.badge === 'founder' ? '★ Основатель' : '💧 first drip'}
+            </div>
+          )}
           <div className="profile__stats">
             <div className="stat"><div className="stat__num">★ {user.style_score}</div><div className="stat__lbl">очки стиля</div></div>
             <div className="stat"><div className="stat__num">#{rank}</div><div className="stat__lbl">в рейтинге</div></div>

@@ -192,3 +192,23 @@
   border-radius: 999px;
   font-family: var(--font-display);
 }
+
+.status-plate {
+  align-self: center;
+  margin: 4px auto 16px;
+  padding: 6px 16px;
+  border-radius: 999px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+}
+.status-plate--founder {
+  background: linear-gradient(135deg, #f4c430, #e0a800);
+  color: #1a1300;
+}
+.status-plate--first_drip {
+  background: rgba(244, 196, 48, 0.14);
+  border: 1px solid rgba(244, 196, 48, 0.5);
+  color: var(--gold);
+}
