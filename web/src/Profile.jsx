@@ -115,6 +115,7 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
     if (!error) {
       setBlocked(want)
       onFollowChanged?.()
+      if (want) onClose?.()
     }
   }
 
@@ -131,9 +132,20 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
     <div className="profile">
       <header className="profile__top">
         <button className="profile__close" onClick={onClose}>{t('back')}</button>
-        {isSelf && (
-          <button className="profile__settings" onClick={onOpenSettings} aria-label="Настройки">⚙</button>
-        )}
+        <div className="profile__topright">
+          {isSelf && (
+            <button className="profile__archive" onClick={onOpenArchive} aria-label="Архив">🗂</button>
+          )}
+          {isSelf && (
+            <button className="profile__settings" onClick={onOpenSettings} aria-label="Настройки">⚙</button>
+          )}
+          {!isSelf && (
+            <button className="profile__block" onClick={() => setBlockState(!blocked)} disabled={busyBlock}
+              aria-label="Заблокировать" title={blocked ? t('unblock_user') : t('block_user')}>
+              {blocked ? '⊘' : '⊘'}
+            </button>
+          )}
+        </div>
       </header>
       {loading ? (
         <div className="state">Загрузка…</div>
@@ -157,11 +169,7 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
                 <b>{followingCount}</b> {t('following_cnt')}
               </button>
             </div>
-            {isSelf ? (
-              <button className="story-btn" onClick={share} disabled={busyShare}>
-                {busyShare ? '…' : t('share_story')}
-              </button>
-            ) : (
+            {!isSelf && (
               <button
                 className={`follow-btn ${following ? 'follow-btn--on' : ''}`}
                 onClick={() => setFollowState(!following)} disabled={busyFollow}
@@ -169,17 +177,9 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
                 {following ? t('unfollow') : t('follow')}
               </button>
             )}
-            {!isSelf && (
-              <button className="block-btn" onClick={() => setBlockState(!blocked)} disabled={busyBlock}>
-                {blocked ? t('unblock_user') : t('block_user')}
-              </button>
-            )}
-            {isSelf && (
-              <button className="archive-btn" onClick={onOpenArchive}>Архив публикаций</button>
-            )}
-            {isSelf && (
-              <button className="invite-btn" onClick={inviteFriend}>{t('invite_friend')}</button>
-            )}
+
+
+
           </div>
           <div className="profile__stats">
             <div className="stat"><div className="stat__num">★ {user.style_score}</div><div className="stat__lbl">очки стиля</div></div>
