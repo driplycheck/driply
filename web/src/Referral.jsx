@@ -16,9 +16,8 @@ export default function Referral({ me, onClose }) {
     supabase.rpc('ref_stats', { p_tid: tgId() }).then(({ data }) => setStats(data || {}))
   }, [])
 
-  const link = stats?.my_id
-    ? `https://t.me/Driplycheckbot?startapp=ref_${stats.my_id}`
-    : ''
+  const code = stats?.ref_code || stats?.my_id
+  const link = code ? `https://t.me/Driplycheckbot?startapp=ref_${code}` : ''
 
   function flash(m) { setToast(m); setTimeout(() => setToast(null), 2000) }
 

@@ -38,7 +38,7 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
     ;(async () => {
       const { data: u } = await supabase
         .from('users')
-        .select('id, username, display_name, avatar_url, bio, style_score, hide_username')
+        .select('id, username, display_name, avatar_url, bio, style_score, hide_username, is_founder')
         .eq('id', userId).maybeSingle()
       if (!active) return
       setUser(u)
@@ -157,7 +157,7 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
             {user.avatar_url && (
               <img className={`profile__ava ${avatarTier(user.style_score)}`} src={user.avatar_url} alt="" />
             )}
-            <div className="profile__name">{displayName}</div>
+            <div className="profile__name">{displayName}{user.is_founder && <span className="founder-badge">★ Основатель</span>}</div>
             {showHandle && <div className="profile__handle">@{user.username}</div>}
             {user.bio && <p className="profile__bio">{user.bio}</p>}
             <div className="profile__follows">

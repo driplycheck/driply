@@ -48,17 +48,17 @@ export default function App() {
     if (!u?.id) { setProfile(null); return }
     supabase
       .from('users')
-      .select('id, display_name, avatar_url, bio, style_score, hide_username, daily_credits, notify_follows')
+      .select('id, display_name, avatar_url, bio, style_score, hide_username, daily_credits, notify_follows, is_founder')
       .eq('telegram_id', u.id)
       .maybeSingle()
       .then(({ data }) => {
         setProfile(data?.display_name ? data : null)
         const sp = getStartParam()
         if (sp && sp.startsWith('ref_')) {
-          const refId = Number(sp.slice(4))
-          if (refId) {
+          const code = sp.slice(4)
+          if (code) {
             supabase.functions.invoke('quick-handler', {
-              body: { action: 'set_referrer', initData: getInitData(), ref_id: refId },
+              body: { action: 'set_referrer', initData: getInitData(), ref_code: code },
             }).catch(() => {})
           }
         }
