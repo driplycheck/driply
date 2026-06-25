@@ -35,12 +35,10 @@ export default function Feed({ selfId, onOpenProfile, onPost }) {
         else setPosts(Array.isArray(data) ? data : [])
         return
       }
-      const { data, error } = await supabase
-        .from('posts').select(SELECT)
-        .eq('hidden', false)
-        .order('created_at', { ascending: false })
+      const { data, error } = await supabase.rpc('main_feed', { p_uid: selfId ?? 0 })
       if (!active) return
-      if (error) setError(error.message); else setPosts(data)
+      if (error) { setError(error.message); setPosts([]) }
+      else setPosts(Array.isArray(data) ? data : [])
     })()
     return () => { active = false }
   }, [tab, selfId])

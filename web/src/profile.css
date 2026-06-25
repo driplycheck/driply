@@ -147,3 +147,16 @@
   cursor: pointer;
 }
 .invite-btn:active { transform: scale(0.97); }
+
+.block-btn {
+  margin-top: 8px;
+  padding: 7px 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,77,79,0.4);
+  background: transparent;
+  color: #ff6b6d;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.block-btn:active { transform: scale(0.97); }

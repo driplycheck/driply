@@ -18,6 +18,8 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
   const [busyFollow, setBusyFollow] = useState(false)
   const [listMode, setListMode] = useState(null)
   const [busyShare, setBusyShare] = useState(false)
+  const [blocked, setBlocked] = useState(false)
+  const [busyBlock, setBusyBlock] = useState(false)
   const [toast, setToast] = useState(null)
 
   async function loadRelations() {
@@ -49,6 +51,10 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
           .eq('user_id', userId).eq('hidden', false).order('created_at', { ascending: false })
         if (active) setPosts(p || [])
         if (active) await loadRelations()
+        if (selfId && selfId !== userId) {
+          const { data: bl } = await supabase.rpc('is_blocked', { p_a: selfId, p_b: userId })
+          if (active) setBlocked(!!bl)
+        }
       }
       if (active) setLoading(false)
     })()
@@ -96,6 +102,19 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
     const text = t('invite_text')
     if (tg && tg.openTelegramLink) {
       tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`)
+    }
+  }
+
+  async function setBlockState(want) {
+    if (busyBlock) return
+    setBusyBlock(true)
+    const { error } = await supabase.functions.invoke('quick-handler', {
+      body: { action: 'set_block', initData: getInitData(), target_id: userId, block: want },
+    })
+    setBusyBlock(false)
+    if (!error) {
+      setBlocked(want)
+      onFollowChanged?.()
     }
   }
 
@@ -148,6 +167,11 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
                 onClick={() => setFollowState(!following)} disabled={busyFollow}
               >
                 {following ? t('unfollow') : t('follow')}
+              </button>
+            )}
+            {!isSelf && (
+              <button className="block-btn" onClick={() => setBlockState(!blocked)} disabled={busyBlock}>
+                {blocked ? t('unblock_user') : t('block_user')}
               </button>
             )}
             {isSelf && (
