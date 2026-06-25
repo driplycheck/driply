@@ -194,14 +194,19 @@
 }
 
 .status-plate {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  max-width: max-content;
   align-self: center;
-  margin: 4px auto 16px;
-  padding: 6px 16px;
+  margin: 6px auto 18px;
+  padding: 5px 14px;
   border-radius: 999px;
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 13px;
+  font-size: 12px;
   letter-spacing: 0.02em;
+  white-space: nowrap;
 }
 .status-plate--founder {
   background: linear-gradient(135deg, #f4c430, #e0a800);
