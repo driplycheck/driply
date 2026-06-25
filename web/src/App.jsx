@@ -13,6 +13,7 @@ import Search from './Search.jsx'
 import Onboarding from './Onboarding.jsx'
 import EditProfile from './EditProfile.jsx'
 import PostsArchive from './PostsArchive.jsx'
+import BlockedList from './BlockedList.jsx'
 import './composer.css'
 import './profile.css'
 import './onboarding.css'
@@ -34,6 +35,7 @@ export default function App() {
   const [profileKey, setProfileKey] = useState(0)
   const [openPostId, setOpenPostId] = useState(null)
   const [archiveOpen, setArchiveOpen] = useState(false)
+  const [blockedOpen, setBlockedOpen] = useState(false)
 
   setActiveLang(lang)
   setActiveSide(side)
@@ -147,6 +149,7 @@ export default function App() {
           onClose={() => setSettingsOpen(false)}
           onEditProfile={() => setEditOpen(true)}
           onChanged={onSettingsChanged}
+          onOpenBlocked={() => setBlockedOpen(true)}
         />
       )}
       {openPostId && (
@@ -158,6 +161,9 @@ export default function App() {
           onPost={() => setComposerOpen(true)}
           onDeleted={onPostDeleted}
         />
+      )}
+      {blockedOpen && (
+        <BlockedList onClose={() => setBlockedOpen(false)} />
       )}
       {archiveOpen && (
         <PostsArchive

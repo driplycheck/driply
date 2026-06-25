@@ -81,3 +81,16 @@
 }
 .ssection:first-child { margin-top: 6px; }
 a.srow { text-decoration: none; }
+
+.unblock-mini {
+  margin-left: auto;
+  padding: 6px 12px;
+  border-radius: 9px;
+  border: 1px solid rgba(255,77,79,0.4);
+  background: transparent;
+  color: #ff6b6d;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}

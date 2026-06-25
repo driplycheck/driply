@@ -6,7 +6,7 @@ import { t, LANGS } from './i18n.js'
 const APP_VERSION = '1.0'
 const SUPPORT_URL = 'https://t.me/Driplycheckbot'
 
-export default function Settings({ me, lang, onLang, side, onSide, onClose, onEditProfile, onChanged }) {
+export default function Settings({ me, lang, onLang, side, onSide, onClose, onEditProfile, onChanged, onOpenBlocked }) {
   const [hide, setHide] = useState(!!me.hide_username)
   const [notify, setNotify] = useState(me.notify_follows !== false)
   const [busy, setBusy] = useState(false)
@@ -76,6 +76,10 @@ export default function Settings({ me, lang, onLang, side, onSide, onClose, onEd
             <span className="toggle__knob" />
           </button>
         </div>
+        <button className="srow srow--tap" onClick={onOpenBlocked}>
+          <span className="srow__label">{t('blocked_list')}</span>
+          <span className="srow__chev">›</span>
+        </button>
 
         <div className="ssection">{t('sec_notify')}</div>
         <div className="srow">
