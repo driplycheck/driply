@@ -14,6 +14,7 @@ import Onboarding from './Onboarding.jsx'
 import EditProfile from './EditProfile.jsx'
 import PostsArchive from './PostsArchive.jsx'
 import BlockedList from './BlockedList.jsx'
+import Referral from './Referral.jsx'
 import './composer.css'
 import './profile.css'
 import './onboarding.css'
@@ -36,6 +37,7 @@ export default function App() {
   const [openPostId, setOpenPostId] = useState(null)
   const [archiveOpen, setArchiveOpen] = useState(false)
   const [blockedOpen, setBlockedOpen] = useState(false)
+  const [referralOpen, setReferralOpen] = useState(false)
 
   setActiveLang(lang)
   setActiveSide(side)
@@ -150,6 +152,7 @@ export default function App() {
           onEditProfile={() => setEditOpen(true)}
           onChanged={onSettingsChanged}
           onOpenBlocked={() => setBlockedOpen(true)}
+          onOpenReferral={() => setReferralOpen(true)}
         />
       )}
       {openPostId && (
@@ -161,6 +164,9 @@ export default function App() {
           onPost={() => setComposerOpen(true)}
           onDeleted={onPostDeleted}
         />
+      )}
+      {referralOpen && profile && (
+        <Referral me={profile} onClose={() => setReferralOpen(false)} />
       )}
       {blockedOpen && (
         <BlockedList onClose={() => setBlockedOpen(false)} />

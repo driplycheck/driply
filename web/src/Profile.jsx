@@ -140,9 +140,10 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
             <button className="profile__settings" onClick={onOpenSettings} aria-label="Настройки">⚙</button>
           )}
           {!isSelf && (
-            <button className="profile__block" onClick={() => setBlockState(!blocked)} disabled={busyBlock}
+            <button className={`profile__block ${blocked ? 'profile__block--on' : ''}`}
+              onClick={() => setBlockState(!blocked)} disabled={busyBlock}
               aria-label="Заблокировать" title={blocked ? t('unblock_user') : t('block_user')}>
-              {blocked ? '⊘' : '⊘'}
+              {blocked ? '↺' : '⊘'}
             </button>
           )}
         </div>
