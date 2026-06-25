@@ -115,7 +115,6 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
     if (!error) {
       setBlocked(want)
       onFollowChanged?.()
-      if (want) onClose?.()
     }
   }
 
