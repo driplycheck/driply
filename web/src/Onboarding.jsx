@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { supabase } from './supabase.js'
-import { getInitData } from './telegram.js'
+import { getInitData, getStartParam } from './telegram.js'
 
 export default function Onboarding({ tgUser, onDone }) {
   const [name, setName] = useState(tgUser?.first_name || '')
@@ -47,6 +47,16 @@ export default function Onboarding({ tgUser, onDone }) {
         let code = 'UNKNOWN'
         try { code = (await error.context.json()).error } catch {}
         throw new Error(code)
+      }
+      // привязка реферера — ПОСЛЕ создания юзера, ДО первого поста
+      const sp = getStartParam()
+      if (sp && sp.startsWith('ref_')) {
+        const code = sp.slice(4)
+        if (code) {
+          await supabase.functions.invoke('quick-handler', {
+            body: { action: 'set_referrer', initData: getInitData(), ref_code: code },
+          }).catch(() => {})
+        }
       }
       onDone({ display_name: nick, avatar_url: avatarUrl })
     } catch (e) {
