@@ -2,7 +2,20 @@ import { useState } from 'react'
 import { supabase } from './supabase.js'
 import { getInitData } from './telegram.js'
 
-const CATEGORIES = [
+const FEMALE_EXTRA = [
+  { value: 'dress', label: '👗 Платье' },
+  { value: 'skirt', label: '👚 Юбка' },
+  { value: 'bag', label: '👜 Сумка' },
+]
+
+function categoriesFor(gender) {
+  const base = BASE_CATEGORIES
+  if (gender === 'female') return [...base, ...FEMALE_EXTRA]
+  if (gender === 'male') return base
+  return [...base, ...FEMALE_EXTRA]  // пол не указан — показываем всё
+}
+
+const BASE_CATEGORIES = [
   { value: 'top', label: '👕 Верх' },
   { value: 'bottoms', label: '👖 Низ' },
   { value: 'shoes', label: '👟 Обувь' },
@@ -10,11 +23,12 @@ const CATEGORIES = [
   { value: 'other', label: '✨ Другое' },
 ]
 
-export default function PostComposer({ onClose, onPosted }) {
+export default function PostComposer({ onClose, onPosted, gender }) {
   const [file, setFile] = useState(null)
   const [preview, setPreview] = useState(null)
   const [caption, setCaption] = useState('')
   const [items, setItems] = useState([])
+  const CATEGORIES = categoriesFor(gender)
   const [cat, setCat] = useState('top')
   const [brand, setBrand] = useState('')
   const [name, setName] = useState('')

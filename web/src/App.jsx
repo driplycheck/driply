@@ -126,7 +126,7 @@ export default function App() {
         />
       )}
       {composerOpen && (
-        <PostComposer onClose={() => setComposerOpen(false)} onPosted={onPosted} />
+        <PostComposer onClose={() => setComposerOpen(false)} onPosted={onPosted} gender={profile?.gender} />
       )}
       {profileUserId && (
         <Profile
