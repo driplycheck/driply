@@ -181,7 +181,10 @@ export default function App() {
         />
       )}
       {votesOpen && (
-        <MyVotes onClose={() => setVotesOpen(false)} />
+        <MyVotes
+          onClose={() => setVotesOpen(false)}
+          onOpenPost={(id) => { setVotesOpen(false); setOpenPostId(id) }}
+        />
       )}
       {editOpen && profile && (
         <EditProfile me={profile} onClose={() => setEditOpen(false)} onSaved={onSaved} />

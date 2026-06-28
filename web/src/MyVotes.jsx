@@ -6,7 +6,7 @@ function tgId() {
   return window.Telegram?.WebApp?.initDataUnsafe?.user?.id ?? 0
 }
 
-export default function MyVotes({ onClose }) {
+export default function MyVotes({ onClose, onOpenPost }) {
   const [votes, setVotes] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -36,14 +36,14 @@ export default function MyVotes({ onClose }) {
         {votes.map((v) => {
           const name = v.author_name || (v.author_hide ? 'user' : '@' + (v.author_username || 'user'))
           return (
-            <div className="myvotes__row" key={v.vote_id}>
+            <button className="myvotes__row" key={v.vote_id} onClick={() => onOpenPost?.(v.post_id)}>
               {v.media_url && <img className="myvotes__thumb" src={v.media_url} alt="" />}
               <div className="myvotes__info">
                 <div className="myvotes__author">{name}</div>
                 <div className="myvotes__meta">Рейтинг образа: {v.score}</div>
               </div>
               <div className="myvotes__amount">{v.amount} 💧</div>
-            </div>
+            </button>
           )
         })}
       </div>
