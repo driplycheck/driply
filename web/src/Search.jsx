@@ -8,16 +8,27 @@ export default function Search({ onClose, onOpenProfile, onOpenPost }) {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(false)
   const [itemView, setItemView] = useState(null) // { label, posts }
+  const [styles, setStyles] = useState([])
+
+  useEffect(() => {
+    let active = true
+    supabase.from('styles')
+      .select('id, name_ru, name_en, emoji')
+      .eq('active', true)
+      .order('sort_order')
+      .then(({ data }) => { if (active) setStyles(data || []) })
+    return () => { active = false }
+  }, [])
 
   useEffect(() => {
     const term = q.trim()
     if (term.length < 2) { setPeople([]); setItems([]); return }
     let active = true
     setLoading(true)
+    const like = `%${term}%`
     const t = setTimeout(async () => {
-      const like = `%${term}%`
       const [pu, it] = await Promise.all([
-        supabase.rpc('search_people', { p_uid: selfId ?? 0, p_q: q }),
+        supabase.rpc('search_people', { p_uid: 0, p_q: q }),
         supabase.from('items')
           .select('id, name, brand, category')
           .or(`name.ilike.${like},brand.ilike.${like}`).limit(20),
@@ -41,6 +52,13 @@ export default function Search({ onClose, onOpenProfile, onOpenPost }) {
     setItemView({ label, posts })
   }
 
+  async function openStyle(s) {
+    const label = `${s.emoji || ''} ${s.name_ru}`.trim()
+    setItemView({ label, posts: null })
+    const { data } = await supabase.rpc('posts_by_style', { p_uid: 0, p_style_id: s.id })
+    setItemView({ label, posts: data || [] })
+  }
+
   if (itemView) {
     return (
       <div className="search">
@@ -53,7 +71,7 @@ export default function Search({ onClose, onOpenProfile, onOpenPost }) {
           {!itemView.posts ? (
             <div className="state">Загрузка…</div>
           ) : itemView.posts.length === 0 ? (
-            <div className="state">Пока нет образов с этой вещью</div>
+            <div className="state">Пока нет образов в этой категории</div>
           ) : (
             <div className="grid">
               {itemView.posts.map((p) => (
@@ -84,7 +102,22 @@ export default function Search({ onClose, onOpenProfile, onOpenPost }) {
       </header>
       <div className="search__body">
         {q.trim().length < 2 ? (
-          <div className="state">Введи ник человека или вещь</div>
+          <>
+            {styles.length > 0 && (
+              <div className="ssection">
+                <div className="ssection__h">Стили</div>
+                <div className="stylegrid">
+                  {styles.map((s) => (
+                    <button className="stylecard" key={s.id} onClick={() => openStyle(s)}>
+                      <span className="stylecard__emoji">{s.emoji}</span>
+                      <span className="stylecard__name">{s.name_ru}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            <div className="state">Введи ник человека или вещь</div>
+          </>
         ) : loading ? (
           <div className="state">Ищем…</div>
         ) : (

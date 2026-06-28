@@ -125,3 +125,9 @@
   text-transform: capitalize;
 }
 .follist__tab--on { background: var(--gold); color: #1a1300; border-color: var(--gold); }
+
+.stylegrid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 12px; }
+.stylecard { display: flex; align-items: center; gap: 8px; padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.04); color: #fff; cursor: pointer; }
+.stylecard:active { background: rgba(255,255,255,0.08); }
+.stylecard__emoji { font-size: 20px; }
+.stylecard__name { font-size: 14px; font-weight: 500; }
