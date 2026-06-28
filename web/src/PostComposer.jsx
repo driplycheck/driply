@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from './supabase.js'
 import { getInitData } from './telegram.js'
-import { activeLang } from './i18n.js'
 
 const FEMALE_EXTRA = [
   { value: 'dress', label: '👗 Платье' },
@@ -53,8 +52,7 @@ export default function PostComposer({ onClose, onPosted, gender }) {
   }, [])
 
   function styleName(s) {
-    const en = (typeof activeLang === 'function' ? activeLang() : 'ru') === 'en'
-    return (en ? s.name_en : s.name_ru) || s.name_ru
+    return s.name_ru || s.name_en
   }
 
   function onPickFile(e) {
