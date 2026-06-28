@@ -6,7 +6,8 @@ import PostCard from './PostCard.jsx'
 const SELECT =
   'id, media_url, caption, score, user_id, hidden, ' +
   'users(id, username, display_name, avatar_url, style_score), ' +
-  'post_items(items(name, brand, category))'
+  'post_items(items(name, brand, category)), ' +
+  'styles(name_ru, name_en, emoji)'
 
 export default function PostView({ postId, selfId, onClose, onOpenProfile, onPost, onChanged }) {
   const [post, setPost] = useState(null)

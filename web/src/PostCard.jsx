@@ -99,6 +99,11 @@ export default function PostCard({ post, alreadyVoted, onOpenProfile, onPost }) 
           <span className="author__name">{authorName}</span>
         </div>
         {post.caption && <p className="caption">{post.caption}</p>}
+        {post.style && (
+          <div className="card__style">
+            <span className="stylebadge">{post.style.emoji} {post.style.name_ru}</span>
+          </div>
+        )}
         {showItems && items.length > 0 && (
           <div className="tags">
             {items.map((it, idx) => (
