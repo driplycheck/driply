@@ -44,7 +44,11 @@ export default function PostComposer({ onClose, onPosted, gender }) {
       .select('id, name_ru, name_en, emoji')
       .eq('active', true)
       .order('sort_order')
-      .then(({ data }) => { if (active) setStyles(data || []) })
+      .then(({ data, error }) => {
+        if (error) { console.error('STYLES_LOAD_ERROR', error); alert('styles error: ' + error.message) }
+        else { console.log('STYLES_LOADED', data?.length, data) }
+        if (active) setStyles(data || [])
+      })
     return () => { active = false }
   }, [])
 
