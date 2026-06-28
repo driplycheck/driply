@@ -119,3 +119,10 @@
   font-size: 14px;
   text-align: center;
 }
+
+.stylepick { margin: 4px 0; }
+.stylepick__lbl { font-size: 12px; color: rgba(255,255,255,0.45); margin-bottom: 6px; }
+.stylepick__row { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
+.stylepick__row::-webkit-scrollbar { display: none; }
+.stylechip { flex-shrink: 0; padding: 7px 12px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.16); background: rgba(255,255,255,0.04); color: #fff; font-size: 13px; white-space: nowrap; cursor: pointer; }
+.stylechip--on { background: #f5c451; border-color: #f5c451; color: #0a0a0b; font-weight: 600; }

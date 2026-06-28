@@ -1,19 +1,13 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from './supabase.js'
 import { getInitData } from './telegram.js'
+import { activeLang } from './i18n.js'
 
 const FEMALE_EXTRA = [
   { value: 'dress', label: '👗 Платье' },
   { value: 'skirt', label: '👚 Юбка' },
   { value: 'bag', label: '👜 Сумка' },
 ]
-
-function categoriesFor(gender) {
-  const base = BASE_CATEGORIES
-  if (gender === 'female') return [...base, ...FEMALE_EXTRA]
-  if (gender === 'male') return base
-  return [...base, ...FEMALE_EXTRA]  // пол не указан — показываем всё
-}
 
 const BASE_CATEGORIES = [
   { value: 'top', label: '👕 Верх' },
@@ -22,6 +16,13 @@ const BASE_CATEGORIES = [
   { value: 'accessory', label: '🧢 Аксессуар' },
   { value: 'other', label: '✨ Другое' },
 ]
+
+function categoriesFor(gender) {
+  const base = BASE_CATEGORIES
+  if (gender === 'female') return [...base, ...FEMALE_EXTRA]
+  if (gender === 'male') return base
+  return [...base, ...FEMALE_EXTRA]
+}
 
 export default function PostComposer({ onClose, onPosted, gender }) {
   const [file, setFile] = useState(null)
@@ -34,6 +35,23 @@ export default function PostComposer({ onClose, onPosted, gender }) {
   const [name, setName] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
+  const [styles, setStyles] = useState([])
+  const [styleId, setStyleId] = useState(null)
+
+  useEffect(() => {
+    let active = true
+    supabase.from('styles')
+      .select('id, name_ru, name_en, emoji')
+      .eq('active', true)
+      .order('sort_order')
+      .then(({ data }) => { if (active) setStyles(data || []) })
+    return () => { active = false }
+  }, [])
+
+  function styleName(s) {
+    const en = (typeof activeLang === 'function' ? activeLang() : 'ru') === 'en'
+    return (en ? s.name_en : s.name_ru) || s.name_ru
+  }
 
   function onPickFile(e) {
     const f = e.target.files?.[0]
@@ -73,6 +91,7 @@ export default function PostComposer({ onClose, onPosted, gender }) {
           media_url: pub.publicUrl,
           caption: caption.trim(),
           items,
+          style_id: styleId,
         },
       })
       if (error) {
@@ -109,6 +128,23 @@ export default function PostComposer({ onClose, onPosted, gender }) {
           value={caption}
           onChange={(e) => setCaption(e.target.value)}
         />
+
+        {styles.length > 0 && (
+          <div className="stylepick">
+            <div className="stylepick__lbl">Стиль (необязательно)</div>
+            <div className="stylepick__row">
+              {styles.map((s) => (
+                <button
+                  key={s.id}
+                  className={`stylechip ${styleId === s.id ? 'stylechip--on' : ''}`}
+                  onClick={() => setStyleId((cur) => (cur === s.id ? null : s.id))}
+                >
+                  {s.emoji} {styleName(s)}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="itemadd">
           <select className="field" value={cat} onChange={(e) => setCat(e.target.value)}>
