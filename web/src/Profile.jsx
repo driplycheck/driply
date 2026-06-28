@@ -7,7 +7,7 @@ import { shareRankCard } from './storyCard.js'
 import { tg } from './telegram.js'
 import FollowList from './FollowList.jsx'
 
-export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpenPost, onOpenProfile, onOpenArchive, onFollowChanged }) {
+export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpenPost, onOpenProfile, onOpenArchive, onOpenVotes, onFollowChanged }) {
   const [user, setUser] = useState(null)
   const [rank, setRank] = useState(null)
   const [posts, setPosts] = useState([])
@@ -132,6 +132,9 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
       <header className="profile__top">
         <button className="profile__close" onClick={onClose}>{t('back')}</button>
         <div className="profile__topright">
+          {isSelf && (
+            <button className="profile__archive" onClick={onOpenVotes} aria-label="Мои оценки">💧</button>
+          )}
           {isSelf && (
             <button className="profile__archive" onClick={onOpenArchive} aria-label="Архив">🗂</button>
           )}
