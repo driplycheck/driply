@@ -8,6 +8,7 @@ export default function Onboarding({ tgUser, onDone }) {
   const [preview, setPreview] = useState(tgUser?.photo_url || null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
+  const [gender, setGender] = useState(null)
 
   function onPickFile(e) {
     const f = e.target.files?.[0]
@@ -36,6 +37,7 @@ export default function Onboarding({ tgUser, onDone }) {
       const { error } = await supabase.functions.invoke('quick-handler', {
         body: {
           action: 'set_profile',
+        gender,
           initData: getInitData(),
           display_name: nick,
           avatar_url: avatarUrl,
@@ -72,6 +74,16 @@ export default function Onboarding({ tgUser, onDone }) {
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
+
+        <div className="gender-pick">
+          <button type="button" className={`gender-opt ${gender === 'male' ? 'gender-opt--on' : ''}`}
+            onClick={() => setGender('male')}>👨 Парень</button>
+          <button type="button" className={`gender-opt ${gender === 'female' ? 'gender-opt--on' : ''}`}
+            onClick={() => setGender('female')}>👩 Девушка</button>
+        </div>
+        <button type="button" className="gender-skip" onClick={() => setGender(null)}>
+          Пропустить
+        </button>
 
         {error && <div className="composer__err">{error}</div>}
 

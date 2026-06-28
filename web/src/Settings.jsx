@@ -8,6 +8,7 @@ const SUPPORT_URL = 'https://t.me/Driplycheckbot'
 
 export default function Settings({ me, lang, onLang, side, onSide, onClose, onEditProfile, onChanged, onOpenBlocked, onOpenReferral }) {
   const [hide, setHide] = useState(!!me.hide_username)
+  const [gender, setGender] = useState(me.gender ?? null)
   const [notify, setNotify] = useState(me.notify_follows !== false)
   const [busy, setBusy] = useState(false)
 
@@ -22,6 +23,19 @@ export default function Settings({ me, lang, onLang, side, onSide, onClose, onEd
     setBusy(false)
     if (error) { setHide(!next); return }
     onChanged({ hide_username: next })
+  }
+
+  async function changeGender(g) {
+    if (busy) return
+    setGender(g)
+    setBusy(true)
+    const { error } = await supabase.functions.invoke('quick-handler', {
+      body: { action: 'set_profile', initData: getInitData(),
+        display_name: me.display_name, avatar_url: me.avatar_url, gender: g },
+    })
+    setBusy(false)
+    if (error) { setGender(me.gender ?? null); return }
+    onChanged({ gender: g })
   }
 
   async function toggleNotify() {
@@ -63,6 +77,13 @@ export default function Settings({ me, lang, onLang, side, onSide, onClose, onEd
             {LANGS.map((l) => (
               <button key={l.code} className={`langopt ${lang === l.code ? 'langopt--on' : ''}`} onClick={() => onLang(l.code)}>{l.label}</button>
             ))}
+          </div>
+        </div>
+        <div className="srow srow--col">
+          <div className="srow__label">{t('gender')}</div>
+          <div className="langrow">
+            <button className={`langopt ${gender === 'male' ? 'langopt--on' : ''}`} onClick={() => changeGender('male')}>👨 {t('gender_male')}</button>
+            <button className={`langopt ${gender === 'female' ? 'langopt--on' : ''}`} onClick={() => changeGender('female')}>👩 {t('gender_female')}</button>
           </div>
         </div>
 

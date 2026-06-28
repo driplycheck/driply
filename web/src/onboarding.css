@@ -89,3 +89,17 @@
 .edit__save { color: var(--gold); font-family: var(--font-display); font-weight: 700; }
 .edit__save:disabled { opacity: 0.45; }
 .edit__bio { margin-top: 12px; resize: none; font-family: var(--font-body); line-height: 1.4; }
+
+.gender-pick { display: flex; gap: 10px; margin-top: 14px; }
+.gender-opt {
+  flex: 1; padding: 13px; border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.16);
+  background: rgba(255,255,255,0.05); color: #fff;
+  font-size: 15px; font-weight: 600; cursor: pointer;
+}
+.gender-opt--on { background: var(--gold); color: #1a1300; border-color: var(--gold); }
+.gender-skip {
+  margin-top: 8px; width: 100%; padding: 8px;
+  background: none; border: none; color: var(--muted);
+  font-size: 13px; cursor: pointer; text-decoration: underline;
+}
