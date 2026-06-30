@@ -10,6 +10,7 @@ export default function Settings({ me, lang, onLang, side, onSide, onClose, onEd
   const [hide, setHide] = useState(!!me.hide_username)
   const [gender, setGender] = useState(me.gender ?? null)
   const [notify, setNotify] = useState(me.notify_follows !== false)
+  const [allowDm, setAllowDm] = useState(me.allow_dm !== false)
   const [busy, setBusy] = useState(false)
 
   async function toggleHide() {
@@ -23,6 +24,19 @@ export default function Settings({ me, lang, onLang, side, onSide, onClose, onEd
     setBusy(false)
     if (error) { setHide(!next); return }
     onChanged({ hide_username: next })
+  }
+
+  async function toggleDm() {
+    if (busy) return
+    const next = !allowDm
+    setAllowDm(next); setBusy(true)
+    const { error } = await supabase.functions.invoke('quick-handler', {
+      body: { action: 'set_profile', initData: getInitData(),
+        display_name: me.display_name, avatar_url: me.avatar_url, allow_dm: next },
+    })
+    setBusy(false)
+    if (error) { setAllowDm(!next); return }
+    onChanged({ allow_dm: next })
   }
 
   async function changeGender(g) {
@@ -94,6 +108,15 @@ export default function Settings({ me, lang, onLang, side, onSide, onClose, onEd
             <div className="srow__hint">{t('hide_username_hint')}</div>
           </div>
           <button className={`toggle ${hide ? 'toggle--on' : ''}`} onClick={toggleHide} disabled={busy} aria-label="hide">
+            <span className="toggle__knob" />
+          </button>
+        </div>
+        <div className="srow">
+          <div className="srow__text">
+            <div className="srow__label">{t('dm_allow')}</div>
+            <div className="srow__hint">{t('dm_allow_hint')}</div>
+          </div>
+          <button className={`toggle ${allowDm ? 'toggle--on' : ''}`} onClick={toggleDm} disabled={busy} aria-label="dm">
             <span className="toggle__knob" />
           </button>
         </div>

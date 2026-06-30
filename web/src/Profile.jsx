@@ -38,7 +38,7 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
     ;(async () => {
       const { data: u } = await supabase
         .from('users')
-        .select('id, username, display_name, avatar_url, bio, style_score, hide_username, badge')
+        .select('id, username, display_name, avatar_url, bio, style_score, hide_username, allow_dm, badge')
         .eq('id', userId).maybeSingle()
       if (!active) return
       setUser(u)
@@ -178,6 +178,12 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
                 onClick={() => setFollowState(!following)} disabled={busyFollow}
               >
                 {following ? t('unfollow') : t('follow')}
+              </button>
+            )}
+            {!isSelf && user.username && !user.hide_username && user.allow_dm && (
+              <button className="dm-btn"
+                onClick={() => tg?.openTelegramLink?.(`https://t.me/${user.username}`)}>
+                {t('write_msg')}
               </button>
             )}
 

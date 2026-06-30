@@ -50,7 +50,7 @@ export default function App() {
     if (!u?.id) { setProfile(null); return }
     supabase
       .from('users')
-      .select('id, display_name, avatar_url, bio, style_score, hide_username, daily_credits, notify_follows, is_founder, gender')
+      .select('id, display_name, avatar_url, bio, style_score, hide_username, daily_credits, notify_follows, is_founder, gender, allow_dm')
       .eq('telegram_id', u.id)
       .maybeSingle()
       .then(({ data }) => {
