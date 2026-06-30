@@ -103,3 +103,43 @@
   background: none; border: none; color: var(--muted);
   font-size: 13px; cursor: pointer; text-decoration: underline;
 }
+
+.edit {
+  position: fixed;
+  inset: 0;
+  background: #0a0a0b;
+  z-index: 110;
+  overflow-y: auto;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: calc(env(safe-area-inset-top) + 12px) 24px 40px;
+}
+.edit__body {
+  width: 100%;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.edit {
+  position: fixed;
+  inset: 0;
+  background: #0a0a0b;
+  z-index: 110;
+  overflow-y: auto;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: calc(env(safe-area-inset-top) + 12px) 24px 40px;
+}
+.edit__body {
+  width: 100%;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}

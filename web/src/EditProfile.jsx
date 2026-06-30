@@ -58,8 +58,8 @@ export default function EditProfile({ me, onClose, onSaved }) {
   }
 
   return (
-    <div className="onb">
-      <div className="onb__body">
+    <div className="edit">
+      <div className="edit__body">
         <div className="edit__top">
           <button className="edit__cancel" onClick={onClose}>Отмена</button>
           <span>Профиль</span>
