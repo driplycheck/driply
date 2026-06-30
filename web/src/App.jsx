@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { initTelegram, getStartParam, getInitData } from './telegram.js'
+import { initTelegram } from './telegram.js'
 import { supabase } from './supabase.js'
 import { avatarTier } from './tiers.js'
 import { loadLang, saveLang, setActiveLang } from './i18n.js'
@@ -55,15 +55,6 @@ export default function App() {
       .maybeSingle()
       .then(({ data }) => {
         setProfile(data?.display_name ? data : null)
-        const sp = getStartParam()
-        if (sp && sp.startsWith('ref_')) {
-          const code = sp.slice(4)
-          if (code) {
-            supabase.functions.invoke('quick-handler', {
-              body: { action: 'set_referrer', initData: getInitData(), ref_code: code },
-            }).catch(() => {})
-          }
-        }
       })
   }, [])
 

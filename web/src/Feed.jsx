@@ -3,11 +3,6 @@ import { supabase } from './supabase.js'
 import { t } from './i18n.js'
 import PostCard from './PostCard.jsx'
 
-const SELECT =
-  'id, media_url, caption, score, ' +
-  'users(id, username, display_name, avatar_url, style_score), ' +
-  'post_items(items(name, brand, category))'
-
 export default function Feed({ selfId, onOpenProfile, onPost }) {
   const [tab, setTab] = useState('all')
   const [posts, setPosts] = useState(null)
