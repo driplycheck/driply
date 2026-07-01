@@ -113,3 +113,5 @@ a.srow { text-decoration: none; }
 .ref-action { padding: 13px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.16); background: rgba(255,255,255,0.05); color: #fff; font-family: var(--font-display); font-weight: 700; font-size: 15px; cursor: pointer; }
 .ref-action--gold { background: linear-gradient(135deg, #f4c430, #e0a800); color: #1a1300; border: none; }
 .ref-note { font-size: 12px; color: var(--muted); text-align: center; line-height: 1.5; margin-top: 4px; }
+
+.srow--off { opacity: 0.4; }

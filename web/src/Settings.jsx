@@ -9,8 +9,13 @@ const SUPPORT_URL = 'https://t.me/Driplycheckbot'
 export default function Settings({ me, lang, onLang, side, onSide, onClose, onEditProfile, onChanged, onOpenBlocked, onOpenReferral }) {
   const [hide, setHide] = useState(!!me.hide_username)
   const [gender, setGender] = useState(me.gender ?? null)
-  const [notify, setNotify] = useState(me.notify_follows !== false)
   const [allowDm, setAllowDm] = useState(me.allow_dm !== false)
+  const [prefs, setPrefs] = useState({
+    all: me.notify_prefs?.all !== false,
+    follows: me.notify_prefs?.follows !== false,
+    votes: me.notify_prefs?.votes !== false,
+    referral: me.notify_prefs?.referral !== false,
+  })
   const [busy, setBusy] = useState(false)
 
   async function toggleHide() {
@@ -39,6 +44,19 @@ export default function Settings({ me, lang, onLang, side, onSide, onClose, onEd
     onChanged({ allow_dm: next })
   }
 
+  async function togglePref(key) {
+    if (busy) return
+    const next = !prefs[key]
+    const updated = { ...prefs, [key]: next }
+    setPrefs(updated); setBusy(true)
+    const { error } = await supabase.functions.invoke('quick-handler', {
+      body: { action: 'set_notify_prefs', initData: getInitData(), prefs: { [key]: next } },
+    })
+    setBusy(false)
+    if (error) { setPrefs(prefs); return }
+    onChanged({ notify_prefs: updated })
+  }
+
   async function changeGender(g) {
     if (busy) return
     setGender(g)
@@ -52,17 +70,6 @@ export default function Settings({ me, lang, onLang, side, onSide, onClose, onEd
     onChanged({ gender: g })
   }
 
-  async function toggleNotify() {
-    if (busy) return
-    const next = !notify
-    setNotify(next); setBusy(true)
-    const { error } = await supabase.functions.invoke('quick-handler', {
-      body: { action: 'set_notify', initData: getInitData(), notify: next },
-    })
-    setBusy(false)
-    if (error) { setNotify(!next); return }
-    onChanged({ notify_follows: next })
-  }
 
   return (
     <div className="settings">
@@ -128,13 +135,24 @@ export default function Settings({ me, lang, onLang, side, onSide, onClose, onEd
         <div className="ssection">{t('sec_notify')}</div>
         <div className="srow">
           <div className="srow__text">
-            <div className="srow__label">{t('notify_follows')}</div>
-            <div className="srow__hint">{t('notify_hint')}</div>
+            <div className="srow__label">{t('notify_all')}</div>
+            <div className="srow__hint">{t('notify_all_hint')}</div>
           </div>
-          <button className={`toggle ${notify ? 'toggle--on' : ''}`} onClick={toggleNotify} disabled={busy} aria-label="notify">
+          <button className={`toggle ${prefs.all ? 'toggle--on' : ''}`} onClick={() => togglePref('all')} disabled={busy} aria-label="notify-all">
             <span className="toggle__knob" />
           </button>
         </div>
+        {['follows', 'votes', 'referral'].map((key) => (
+          <div className={`srow ${!prefs.all ? 'srow--off' : ''}`} key={key}>
+            <div className="srow__text">
+              <div className="srow__label">{t('notify_' + key)}</div>
+            </div>
+            <button className={`toggle ${prefs.all && prefs[key] ? 'toggle--on' : ''}`}
+              onClick={() => togglePref(key)} disabled={busy || !prefs.all} aria-label={'notify-' + key}>
+              <span className="toggle__knob" />
+            </button>
+          </div>
+        ))}
 
         <button className="srow srow--tap" onClick={onOpenReferral}>
           <span className="srow__label">{t('referral')}</span>
