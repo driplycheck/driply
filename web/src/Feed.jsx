@@ -13,7 +13,11 @@ export default function Feed({ selfId, onOpenProfile, onPost }) {
     if (!selfId) return
     let active = true
     supabase.from('votes').select('post_id').eq('voter_id', selfId)
-      .then(({ data }) => { if (data && active) setVotedIds(new Set(data.map((r) => r.post_id))) })
+      .then(({ data, error }) => {
+        if (!active) return
+        if (error) { console.error('votes load', error); return }
+        setVotedIds(new Set((data || []).map((r) => r.post_id)))
+      })
     return () => { active = false }
   }, [selfId])
 
