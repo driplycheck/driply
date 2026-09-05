@@ -193,7 +193,10 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
           {user.badge && (
             <div className="status-wrap">
               <div className={`status-plate status-plate--${user.badge}`}>
-                {user.badge === 'founder' ? '★ Основатель' : '💧 first drip'}
+                {
+                  { founder: '★ Основатель', cofounder: '🤝 Со-основатель', first_drip: '💧 first drip' }[user.badge]
+                  || user.badge
+                }
               </div>
             </div>
           )}

@@ -336,3 +336,7 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 .screen-anim { animation: screenIn 0.22s ease-out; }
+
+.screen-anim { animation: screenIn 0.22s ease-out; }
+@keyframes screenOut { from { opacity: 1; } to { opacity: 0; } }
+.screen-exit { animation: screenOut 0.15s ease-in forwards; }
