@@ -188,7 +188,7 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
             <div className="status-wrap">
               <div className={`status-plate status-plate--${user.badge}`}>
                 {
-                  { founder: '★ Основатель', cofounder: '🤝 Со-основатель', first_drip: '💧 first drip' }[user.badge]
+                  { founder: '★ Основатель', cofounder: '★ Основатель', first_drip: '💧 first drip' }[user.badge]
                   || user.badge
                 }
               </div>
