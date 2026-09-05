@@ -1,3 +1,4 @@
+import AboutApp from './AboutApp.jsx'
 import { useState } from 'react'
 import { supabase } from './supabase.js'
 import { getInitData } from './telegram.js'
@@ -16,6 +17,7 @@ export default function Settings({ me, lang, onLang, side, onSide, onClose, onEd
     referral: me.notify_prefs?.referral !== false,
   })
   const [busy, setBusy] = useState(false)
+  const [aboutOpen, setAboutOpen] = useState(false)
 
   async function toggleHide() {
     if (busy) return
@@ -141,16 +143,17 @@ export default function Settings({ me, lang, onLang, side, onSide, onClose, onEd
           <span className="srow__label">{t('support')}</span>
           <span className="srow__chev">›</span>
         </a>
-        <div className="srow srow--col">
-          <div className="srow__label">{t('about_app')}</div>
-          <div className="srow__hint">{t('about_text')}</div>
-        </div>
+        <button className="srow srow--tap" onClick={() => setAboutOpen(true)}>
+          <span className="srow__label">О Driply</span>
+          <span className="srow__chev">›</span>
+        </button>
         <div className="srow">
           <span className="srow__label">{t('version')}</span>
           <span className="srow__hint">{APP_VERSION}</span>
         </div>
 
       </div>
+      {aboutOpen && <AboutApp onClose={() => setAboutOpen(false)} />}
     </div>
   )
 }
