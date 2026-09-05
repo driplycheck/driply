@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from './supabase.js'
 import { avatarTier } from './tiers.js'
 
-export default function Search({ onClose, onOpenProfile, onOpenPost }) {
+export default function Search({ onClose, onOpenProfile, onOpenPost, onOpenTop }) {
   const [q, setQ] = useState('')
   const [people, setPeople] = useState([])
   const [items, setItems] = useState([])
@@ -103,6 +103,16 @@ export default function Search({ onClose, onOpenProfile, onOpenPost }) {
       <div className="search__body">
         {q.trim().length < 2 ? (
           <>
+            <div className="ssection">
+              <div className="ssection__h">Рейтинг</div>
+              <button className="sresult" onClick={onOpenTop}>
+                <div className="sresult__icon">🏆</div>
+                <div className="sresult__text">
+                  <div className="sresult__name">Топ по стилю</div>
+                  <div className="sresult__sub">Кто на каком месте</div>
+                </div>
+              </button>
+            </div>
             {styles.length > 0 && (
               <div className="ssection">
                 <div className="ssection__h">Стили</div>

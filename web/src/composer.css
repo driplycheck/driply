@@ -19,7 +19,7 @@
 }
 .fab:active { transform: scale(0.9); }
 
-.composer {
+.composer { animation: screenIn 0.22s ease-out;
   position: fixed;
   inset: 0;
   background: #0a0a0b;

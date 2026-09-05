@@ -1,4 +1,4 @@
-.onb {
+.onb { animation: screenIn 0.22s ease-out;
   position: fixed;
   inset: 0;
   background: #0a0a0b;
@@ -104,7 +104,7 @@
   font-size: 13px; cursor: pointer; text-decoration: underline;
 }
 
-.edit {
+.edit { animation: screenIn 0.22s ease-out;
   position: fixed;
   inset: 0;
   background: #0a0a0b;

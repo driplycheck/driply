@@ -42,7 +42,7 @@ input, textarea, select, .field { font-size: 16px; }
   display: grid; place-items: center; cursor: pointer; z-index: 30;
 }
 .postview__del:active { transform: scale(0.9); }
-.confirm {
+.confirm { animation: screenIn 0.22s ease-out;
   position: fixed; inset: 0; z-index: 120;
   display: grid; place-items: center;
   background: rgba(0, 0, 0, 0.62);

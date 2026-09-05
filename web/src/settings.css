@@ -1,4 +1,4 @@
-.settings {
+.settings { animation: screenIn 0.22s ease-out;
   position: fixed;
   inset: 0;
   background: #0a0a0b;
@@ -95,7 +95,7 @@ a.srow { text-decoration: none; }
   white-space: nowrap;
 }
 
-.referral { position: fixed; inset: 0; z-index: 99; background: #0a0a0b; display: flex; flex-direction: column; overflow: hidden; }
+.referral { animation: screenIn 0.22s ease-out; position: fixed; inset: 0; z-index: 99; background: #0a0a0b; display: flex; flex-direction: column; overflow: hidden; }
 .referral__top { display: flex; align-items: center; justify-content: space-between; padding: calc(env(safe-area-inset-top) + 12px) 16px 12px; border-bottom: 1px solid rgba(255,255,255,0.08); }
 .referral__close { background: none; border: none; color: #fff; font-size: 17px; cursor: pointer; width: 70px; text-align: left; }
 .referral__title { font-weight: 600; font-size: 16px; }
@@ -115,3 +115,12 @@ a.srow { text-decoration: none; }
 .ref-note { font-size: 12px; color: var(--muted); text-align: center; line-height: 1.5; margin-top: 4px; }
 
 .srow--off { opacity: 0.4; }
+
+.reflist { margin-top: 20px; }
+.reflist__label { font-size: 13px; color: rgba(255,255,255,0.5); margin-bottom: 8px; }
+.refrow { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
+.refrow__ava { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+.refrow__text { flex: 1; min-width: 0; }
+.refrow__name { color: #fff; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.refrow__status { font-size: 12px; color: rgba(255,255,255,0.4); flex-shrink: 0; }
+.refrow__status--on { color: #f5c451; font-weight: 600; }

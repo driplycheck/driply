@@ -118,6 +118,7 @@ export default function App() {
           onClose={() => setSearchOpen(false)}
           onOpenProfile={openProfileFromSearch}
           onOpenPost={openPostFromSearch}
+          onOpenTop={() => { setSearchOpen(false); setTopOpen(true) }}
         />
       )}
       {composerOpen && (

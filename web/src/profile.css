@@ -1,4 +1,4 @@
-.profile {
+.profile { animation: screenIn 0.22s ease-out;
   position: fixed;
   inset: 0;
   background: #0a0a0b;
@@ -116,7 +116,7 @@
   border: 1px solid rgba(255,255,255,0.16); background: rgba(255,255,255,0.05);
   color: #fff; font-family: var(--font-display); font-weight: 600; font-size: 14px; cursor: pointer;
 }
-.archive { position: fixed; inset: 0; z-index: 98; background: #0a0a0b; display: flex; flex-direction: column; overflow: hidden; }
+.archive { animation: screenIn 0.22s ease-out; position: fixed; inset: 0; z-index: 98; background: #0a0a0b; display: flex; flex-direction: column; overflow: hidden; }
 .archive__top { display: flex; align-items: center; justify-content: space-between; padding: calc(env(safe-area-inset-top) + 12px) 16px 12px; border-bottom: 1px solid rgba(255,255,255,0.08); }
 .archive__close { background: none; border: none; color: #fff; font-size: 17px; cursor: pointer; width: 70px; text-align: left; }
 .archive__title { font-weight: 600; font-size: 16px; }
@@ -226,3 +226,5 @@
 
 .dm-btn { margin-top: 8px; padding: 9px 18px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.2); background: transparent; color: #fff; font-size: 14px; font-weight: 500; cursor: pointer; }
 .dm-btn:active { background: rgba(255,255,255,0.06); }
+
+.stat--tap { background: none; border: none; padding: 0; font: inherit; color: inherit; cursor: pointer; width: 100%; }

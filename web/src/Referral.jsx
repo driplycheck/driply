@@ -6,6 +6,7 @@ import { shareRankCard } from './storyCard.js'
 
 export default function Referral({ me, onClose }) {
   const [stats, setStats] = useState(null)
+  const [invited, setInvited] = useState(null)
   const [copied, setCopied] = useState(false)
   const [busyShare, setBusyShare] = useState(false)
   const [toast, setToast] = useState(null)
@@ -14,6 +15,7 @@ export default function Referral({ me, onClose }) {
 
   useEffect(() => {
     supabase.rpc('ref_stats', { p_tid: tgId() }).then(({ data }) => setStats(data || {}))
+    supabase.rpc('ref_invited_list', { p_tid: tgId() }).then(({ data }) => setInvited(data || []))
   }, [])
 
   const code = stats?.ref_code || stats?.my_id
@@ -90,6 +92,23 @@ export default function Referral({ me, onClose }) {
         <button className="ref-action" onClick={shareStory} disabled={busyShare}>
           {busyShare ? '…' : t('share_story')}
         </button>
+
+        {invited && invited.length > 0 && (
+          <div className="reflist">
+            <div className="reflist__label">Приглашённые</div>
+            {invited.map((r) => (
+              <div className="refrow" key={r.id}>
+                {r.avatar_url && <img className="refrow__ava" src={r.avatar_url} alt="" />}
+                <div className="refrow__text">
+                  <div className="refrow__name">{r.display_name || '@' + (r.username || 'user')}</div>
+                </div>
+                <div className={`refrow__status ${r.rewarded ? 'refrow__status--on' : ''}`}>
+                  {r.rewarded ? '✓ +500' : '⏳ ждёт поста'}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
         <p className="ref-note">{t('ref_note')}</p>
       </div>
