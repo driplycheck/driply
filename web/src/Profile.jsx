@@ -7,7 +7,7 @@ import { shareRankCard } from './storyCard.js'
 import { tg } from './telegram.js'
 import FollowList from './FollowList.jsx'
 
-export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpenPost, onOpenProfile, onOpenArchive, onOpenVotes, onFollowChanged }) {
+export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpenPost, onOpenProfile, onOpenArchive, onOpenVotes, onOpenTop, onFollowChanged }) {
   const [user, setUser] = useState(null)
   const [rank, setRank] = useState(null)
   const [posts, setPosts] = useState([])
@@ -199,7 +199,7 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
           )}
           <div className="profile__stats">
             <div className="stat"><div className="stat__num">★ {user.style_score}</div><div className="stat__lbl">очки стиля</div></div>
-            <div className="stat"><div className="stat__num">#{rank}</div><div className="stat__lbl">в рейтинге</div></div>
+            <button className="stat stat--tap" onClick={onOpenTop}><div className="stat__num">#{rank}</div><div className="stat__lbl">в рейтинге</div></button>
             <div className="stat"><div className="stat__num">{posts.length}</div><div className="stat__lbl">образов</div></div>
           </div>
           {posts.length > 0 ? (

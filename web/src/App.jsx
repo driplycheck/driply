@@ -14,6 +14,7 @@ import Onboarding from './Onboarding.jsx'
 import EditProfile from './EditProfile.jsx'
 import PostsArchive from './PostsArchive.jsx'
 import MyVotes from './MyVotes.jsx'
+import TopUsers from './TopUsers.jsx'
 import BlockedList from './BlockedList.jsx'
 import Referral from './Referral.jsx'
 import './composer.css'
@@ -38,6 +39,7 @@ export default function App() {
   const [openPostId, setOpenPostId] = useState(null)
   const [archiveOpen, setArchiveOpen] = useState(false)
   const [votesOpen, setVotesOpen] = useState(false)
+  const [topOpen, setTopOpen] = useState(false)
   const [blockedOpen, setBlockedOpen] = useState(false)
   const [referralOpen, setReferralOpen] = useState(false)
 
@@ -131,6 +133,7 @@ export default function App() {
           onOpenSettings={() => setSettingsOpen(true)}
           onOpenArchive={() => setArchiveOpen(true)}
           onOpenVotes={() => setVotesOpen(true)}
+          onOpenTop={() => setTopOpen(true)}
           onOpenPost={setOpenPostId}
           onFollowChanged={() => setFeedKey((k) => k + 1)}
         />
@@ -170,6 +173,9 @@ export default function App() {
           onClose={() => setArchiveOpen(false)}
           onChanged={() => { setFeedKey((k) => k + 1); setProfileKey((k) => k + 1) }}
         />
+      )}
+      {topOpen && (
+        <TopUsers onClose={() => setTopOpen(false)} onOpenProfile={(id) => { setTopOpen(false); setProfileUserId(id) }} />
       )}
       {votesOpen && (
         <MyVotes

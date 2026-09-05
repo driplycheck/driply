@@ -131,3 +131,5 @@
 .stylecard:active { background: rgba(255,255,255,0.08); }
 .stylecard__emoji { font-size: 20px; }
 .stylecard__name { font-size: 14px; font-weight: 500; }
+
+.sresult__rank { font-size: 15px; font-weight: 700; color: rgba(255,255,255,0.5); width: 28px; flex-shrink: 0; text-align: center; }
