@@ -180,12 +180,6 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
                 {following ? t('unfollow') : t('follow')}
               </button>
             )}
-            {!isSelf && user.username && !user.hide_username && user.allow_dm && (
-              <button className="dm-btn"
-                onClick={() => tg?.openTelegramLink?.(`https://t.me/${user.username}`)}>
-                {t('write_msg')}
-              </button>
-            )}
 
 
 

@@ -207,7 +207,7 @@
   letter-spacing: 0.02em;
   white-space: nowrap;
 }
-.status-plate--founder {
+.status-plate--founder, .status-plate--cofounder {
   background: linear-gradient(135deg, #f4c430, #e0a800);
   color: #1a1300;
 }
