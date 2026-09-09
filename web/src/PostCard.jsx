@@ -4,8 +4,14 @@ import { getInitData } from './telegram.js'
 import { avatarTier } from './tiers.js'
 
 const CATEGORY_ICON = {
-  top: '👕', bottoms: '👖', shoes: '👟', accessory: '🧢',
-  dress: '👗', skirt: '👚', bag: '👜', other: '✨',
+  top: '👕',
+  bottoms: '👖',
+  shoes: '👟',
+  accessory: '🧢',
+  dress: '👗',
+  skirt: '👚',
+  bag: '👜',
+  other: '✨',
 }
 
 const AMOUNTS = [10, 50, 100]
