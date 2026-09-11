@@ -340,3 +340,35 @@ body {
 .screen-anim { animation: screenIn 0.22s ease-out; }
 @keyframes screenOut { from { opacity: 1; } to { opacity: 0; } }
 .screen-exit { animation: screenOut 0.15s ease-in forwards; }
+
+/* overlay stack */
+.overlay-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex; align-items: flex-end; justify-content: center;
+  z-index: 100;
+}
+.overlay-panel {
+  background: var(--bg);
+  width: 100%; max-width: 480px;
+  max-height: 90vh; overflow-y: auto;
+  border-radius: 24px 24px 0 0;
+}
+.overlay-sheet { animation: slideUp 0.25s ease-out; }
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+/* overlay stack */
+.overlay-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex; align-items: flex-end; justify-content: center;
+  z-index: 100;
+}
+.overlay-panel {
+  background: var(--bg);
+  width: 100%; max-width: 480px;
+  max-height: 90vh; overflow-y: auto;
+  border-radius: 24px 24px 0 0;
+}
+.overlay-sheet { animation: slideUp 0.25s ease-out; }
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }

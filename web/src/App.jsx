@@ -4,6 +4,8 @@ import { supabase } from './supabase.js'
 import { avatarTier } from './tiers.js'
 import { loadLang, saveLang, setActiveLang } from './i18n.js'
 import { loadSide, saveSide, setActiveSide } from './side.js'
+import { useOverlayStack } from './useOverlayStack.js'
+import Overlay from './ui/Overlay.jsx'
 import Feed from './Feed.jsx'
 import PostComposer from './PostComposer.jsx'
 import Profile from './Profile.jsx'
@@ -29,19 +31,9 @@ export default function App() {
   const [profile, setProfile] = useState(undefined)
   const [lang, setLang] = useState(loadLang())
   const [side, setSide] = useState(loadSide())
-  const [composerOpen, setComposerOpen] = useState(false)
-  const [settingsOpen, setSettingsOpen] = useState(false)
-  const [searchOpen, setSearchOpen] = useState(false)
-  const [editOpen, setEditOpen] = useState(false)
   const [feedKey, setFeedKey] = useState(0)
-  const [profileUserId, setProfileUserId] = useState(null)
-  const [profileKey, setProfileKey] = useState(0)
-  const [openPostId, setOpenPostId] = useState(null)
-  const [archiveOpen, setArchiveOpen] = useState(false)
-  const [votesOpen, setVotesOpen] = useState(false)
-  const [topOpen, setTopOpen] = useState(false)
-  const [blockedOpen, setBlockedOpen] = useState(false)
-  const [referralOpen, setReferralOpen] = useState(false)
+
+  const { top, push, replace, pop, touch } = useOverlayStack()
 
   setActiveLang(lang)
   setActiveSide(side)
@@ -63,19 +55,11 @@ export default function App() {
   function changeLang(code) { saveLang(code); setActiveLang(code); setLang(code) }
   function changeSide(s) { saveSide(s); setActiveSide(s); setSide(s) }
 
-  function onPosted() { setComposerOpen(false); setFeedKey((k) => k + 1) }
-  function onSaved(update) { setProfile((p) => ({ ...p, ...update })); setEditOpen(false); setProfileKey((k) => k + 1) }
-  function onSettingsChanged(update) { setProfile((p) => ({ ...p, ...update })); setProfileKey((k) => k + 1) }
-  function openProfileFromSearch(id) { setSearchOpen(false); setProfileUserId(id) }
-  function openPostFromSearch(id) { setSearchOpen(false); setOpenPostId(id) }
-  function onPostDeleted() { setOpenPostId(null); setFeedKey((k) => k + 1); setProfileKey((k) => k + 1) }
-
-  // переход в чужой профиль из любого места: сначала закрываем текущий профиль,
-  // потом открываем новый — без промежуточного показа своего
-  function goProfile(id) {
-    setProfileKey((k) => k + 1)
-    setProfileUserId(id)
-  }
+  function onPosted() { pop(); setFeedKey((k) => k + 1) }
+  function onSaved(update) { setProfile((p) => ({ ...p, ...update })); pop(); touch('profile') }
+  function onSettingsChanged(update) { setProfile((p) => ({ ...p, ...update })); touch('profile') }
+  function onFollowChanged() { setFeedKey((k) => k + 1) }
+  function onPostDeleted() { pop(); setFeedKey((k) => k + 1); touch('profile') }
 
   if (profile === undefined) return <div className="state">Загрузка…</div>
 
@@ -88,11 +72,11 @@ export default function App() {
       <Feed
         key={feedKey}
         selfId={profile?.id ?? null}
-        onOpenProfile={setProfileUserId}
-        onPost={() => setComposerOpen(true)}
+        onOpenProfile={(id) => push('profile', { userId: id })}
+        onPost={() => push('composer', { gender: profile?.gender })}
       />
 
-      <button className="search-btn" onClick={() => setSearchOpen(true)} aria-label="Поиск">
+      <button className="search-btn" onClick={() => push('search')} aria-label="Поиск">
         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
           strokeWidth="2" strokeLinecap="round">
           <circle cx="11" cy="11" r="7" />
@@ -103,7 +87,7 @@ export default function App() {
       {profile?.avatar_url && (
         <button
           className={`me ${avatarTier(profile.style_score)}`}
-          onClick={() => setProfileUserId(profile.id)}
+          onClick={() => push('profile', { userId: profile.id })}
           aria-label="Мой профиль"
         >
           <img src={profile.avatar_url} alt="" />
@@ -113,79 +97,107 @@ export default function App() {
         <div className="balance-pill">💧 {profile.daily_credits ?? 0}</div>
       )}
 
-      {searchOpen && (
-        <Search
-          onClose={() => setSearchOpen(false)}
-          onOpenProfile={openProfileFromSearch}
-          onOpenPost={openPostFromSearch}
-          onOpenTop={() => { setSearchOpen(false); setTopOpen(true) }}
-        />
+      {top?.type === 'search' && (
+        <Overlay onClose={pop}>
+          <Search
+            onClose={pop}
+            onOpenProfile={(id) => replace('profile', { userId: id })}
+            onOpenPost={(id) => replace('postView', { postId: id })}
+            onOpenTop={() => replace('top')}
+          />
+        </Overlay>
       )}
-      {composerOpen && (
-        <PostComposer onClose={() => setComposerOpen(false)} onPosted={onPosted} gender={profile?.gender} />
+
+      {top?.type === 'composer' && (
+        <Overlay onClose={pop}>
+          <PostComposer onClose={pop} onPosted={onPosted} gender={top.props.gender} />
+        </Overlay>
       )}
-      {profileUserId && (
-        <Profile
-          key={profileKey}
-          userId={profileUserId}
-          selfId={profile?.id}
-          onClose={() => setProfileUserId(null)}
-          onOpenProfile={goProfile}
-          onOpenSettings={() => setSettingsOpen(true)}
-          onOpenArchive={() => setArchiveOpen(true)}
-          onOpenVotes={() => setVotesOpen(true)}
-          onOpenTop={() => setTopOpen(true)}
-          onOpenPost={setOpenPostId}
-          onFollowChanged={() => setFeedKey((k) => k + 1)}
-        />
+
+      {top?.type === 'profile' && (
+        <Overlay key={top.key} onClose={pop}>
+          <Profile
+            userId={top.props.userId}
+            selfId={profile?.id}
+            onClose={pop}
+            onOpenProfile={(id) => replace('profile', { userId: id })}
+            onOpenSettings={() => push('settings')}
+            onOpenArchive={() => push('archive')}
+            onOpenVotes={() => push('votes')}
+            onOpenTop={() => push('top')}
+            onOpenPost={(id) => push('postView', { postId: id })}
+            onFollowChanged={onFollowChanged}
+          />
+        </Overlay>
       )}
-      {settingsOpen && profile && (
-        <Settings
-          me={profile}
-          lang={lang}
-          onLang={changeLang}
-          side={side}
-          onSide={changeSide}
-          onClose={() => setSettingsOpen(false)}
-          onEditProfile={() => setEditOpen(true)}
-          onChanged={onSettingsChanged}
-          onOpenBlocked={() => setBlockedOpen(true)}
-          onOpenReferral={() => setReferralOpen(true)}
-        />
+
+      {top?.type === 'settings' && profile && (
+        <Overlay onClose={pop}>
+          <Settings
+            me={profile}
+            lang={lang}
+            onLang={changeLang}
+            side={side}
+            onSide={changeSide}
+            onClose={pop}
+            onEditProfile={() => push('editProfile')}
+            onChanged={onSettingsChanged}
+            onOpenBlocked={() => push('blocked')}
+            onOpenReferral={() => push('referral')}
+          />
+        </Overlay>
       )}
-      {openPostId && (
-        <PostView
-          postId={openPostId}
-          selfId={profile?.id}
-          onClose={() => setOpenPostId(null)}
-          onOpenProfile={(id) => { setOpenPostId(null); setProfileUserId(id) }}
-          onPost={() => setComposerOpen(true)}
-          onDeleted={onPostDeleted}
-        />
+
+      {top?.type === 'postView' && (
+        <Overlay key={top.key} onClose={pop}>
+          <PostView
+            postId={top.props.postId}
+            selfId={profile?.id}
+            onClose={pop}
+            onOpenProfile={(id) => replace('profile', { userId: id })}
+            onPost={() => push('composer', { gender: profile?.gender })}
+            onDeleted={onPostDeleted}
+          />
+        </Overlay>
       )}
-      {referralOpen && profile && (
-        <Referral me={profile} onClose={() => setReferralOpen(false)} />
+
+      {top?.type === 'referral' && profile && (
+        <Overlay onClose={pop}>
+          <Referral me={profile} onClose={pop} />
+        </Overlay>
       )}
-      {blockedOpen && (
-        <BlockedList onClose={() => setBlockedOpen(false)} />
+
+      {top?.type === 'blocked' && (
+        <Overlay onClose={pop}>
+          <BlockedList onClose={pop} />
+        </Overlay>
       )}
-      {archiveOpen && (
-        <PostsArchive
-          onClose={() => setArchiveOpen(false)}
-          onChanged={() => { setFeedKey((k) => k + 1); setProfileKey((k) => k + 1) }}
-        />
+
+      {top?.type === 'archive' && (
+        <Overlay onClose={pop}>
+          <PostsArchive
+            onClose={pop}
+            onChanged={() => { setFeedKey((k) => k + 1); touch('profile') }}
+          />
+        </Overlay>
       )}
-      {topOpen && (
-        <TopUsers onClose={() => setTopOpen(false)} onOpenProfile={(id) => { setTopOpen(false); setProfileUserId(id) }} />
+
+      {top?.type === 'top' && (
+        <Overlay onClose={pop}>
+          <TopUsers onClose={pop} onOpenProfile={(id) => replace('profile', { userId: id })} />
+        </Overlay>
       )}
-      {votesOpen && (
-        <MyVotes
-          onClose={() => setVotesOpen(false)}
-          onOpenPost={(id) => { setVotesOpen(false); setOpenPostId(id) }}
-        />
+
+      {top?.type === 'votes' && (
+        <Overlay onClose={pop}>
+          <MyVotes onClose={pop} onOpenPost={(id) => replace('postView', { postId: id })} />
+        </Overlay>
       )}
-      {editOpen && profile && (
-        <EditProfile me={profile} onClose={() => setEditOpen(false)} onSaved={onSaved} />
+
+      {top?.type === 'editProfile' && profile && (
+        <Overlay onClose={pop}>
+          <EditProfile me={profile} onClose={pop} onSaved={onSaved} />
+        </Overlay>
       )}
     </div>
   )

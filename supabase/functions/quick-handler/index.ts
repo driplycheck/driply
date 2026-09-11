@@ -142,6 +142,17 @@ Deno.serve(async (req) => {
       return jsonResponse(data, 200)
     }
 
+    if (body.action === 'report') {
+      const reason = String(body.reason ?? 'other')
+      const fn = body.post_id ? 'report_post' : 'report_user'
+      const args = body.post_id
+        ? { p_tid: tgUser.id, p_post: body.post_id, p_reason: reason }
+        : { p_tid: tgUser.id, p_target: body.target_id, p_reason: reason }
+      const { data, error } = await supabase.rpc(fn, args)
+      if (error) return jsonResponse({ error: error.message }, 400)
+      return jsonResponse(data, 200)
+    }
+
     const { data, error } = await supabase.rpc('cast_vote', {
       p_tid: tgUser.id, p_username: uname, p_avatar: tgUser.photo_url ?? null,
       p_post: body.post_id, p_amount: body.amount,
