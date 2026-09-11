@@ -67,6 +67,7 @@ export default function Feed({ selfId, onOpenProfile, onPost }) {
               post={post}
               alreadyVoted={votedIds.has(post.id)}
               selfId={selfId}
+              onReported={(id) => setPosts((ps) => ps.filter((x) => x.id !== id))}
               onOpenProfile={onOpenProfile}
               onPost={onPost}
             />

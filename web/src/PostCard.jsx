@@ -46,7 +46,7 @@ async function castVote(postId, amount) {
   }
 }
 
-export default function PostCard({ post, alreadyVoted, onOpenProfile, onPost, selfId }) {
+export default function PostCard({ post, alreadyVoted, onOpenProfile, onPost, selfId, onReported }) {
   const [reportOpen, setReportOpen] = useState(false)
   const author = post.users || {}
   const items = (post.post_items || []).map((pi) => pi.items).filter(Boolean)
@@ -173,7 +173,7 @@ export default function PostCard({ post, alreadyVoted, onOpenProfile, onPost, se
       </div>
 
       {toast && <div className="toast">{toast}</div>}
-      {reportOpen && <ReportModal postId={post.id} onClose={() => setReportOpen(false)} />}
+      {reportOpen && <ReportModal postId={post.id} onClose={() => setReportOpen(false)} onReported={onReported} />}
     </section>
   )
 }
