@@ -10,20 +10,20 @@ const REASONS = [
   { key: 'other', label: 'Другое' },
 ]
 
-export default function ReportModal({ postId, targetId, onClose }) {
+export default function ReportModal({ postId, targetId, onClose, onReported }) {
   const [busy, setBusy] = useState(false)
   const [done, setDone] = useState(false)
 
-  async function send(reason) {
+  function send(reason) {
     if (busy) return
     setBusy(true)
     const body = { action: 'report', initData: getInitData(), reason }
     if (postId) body.post_id = postId
     else body.target_id = targetId
-    const { error } = await supabase.functions.invoke('quick-handler', { body })
-    setBusy(false)
-    if (!error) setDone(true)
-    else onClose?.()
+    // fire-and-forget: the user does not need to wait for the server
+    supabase.functions.invoke('quick-handler', { body })
+    setDone(true)
+    onReported?.(postId)
   }
 
   if (done) {
