@@ -46,16 +46,36 @@ export default function ReportModal({ postId, targetId, onClose }) {
           <button
             key={r.key}
             className="confirm__no"
-            style={{ width: '100%', marginTop: 8 }}
+            style={{
+              display: 'block',
+              width: '100%',
+              marginTop: 8,
+              textAlign: 'center',
+              fontWeight: 500,
+            }}
             onClick={() => send(r.key)}
             disabled={busy}
           >
             {r.label}
           </button>
         ))}
-        <div className="confirm__row">
-          <button className="confirm__no" onClick={onClose} disabled={busy}>Отмена</button>
-        </div>
+        <button
+          onClick={onClose}
+          disabled={busy}
+          style={{
+            display: 'block',
+            width: '100%',
+            marginTop: 16,
+            padding: '10px 0',
+            background: 'transparent',
+            border: 'none',
+            color: '#8a8a8a',
+            fontSize: 15,
+            cursor: 'pointer',
+          }}
+        >
+          Отмена
+        </button>
       </div>
     </div>
   )
