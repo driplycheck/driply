@@ -6,12 +6,14 @@ import { t } from './i18n.js'
 import { shareRankCard } from './storyCard.js'
 import { tg } from './telegram.js'
 import FollowList from './FollowList.jsx'
+import ReportModal from './ReportModal.jsx'
 
 export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpenPost, onOpenProfile, onOpenArchive, onOpenVotes, onOpenTop, onFollowChanged }) {
   const [user, setUser] = useState(null)
   const [rank, setRank] = useState(null)
   const [posts, setPosts] = useState([])
   const [loading, setLoading] = useState(true)
+  const [reportOpen, setReportOpen] = useState(false)
   const [followers, setFollowers] = useState(0)
   const [followingCount, setFollowingCount] = useState(0)
   const [following, setFollowing] = useState(false)
@@ -142,11 +144,18 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
             <button className="profile__settings" onClick={onOpenSettings} aria-label="Настройки">⚙</button>
           )}
           {!isSelf && (
-            <button className={`profile__block ${blocked ? 'profile__block--on' : ''}`}
-              onClick={() => setBlockState(!blocked)} disabled={busyBlock}
-              aria-label="Заблокировать" title={blocked ? t('unblock_user') : t('block_user')}>
-              {blocked ? '↺' : '⊘'}
-            </button>
+            <>
+              <button className={`profile__block ${blocked ? 'profile__block--on' : ''}`}
+                onClick={() => setBlockState(!blocked)} disabled={busyBlock}
+                aria-label="Заблокировать" title={blocked ? t('unblock_user') : t('block_user')}>
+                {blocked ? '↺' : '⊘'}
+              </button>
+              <button className="profile__block"
+                onClick={() => setReportOpen(true)}
+                aria-label="Пожаловаться" title="Пожаловаться">
+                🚩
+              </button>
+            </>
           )}
         </div>
       </header>
@@ -225,6 +234,7 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
           onOpenProfile={openPerson}
         />
       )}
+      {reportOpen && <ReportModal targetId={userId} onClose={() => setReportOpen(false)} />}
     </div>
   )
 }
