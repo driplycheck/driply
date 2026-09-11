@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { supabase } from './supabase.js'
 import { getInitData } from './telegram.js'
 import { avatarTier } from './tiers.js'
+import ReportModal from './ReportModal.jsx'
 
 const CATEGORY_ICON = {
   top: '👕',
@@ -45,7 +46,8 @@ async function castVote(postId, amount) {
   }
 }
 
-export default function PostCard({ post, alreadyVoted, onOpenProfile, onPost }) {
+export default function PostCard({ post, alreadyVoted, onOpenProfile, onPost, selfId }) {
+  const [reportOpen, setReportOpen] = useState(false)
   const author = post.users || {}
   const items = (post.post_items || []).map((pi) => pi.items).filter(Boolean)
   const authorName = author.display_name || '@' + (author.username || 'user')
@@ -122,6 +124,9 @@ export default function PostCard({ post, alreadyVoted, onOpenProfile, onPost }) 
       </div>
 
       <div className="rail">
+        {selfId && post.user_id !== selfId && post.users?.id !== selfId && (
+          <button className="railic" onClick={() => setReportOpen(true)} aria-label="Пожаловаться">🚩</button>
+        )}
         <button className="railic" onClick={() => onPost?.()} aria-label="Выложить образ">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
             <path d="M12 5v14M5 12h14" />
@@ -168,6 +173,7 @@ export default function PostCard({ post, alreadyVoted, onOpenProfile, onPost }) 
       </div>
 
       {toast && <div className="toast">{toast}</div>}
+      {reportOpen && <ReportModal postId={post.id} onClose={() => setReportOpen(false)} />}
     </section>
   )
 }

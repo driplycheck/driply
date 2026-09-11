@@ -66,6 +66,7 @@ export default function Feed({ selfId, onOpenProfile, onPost }) {
               key={post.id}
               post={post}
               alreadyVoted={votedIds.has(post.id)}
+              selfId={selfId}
               onOpenProfile={onOpenProfile}
               onPost={onPost}
             />
