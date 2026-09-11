@@ -172,6 +172,16 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
                 <b>{followingCount}</b> {t('following_cnt')}
               </button>
             </div>
+            {user.badge && (
+              <div className="status-wrap">
+                <div className={`status-plate status-plate--${user.badge}`}>
+                  {
+                    { founder: '★ Основатель', cofounder: '★ Основатель', first_drip: '💧 first drip' }[user.badge]
+                    || user.badge
+                  }
+                </div>
+              </div>
+            )}
             {!isSelf && (
               <button
                 className={`follow-btn ${following ? 'follow-btn--on' : ''}`}
@@ -184,16 +194,6 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
 
 
           </div>
-          {user.badge && (
-            <div className="status-wrap">
-              <div className={`status-plate status-plate--${user.badge}`}>
-                {
-                  { founder: '★ Основатель', cofounder: '★ Основатель', first_drip: '💧 first drip' }[user.badge]
-                  || user.badge
-                }
-              </div>
-            </div>
-          )}
           <div className="profile__stats">
             <div className="stat"><div className="stat__num">★ {user.style_score}</div><div className="stat__lbl">очки стиля</div></div>
             <button className="stat stat--tap" onClick={onOpenTop}><div className="stat__num">#{rank}</div><div className="stat__lbl">в рейтинге</div></button>
