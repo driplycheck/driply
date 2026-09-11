@@ -43,10 +43,7 @@ export default function App() {
     setTgUser(u)
     if (!u?.id) { setProfile(null); return }
     supabase
-      .from('users')
-      .select('id, display_name, avatar_url, bio, style_score, hide_username, daily_credits, is_founder, gender, allow_dm, notify_prefs')
-      .eq('telegram_id', u.id)
-      .maybeSingle()
+      .rpc('my_profile', { p_tid: u.id })
       .then(({ data }) => {
         setProfile(data?.display_name ? data : null)
       })
