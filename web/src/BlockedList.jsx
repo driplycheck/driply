@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { supabase } from './supabase.js'
 import { getInitData } from './telegram.js'
 import { avatarTier } from './tiers.js'
@@ -11,11 +11,11 @@ export default function BlockedList({ onClose }) {
   function tgId() {
     return window.Telegram?.WebApp?.initDataUnsafe?.user?.id ?? 0
   }
-  async function load() {
+  const load = useCallback(async () => {
     const { data } = await supabase.rpc('my_blocks', { p_tid: tgId() })
     setPeople(Array.isArray(data) ? data : [])
-  }
-  useEffect(() => { load() }, [])
+  }, [])
+  useEffect(() => { load() }, [load])
 
   async function unblock(id) {
     if (busyId) return

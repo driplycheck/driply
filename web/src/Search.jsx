@@ -2,6 +2,23 @@ import { useState, useEffect } from 'react'
 import { supabase } from './supabase.js'
 import { avatarTier } from './tiers.js'
 
+function PostGrid({ posts, onOpenPost }) {
+  return (
+    <div className="grid">
+      {posts.map((post) => (
+        <button
+          className="grid__item"
+          key={post.id}
+          style={{ backgroundImage: `url(${post.media_url})` }}
+          onClick={() => onOpenPost(post.id)}
+        >
+          <span className="grid__score">★ {post.score}</span>
+        </button>
+      ))}
+    </div>
+  )
+}
+
 export default function Search({ onClose, onOpenProfile, onOpenPost, onOpenTop }) {
   const [q, setQ] = useState('')
   const [people, setPeople] = useState([])
@@ -28,7 +45,7 @@ export default function Search({ onClose, onOpenProfile, onOpenPost, onOpenTop }
     const like = `%${term}%`
     const t = setTimeout(async () => {
       const [pu, it] = await Promise.all([
-        supabase.rpc('search_people', { p_uid: 0, p_q: q }),
+        supabase.rpc('search_people', { p_uid: 0, p_q: term }),
         supabase.from('items')
           .select('id, name, brand, category')
           .or(`name.ilike.${like},brand.ilike.${like}`).limit(20),
@@ -73,15 +90,7 @@ export default function Search({ onClose, onOpenProfile, onOpenPost, onOpenTop }
           ) : itemView.posts.length === 0 ? (
             <div className="state">Пока нет образов в этой категории</div>
           ) : (
-            <div className="grid">
-              {itemView.posts.map((p) => (
-                <button className="grid__item" key={p.id}
-                  style={{ backgroundImage: `url(${p.media_url})` }}
-                  onClick={() => onOpenPost(p.id)}>
-                  <span className="grid__score">★ {p.score}</span>
-                </button>
-              ))}
-            </div>
+            <PostGrid posts={itemView.posts} onOpenPost={onOpenPost} />
           )}
         </div>
       </div>

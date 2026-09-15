@@ -3,10 +3,44 @@ import { supabase } from './supabase.js'
 import { getInitData } from './telegram.js'
 import { avatarTier } from './tiers.js'
 import { t } from './i18n.js'
-import { shareRankCard } from './storyCard.js'
-import { tg } from './telegram.js'
 import FollowList from './FollowList.jsx'
 import ReportModal from './ReportModal.jsx'
+
+async function fetchRelations(userId, selfId) {
+  const { data } = await supabase.rpc('profile_relations', {
+    p_target: userId, p_viewer: selfId ?? 0,
+  })
+  return data
+}
+
+async function fetchProfileData(userId, selfId) {
+  const { data: user } = await supabase
+    .from('users')
+    .select('id, username, display_name, avatar_url, bio, style_score, hide_username, allow_dm, badge')
+    .eq('id', userId).maybeSingle()
+
+  if (!user) return { user: null }
+
+  const requests = [
+    supabase.from('users').select('id', { count: 'exact', head: true }).gt('style_score', user.style_score),
+    supabase.from('posts').select('id, media_url, score')
+      .eq('user_id', userId).eq('hidden', false).order('created_at', { ascending: false }),
+    fetchRelations(userId, selfId),
+  ]
+
+  if (selfId && selfId !== userId) {
+    requests.push(supabase.rpc('is_blocked', { p_a: selfId, p_b: userId }).then(({ data }) => data))
+  }
+
+  const [higherResult, postsResult, relations, blocked] = await Promise.all(requests)
+  return {
+    user,
+    rank: (higherResult.count ?? 0) + 1,
+    posts: postsResult.data || [],
+    relations,
+    blocked: !!blocked,
+  }
+}
 
 export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpenPost, onOpenProfile, onOpenArchive, onOpenVotes, onOpenTop, onFollowChanged }) {
   const [user, setUser] = useState(null)
@@ -19,51 +53,27 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
   const [following, setFollowing] = useState(false)
   const [busyFollow, setBusyFollow] = useState(false)
   const [listMode, setListMode] = useState(null)
-  const [busyShare, setBusyShare] = useState(false)
   const [blocked, setBlocked] = useState(false)
   const [busyBlock, setBusyBlock] = useState(false)
-  const [toast, setToast] = useState(null)
-
-  async function loadRelations() {
-    const { data } = await supabase.rpc('profile_relations', {
-      p_target: userId, p_viewer: selfId ?? 0,
-    })
-    if (data) {
-      setFollowers(data.followers ?? 0)
-      setFollowingCount(data.following ?? 0)
-      if (selfId && selfId !== userId) setFollowing(!!data.is_following)
-    }
-  }
 
   useEffect(() => {
     let active = true
     ;(async () => {
-      const { data: u } = await supabase
-        .from('users')
-        .select('id, username, display_name, avatar_url, bio, style_score, hide_username, allow_dm, badge')
-        .eq('id', userId).maybeSingle()
+      const profile = await fetchProfileData(userId, selfId)
       if (!active) return
-      setUser(u)
-      if (u) {
-        const { data: higher } = await supabase
-          .from('users').select('id').gt('style_score', u.style_score)
-        if (active) setRank((higher?.length ?? 0) + 1)
-        const { data: p } = await supabase
-          .from('posts').select('id, media_url, score')
-          .eq('user_id', userId).eq('hidden', false).order('created_at', { ascending: false })
-        if (active) setPosts(p || [])
-        if (active) await loadRelations()
-        if (selfId && selfId !== userId) {
-          const { data: bl } = await supabase.rpc('is_blocked', { p_a: selfId, p_b: userId })
-          if (active) setBlocked(!!bl)
-        }
+      setUser(profile.user)
+      setRank(profile.rank ?? null)
+      setPosts(profile.posts || [])
+      setBlocked(profile.blocked || false)
+      if (profile.relations) {
+        setFollowers(profile.relations.followers ?? 0)
+        setFollowingCount(profile.relations.following ?? 0)
+        if (selfId && selfId !== userId) setFollowing(!!profile.relations.is_following)
       }
-      if (active) setLoading(false)
+      setLoading(false)
     })()
     return () => { active = false }
   }, [userId, selfId])
-
-  function flash(m) { setToast(m); setTimeout(() => setToast(null), 2500) }
 
   async function setFollowState(want) {
     if (busyFollow) return
@@ -81,29 +91,13 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
     }
     if (data) {
       setFollowing(!!data.following)
-      setFollowers(data.followers ?? followers)
+      setFollowers((current) => data.followers ?? current)
       onFollowChanged?.()
-      await loadRelations()
-    }
-  }
-
-  async function share() {
-    if (busyShare || !user) return
-    setBusyShare(true)
-    const res = await shareRankCard({ user, rank, postsCount: posts.length })
-    setBusyShare(false)
-    if (!res.ok) {
-      flash(res.reason === 'unsupported' ? t('share_unsupported') : t('share_failed'))
-    } else if (res.reward) {
-      flash(`+${res.reward} кредитов за историю 🔥`)
-    }
-  }
-
-  function inviteFriend() {
-    const link = `https://t.me/Driplycheckbot?startapp=ref_${user.id}`
-    const text = t('invite_text')
-    if (tg && tg.openTelegramLink) {
-      tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`)
+      const relations = await fetchRelations(userId, selfId)
+      if (relations) {
+        setFollowers(relations.followers ?? 0)
+        setFollowingCount(relations.following ?? 0)
+      }
     }
   }
 
@@ -223,8 +217,6 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
           )}
         </div>
       )}
-
-      {toast && <div className="ptoast">{toast}</div>}
 
       {listMode && (
         <FollowList

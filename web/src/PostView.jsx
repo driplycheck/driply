@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { supabase } from './supabase.js'
 import { getInitData } from './telegram.js'
 import PostCard from './PostCard.jsx'
-import ReportModal from './ReportModal.jsx'
 
 const SELECT =
   'id, media_url, caption, score, user_id, hidden, ' +
@@ -14,7 +13,6 @@ export default function PostView({ postId, selfId, onClose, onOpenProfile, onPos
   const [post, setPost] = useState(null)
   const [loading, setLoading] = useState(true)
   const [confirm, setConfirm] = useState(false)
-  const [reportOpen, setReportOpen] = useState(false)
   const [busy, setBusy] = useState(false)
 
   useEffect(() => {
@@ -63,7 +61,6 @@ export default function PostView({ postId, selfId, onClose, onOpenProfile, onPos
           </div>
         </div>
       )}
-      {reportOpen && <ReportModal postId={postId} onClose={() => setReportOpen(false)} />}
     </div>
   )
 }

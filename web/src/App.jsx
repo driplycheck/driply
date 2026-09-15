@@ -35,8 +35,13 @@ export default function App() {
 
   const { top, push, replace, pop, touch } = useOverlayStack()
 
-  setActiveLang(lang)
-  setActiveSide(side)
+  useEffect(() => {
+    setActiveLang(lang)
+  }, [lang])
+
+  useEffect(() => {
+    setActiveSide(side)
+  }, [side])
 
   useEffect(() => {
     const u = initTelegram()
@@ -49,8 +54,8 @@ export default function App() {
       })
   }, [])
 
-  function changeLang(code) { saveLang(code); setActiveLang(code); setLang(code) }
-  function changeSide(s) { saveSide(s); setActiveSide(s); setSide(s) }
+  function changeLang(code) { saveLang(code); setLang(code) }
+  function changeSide(nextSide) { saveSide(nextSide); setSide(nextSide) }
 
   function onPosted() { pop(); setFeedKey((k) => k + 1) }
   function onSaved(update) { setProfile((p) => ({ ...p, ...update })); pop(); touch('profile') }
@@ -153,7 +158,7 @@ export default function App() {
             onClose={pop}
             onOpenProfile={(id) => replace('profile', { userId: id })}
             onPost={() => push('composer', { gender: profile?.gender })}
-            onDeleted={onPostDeleted}
+            onChanged={onPostDeleted}
           />
         </Overlay>
       )}

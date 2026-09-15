@@ -14,8 +14,16 @@ export default function Referral({ me, onClose }) {
   function tgId() { return window.Telegram?.WebApp?.initDataUnsafe?.user?.id ?? 0 }
 
   useEffect(() => {
-    supabase.rpc('ref_stats', { p_tid: tgId() }).then(({ data }) => setStats(data || {}))
-    supabase.rpc('ref_invited_list', { p_tid: tgId() }).then(({ data }) => setInvited(data || []))
+    let active = true
+    Promise.all([
+      supabase.rpc('ref_stats', { p_tid: tgId() }),
+      supabase.rpc('ref_invited_list', { p_tid: tgId() }),
+    ]).then(([statsResult, invitedResult]) => {
+      if (!active) return
+      setStats(statsResult.data || {})
+      setInvited(invitedResult.data || [])
+    })
+    return () => { active = false }
   }, [])
 
   const code = stats?.ref_code || stats?.my_id
@@ -46,12 +54,12 @@ export default function Referral({ me, onClose }) {
     setBusyShare(true)
     const { data: u } = await supabase
       .from('users').select('id, display_name, avatar_url, style_score').eq('id', me.id).maybeSingle()
-    const { data: higher } = await supabase
-      .from('users').select('id').gt('style_score', u?.style_score ?? 0)
-    const { data: posts } = await supabase
-      .from('posts').select('id').eq('user_id', me.id).eq('hidden', false)
+    const [{ count: higherCount }, { count: postsCount }] = await Promise.all([
+      supabase.from('users').select('id', { count: 'exact', head: true }).gt('style_score', u?.style_score ?? 0),
+      supabase.from('posts').select('id', { count: 'exact', head: true }).eq('user_id', me.id).eq('hidden', false),
+    ])
     const res = await shareRankCard({
-      user: u || me, rank: (higher?.length ?? 0) + 1, postsCount: posts?.length ?? 0,
+      user: u || me, rank: (higherCount ?? 0) + 1, postsCount: postsCount ?? 0,
     })
     setBusyShare(false)
     if (!res.ok) flash(res.reason === 'unsupported' ? t('share_unsupported') : t('share_failed'))

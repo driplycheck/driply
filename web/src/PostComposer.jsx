@@ -17,10 +17,57 @@ const BASE_CATEGORIES = [
 ]
 
 function categoriesFor(gender) {
-  const base = BASE_CATEGORIES
-  if (gender === 'female') return [...base, ...FEMALE_EXTRA]
-  if (gender === 'male') return base
-  return [...base, ...FEMALE_EXTRA]
+  return gender === 'male' ? BASE_CATEGORIES : [...BASE_CATEGORIES, ...FEMALE_EXTRA]
+}
+
+function StylePicker({ styles, selectedId, onSelect }) {
+  if (styles.length === 0) return null
+
+  return (
+    <div className="stylepick">
+      <div className="stylepick__lbl">Стиль (необязательно)</div>
+      <div className="stylepick__row">
+        {styles.map((style) => (
+          <button
+            key={style.id}
+            className={`stylechip ${selectedId === style.id ? 'stylechip--on' : ''}`}
+            onClick={() => onSelect(style.id)}
+          >
+            {style.emoji} {style.name_ru || style.name_en}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function ItemForm({ categories, category, brand, name, onCategory, onBrand, onName, onAdd }) {
+  return (
+    <div className="itemadd">
+      <select className="field" value={category} onChange={(e) => onCategory(e.target.value)}>
+        {categories.map((item) => (
+          <option key={item.value} value={item.value}>{item.label}</option>
+        ))}
+      </select>
+      <input className="field" placeholder="Бренд" value={brand} onChange={(e) => onBrand(e.target.value)} />
+      <input className="field" placeholder="Название" value={name} onChange={(e) => onName(e.target.value)} />
+      <button className="itemadd__btn" onClick={onAdd}>+</button>
+    </div>
+  )
+}
+
+function AddedItems({ items, onRemove }) {
+  if (items.length === 0) return null
+
+  return (
+    <div className="chips">
+      {items.map((item, index) => (
+        <span className="chip" key={index} onClick={() => onRemove(index)}>
+          {item.brand} {item.name} ✕
+        </span>
+      ))}
+    </div>
+  )
 }
 
 export default function PostComposer({ onClose, onPosted, gender }) {
@@ -28,7 +75,7 @@ export default function PostComposer({ onClose, onPosted, gender }) {
   const [preview, setPreview] = useState(null)
   const [caption, setCaption] = useState('')
   const [items, setItems] = useState([])
-  const CATEGORIES = categoriesFor(gender)
+  const categories = categoriesFor(gender)
   const [cat, setCat] = useState('top')
   const [brand, setBrand] = useState('')
   const [name, setName] = useState('')
@@ -51,13 +98,14 @@ export default function PostComposer({ onClose, onPosted, gender }) {
     return () => { active = false }
   }, [])
 
-  function styleName(s) {
-    return s.name_ru || s.name_en
-  }
+  useEffect(() => () => {
+    if (preview) URL.revokeObjectURL(preview)
+  }, [preview])
 
   function onPickFile(e) {
     const f = e.target.files?.[0]
     if (!f) return
+    if (preview) URL.revokeObjectURL(preview)
     setFile(f)
     setPreview(URL.createObjectURL(f))
   }
@@ -131,43 +179,22 @@ export default function PostComposer({ onClose, onPosted, gender }) {
           onChange={(e) => setCaption(e.target.value)}
         />
 
-        {styles.length > 0 && (
-          <div className="stylepick">
-            <div className="stylepick__lbl">Стиль (необязательно)</div>
-            <div className="stylepick__row">
-              {styles.map((s) => (
-                <button
-                  key={s.id}
-                  className={`stylechip ${styleId === s.id ? 'stylechip--on' : ''}`}
-                  onClick={() => setStyleId((cur) => (cur === s.id ? null : s.id))}
-                >
-                  {s.emoji} {styleName(s)}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div className="itemadd">
-          <select className="field" value={cat} onChange={(e) => setCat(e.target.value)}>
-            {CATEGORIES.map((c) => (
-              <option key={c.value} value={c.value}>{c.label}</option>
-            ))}
-          </select>
-          <input className="field" placeholder="Бренд" value={brand} onChange={(e) => setBrand(e.target.value)} />
-          <input className="field" placeholder="Название" value={name} onChange={(e) => setName(e.target.value)} />
-          <button className="itemadd__btn" onClick={addItem}>+</button>
-        </div>
-
-        {items.length > 0 && (
-          <div className="chips">
-            {items.map((it, idx) => (
-              <span className="chip" key={idx} onClick={() => removeItem(idx)}>
-                {it.brand} {it.name} ✕
-              </span>
-            ))}
-          </div>
-        )}
+        <StylePicker
+          styles={styles}
+          selectedId={styleId}
+          onSelect={(id) => setStyleId((current) => (current === id ? null : id))}
+        />
+        <ItemForm
+          categories={categories}
+          category={cat}
+          brand={brand}
+          name={name}
+          onCategory={setCat}
+          onBrand={setBrand}
+          onName={setName}
+          onAdd={addItem}
+        />
+        <AddedItems items={items} onRemove={removeItem} />
 
         {error && <div className="composer__err">{error}</div>}
       </div>

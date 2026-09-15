@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { supabase } from './supabase.js'
 import { getInitData } from './telegram.js'
 
@@ -10,11 +10,11 @@ export default function PostsArchive({ onClose, onChanged }) {
   function tgId() {
     return window.Telegram?.WebApp?.initDataUnsafe?.user?.id ?? 0
   }
-  async function load() {
+  const load = useCallback(async () => {
     const { data } = await supabase.rpc('my_posts', { p_tid: tgId() })
     setPosts(Array.isArray(data) ? data : [])
-  }
-  useEffect(() => { load() }, [])
+  }, [])
+  useEffect(() => { load() }, [load])
 
   async function toggleHidden(p) {
     if (busyId) return

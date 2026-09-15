@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { supabase } from './supabase.js'
 import { getInitData } from './telegram.js'
 import { avatarTier } from './tiers.js'
@@ -12,9 +12,14 @@ export default function EditProfile({ me, onClose, onSaved }) {
   const [error, setError] = useState(null)
   const fileRef = useRef(null)
 
+  useEffect(() => () => {
+    if (preview && preview !== me?.avatar_url) URL.revokeObjectURL(preview)
+  }, [preview, me?.avatar_url])
+
   function onPickFile(e) {
     const f = e.target.files?.[0]
     if (!f) return
+    if (preview && preview !== me?.avatar_url) URL.revokeObjectURL(preview)
     setFile(f)
     setPreview(URL.createObjectURL(f))
   }

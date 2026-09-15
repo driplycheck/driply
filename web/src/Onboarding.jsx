@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { supabase } from './supabase.js'
 import { getInitData, getStartParam } from './telegram.js'
 
@@ -10,9 +10,14 @@ export default function Onboarding({ tgUser, onDone }) {
   const [error, setError] = useState(null)
   const [gender, setGender] = useState(null)
 
+  useEffect(() => () => {
+    if (preview && preview !== tgUser?.photo_url) URL.revokeObjectURL(preview)
+  }, [preview, tgUser?.photo_url])
+
   function onPickFile(e) {
     const f = e.target.files?.[0]
     if (!f) return
+    if (preview && preview !== tgUser?.photo_url) URL.revokeObjectURL(preview)
     setFile(f)
     setPreview(URL.createObjectURL(f))
   }
