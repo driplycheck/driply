@@ -49,6 +49,23 @@
 }
 .composer__post:disabled { opacity: 0.5; }
 .composer__title { font-weight: 600; font-size: 16px; }
+.composer__hint { color: var(--muted); font-size: 13px; line-height: 1.35; text-align: center; }
+.details-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 13px 14px;
+  border: 1px solid rgba(244, 196, 48, 0.35);
+  border-radius: 12px;
+  background: rgba(244, 196, 48, 0.08);
+  color: var(--gold);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.details-toggle span { font-size: 18px; line-height: 1; }
 
 .composer__body {
   flex: 1;

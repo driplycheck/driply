@@ -32,6 +32,7 @@ export default function App() {
   const [lang, setLang] = useState(loadLang())
   const [side, setSide] = useState(loadSide())
   const [feedKey, setFeedKey] = useState(0)
+  const [openFirstComposer, setOpenFirstComposer] = useState(false)
 
   const { top, push, replace, pop, touch } = useOverlayStack()
 
@@ -55,6 +56,12 @@ export default function App() {
     setProfile(data?.display_name ? data : null)
   }
 
+  useEffect(() => {
+    if (!profile || !openFirstComposer) return
+    setOpenFirstComposer(false)
+    push('composer', { firstPost: true })
+  }, [profile, openFirstComposer, push])
+
   function changeLang(code) { saveLang(code); setLang(code) }
   function changeSide(nextSide) { saveSide(nextSide); setSide(nextSide) }
 
@@ -67,7 +74,15 @@ export default function App() {
   if (profile === undefined) return <div className="state">Загрузка…</div>
 
   if (profile === null && tgUser?.id) {
-    return <Onboarding tgUser={tgUser} onDone={() => loadProfile(tgUser.id)} />
+    return (
+      <Onboarding
+        tgUser={tgUser}
+        onDone={() => {
+          setOpenFirstComposer(true)
+          loadProfile(tgUser.id)
+        }}
+      />
+    )
   }
 
   return (
@@ -113,7 +128,7 @@ export default function App() {
 
       {top?.type === 'composer' && (
         <Overlay onClose={pop}>
-          <PostComposer onClose={pop} onPosted={onPosted} />
+          <PostComposer onClose={pop} onPosted={onPosted} firstPost={top.props.firstPost} />
         </Overlay>
       )}
 

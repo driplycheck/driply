@@ -87,7 +87,7 @@ function AddedItems({ items, onRemove }) {
   )
 }
 
-export default function PostComposer({ onClose, onPosted }) {
+export default function PostComposer({ onClose, onPosted, firstPost = false }) {
   const [file, setFile] = useState(null)
   const [preview, setPreview] = useState(null)
   const [caption, setCaption] = useState('')
@@ -101,6 +101,7 @@ export default function PostComposer({ onClose, onPosted }) {
   const [styleId, setStyleId] = useState(null)
   const [brandSuggestions, setBrandSuggestions] = useState([])
   const [nameSuggestions, setNameSuggestions] = useState([])
+  const [showDetails, setShowDetails] = useState(!firstPost)
 
   useEffect(() => {
     let active = true
@@ -223,8 +224,8 @@ export default function PostComposer({ onClose, onPosted }) {
     <div className="composer">
       <header className="composer__top">
         <button className="composer__close" onClick={onClose}>✕</button>
-        <span className="composer__title">Новый образ</span>
-        <button className="composer__post" onClick={submit} disabled={busy}>
+        <span className="composer__title">{firstPost ? 'Твой первый образ' : 'Новый образ'}</span>
+        <button className="composer__post" onClick={submit} disabled={busy || !file}>
           {busy ? '…' : 'Выложить'}
         </button>
       </header>
@@ -235,33 +236,45 @@ export default function PostComposer({ onClose, onPosted }) {
           <input type="file" accept="image/*" onChange={onPickFile} hidden />
         </label>
 
-        <input
-          className="field"
-          placeholder="Подпись (необязательно)"
-          value={caption}
-          onChange={(e) => setCaption(e.target.value)}
-        />
+        {firstPost && <p className="composer__hint">Достаточно фото. Детали можно добавить сейчас или позже.</p>}
 
-        <StylePicker
-          styles={styles}
-          selectedId={styleId}
-          onSelect={(id) => setStyleId((current) => (current === id ? null : id))}
-        />
-        <ItemForm
-          categories={CATEGORIES}
-          category={cat}
-          brand={brand}
-          name={name}
-          brandSuggestions={brandSuggestions}
-          nameSuggestions={nameSuggestions}
-          onCategory={setCat}
-          onBrand={setBrand}
-          onName={setName}
-          onBrandSelect={(value) => { setBrand(value); setBrandSuggestions([]) }}
-          onNameSelect={(value) => { setName(value); setNameSuggestions([]) }}
-          onAdd={addItem}
-        />
-        <AddedItems items={items} onRemove={removeItem} />
+        {firstPost && (
+          <button className="details-toggle" type="button" onClick={() => setShowDetails((visible) => !visible)}>
+            {showDetails ? 'Скрыть детали' : 'Добавить детали'}
+            <span aria-hidden="true">{showDetails ? '⌃' : '⌄'}</span>
+          </button>
+        )}
+
+        {showDetails && (
+          <>
+            <input
+              className="field"
+              placeholder="Подпись (необязательно)"
+              value={caption}
+              onChange={(e) => setCaption(e.target.value)}
+            />
+            <StylePicker
+              styles={styles}
+              selectedId={styleId}
+              onSelect={(id) => setStyleId((current) => (current === id ? null : id))}
+            />
+            <ItemForm
+              categories={CATEGORIES}
+              category={cat}
+              brand={brand}
+              name={name}
+              brandSuggestions={brandSuggestions}
+              nameSuggestions={nameSuggestions}
+              onCategory={setCat}
+              onBrand={setBrand}
+              onName={setName}
+              onBrandSelect={(value) => { setBrand(value); setBrandSuggestions([]) }}
+              onNameSelect={(value) => { setName(value); setNameSuggestions([]) }}
+              onAdd={addItem}
+            />
+            <AddedItems items={items} onRemove={removeItem} />
+          </>
+        )}
 
         {error && <div className="composer__err">{error}</div>}
       </div>
