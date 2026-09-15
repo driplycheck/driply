@@ -93,11 +93,6 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
       setFollowing(!!data.following)
       setFollowers((current) => data.followers ?? current)
       onFollowChanged?.()
-      const relations = await fetchRelations(userId, selfId)
-      if (relations) {
-        setFollowers(relations.followers ?? 0)
-        setFollowingCount(relations.following ?? 0)
-      }
     }
   }
 

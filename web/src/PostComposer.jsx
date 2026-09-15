@@ -2,23 +2,20 @@ import { useState, useEffect } from 'react'
 import { supabase } from './supabase.js'
 import { getInitData } from './telegram.js'
 
-const FEMALE_EXTRA = [
+const EXTRA_CATEGORIES = [
   { value: 'dress', label: '👗 Платье' },
   { value: 'skirt', label: '👚 Юбка' },
   { value: 'bag', label: '👜 Сумка' },
 ]
 
-const BASE_CATEGORIES = [
+const CATEGORIES = [
   { value: 'top', label: '👕 Верх' },
   { value: 'bottoms', label: '👖 Низ' },
   { value: 'shoes', label: '👟 Обувь' },
   { value: 'accessory', label: '🧢 Аксессуар' },
   { value: 'other', label: '✨ Другое' },
+  ...EXTRA_CATEGORIES,
 ]
-
-function categoriesFor(gender) {
-  return gender === 'male' ? BASE_CATEGORIES : [...BASE_CATEGORIES, ...FEMALE_EXTRA]
-}
 
 function StylePicker({ styles, selectedId, onSelect }) {
   if (styles.length === 0) return null
@@ -41,7 +38,21 @@ function StylePicker({ styles, selectedId, onSelect }) {
   )
 }
 
-function ItemForm({ categories, category, brand, name, onCategory, onBrand, onName, onAdd }) {
+function SuggestionList({ suggestions, onSelect }) {
+  if (suggestions.length === 0) return null
+
+  return (
+    <div className="suggestions">
+      {suggestions.map((suggestion) => (
+        <button className="suggestion" key={suggestion} type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => onSelect(suggestion)}>
+          {suggestion}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+function ItemForm({ categories, category, brand, name, brandSuggestions, nameSuggestions, onCategory, onBrand, onName, onBrandSelect, onNameSelect, onAdd }) {
   return (
     <div className="itemadd">
       <select className="field" value={category} onChange={(e) => onCategory(e.target.value)}>
@@ -49,8 +60,14 @@ function ItemForm({ categories, category, brand, name, onCategory, onBrand, onNa
           <option key={item.value} value={item.value}>{item.label}</option>
         ))}
       </select>
-      <input className="field" placeholder="Бренд" value={brand} onChange={(e) => onBrand(e.target.value)} />
-      <input className="field" placeholder="Название" value={name} onChange={(e) => onName(e.target.value)} />
+      <div className="field-wrap">
+        <input className="field" placeholder="Бренд" value={brand} onChange={(e) => onBrand(e.target.value)} />
+        <SuggestionList suggestions={brandSuggestions} onSelect={onBrandSelect} />
+      </div>
+      <div className="field-wrap">
+        <input className="field" placeholder="Название" value={name} onChange={(e) => onName(e.target.value)} />
+        <SuggestionList suggestions={nameSuggestions} onSelect={onNameSelect} />
+      </div>
       <button className="itemadd__btn" onClick={onAdd}>+</button>
     </div>
   )
@@ -70,12 +87,11 @@ function AddedItems({ items, onRemove }) {
   )
 }
 
-export default function PostComposer({ onClose, onPosted, gender }) {
+export default function PostComposer({ onClose, onPosted }) {
   const [file, setFile] = useState(null)
   const [preview, setPreview] = useState(null)
   const [caption, setCaption] = useState('')
   const [items, setItems] = useState([])
-  const categories = categoriesFor(gender)
   const [cat, setCat] = useState('top')
   const [brand, setBrand] = useState('')
   const [name, setName] = useState('')
@@ -83,6 +99,8 @@ export default function PostComposer({ onClose, onPosted, gender }) {
   const [error, setError] = useState(null)
   const [styles, setStyles] = useState([])
   const [styleId, setStyleId] = useState(null)
+  const [brandSuggestions, setBrandSuggestions] = useState([])
+  const [nameSuggestions, setNameSuggestions] = useState([])
 
   useEffect(() => {
     let active = true
@@ -102,6 +120,49 @@ export default function PostComposer({ onClose, onPosted, gender }) {
     if (preview) URL.revokeObjectURL(preview)
   }, [preview])
 
+  useEffect(() => {
+    const term = brand.trim()
+    if (term.length < 2) {
+      setBrandSuggestions([])
+      return
+    }
+    let active = true
+    const timer = setTimeout(async () => {
+      const { data } = await supabase
+        .from('items')
+        .select('brand')
+        .ilike('brand', `%${term}%`)
+        .not('brand', 'is', null)
+        .limit(24)
+      if (!active) return
+      const brands = [...new Set((data || []).map((item) => item.brand).filter(Boolean))]
+      setBrandSuggestions(brands.slice(0, 6))
+    }, 250)
+    return () => { active = false; clearTimeout(timer) }
+  }, [brand])
+
+  useEffect(() => {
+    const term = name.trim()
+    if (term.length < 2) {
+      setNameSuggestions([])
+      return
+    }
+    let active = true
+    const timer = setTimeout(async () => {
+      let query = supabase
+        .from('items')
+        .select('name')
+        .ilike('name', `%${term}%`)
+        .limit(24)
+      if (brand.trim()) query = query.ilike('brand', brand.trim())
+      const { data } = await query
+      if (!active) return
+      const names = [...new Set((data || []).map((item) => item.name).filter(Boolean))]
+      setNameSuggestions(names.slice(0, 6))
+    }, 250)
+    return () => { active = false; clearTimeout(timer) }
+  }, [name, brand])
+
   function onPickFile(e) {
     const f = e.target.files?.[0]
     if (!f) return
@@ -115,6 +176,8 @@ export default function PostComposer({ onClose, onPosted, gender }) {
     setItems((arr) => [...arr, { category: cat, brand: brand.trim(), name: name.trim() }])
     setBrand('')
     setName('')
+    setBrandSuggestions([])
+    setNameSuggestions([])
   }
 
   function removeItem(idx) {
@@ -185,13 +248,17 @@ export default function PostComposer({ onClose, onPosted, gender }) {
           onSelect={(id) => setStyleId((current) => (current === id ? null : id))}
         />
         <ItemForm
-          categories={categories}
+          categories={CATEGORIES}
           category={cat}
           brand={brand}
           name={name}
+          brandSuggestions={brandSuggestions}
+          nameSuggestions={nameSuggestions}
           onCategory={setCat}
           onBrand={setBrand}
           onName={setName}
+          onBrandSelect={(value) => { setBrand(value); setBrandSuggestions([]) }}
+          onNameSelect={(value) => { setName(value); setNameSuggestions([]) }}
           onAdd={addItem}
         />
         <AddedItems items={items} onRemove={removeItem} />

@@ -93,6 +93,33 @@
   gap: 8px;
 }
 .itemadd .field:first-child { grid-column: 1 / -1; }
+.field-wrap { position: relative; min-width: 0; }
+.suggestions {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  padding: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+  background: #202024;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+}
+.suggestion {
+  border: 0;
+  border-radius: 7px;
+  padding: 9px 10px;
+  background: transparent;
+  color: #fff;
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+.suggestion:hover, .suggestion:focus-visible { background: rgba(255, 255, 255, 0.1); outline: none; }
 .itemadd__btn {
   background: var(--gold);
   color: #1a1300;

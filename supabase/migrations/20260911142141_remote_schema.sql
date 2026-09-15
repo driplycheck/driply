@@ -1,0 +1,1 @@
+-- Already applied in production. Local placeholder for migration history alignment.

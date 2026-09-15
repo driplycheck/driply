@@ -39,6 +39,11 @@ async function sendTg(botToken, chatId, text) {
   } catch (_) { /* игнор */ }
 }
 
+function runInBackground(task) {
+  if (typeof EdgeRuntime !== 'undefined') EdgeRuntime.waitUntil(task)
+  else void task
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
   try {
@@ -107,7 +112,7 @@ Deno.serve(async (req) => {
       })
       if (error) return jsonResponse({ error: error.message }, 400)
       if (data?.new_follow && data?.target_tid && data?.notify !== false) {
-        await sendTg(botToken, data.target_tid, `👀 ${data.follower_name || 'Кто-то'} подписался на тебя в Driply`)
+        runInBackground(sendTg(botToken, data.target_tid, `👀 ${data.follower_name || 'Кто-то'} подписался на тебя в Driply`))
       }
       return jsonResponse(data, 200)
     }
@@ -151,6 +156,10 @@ Deno.serve(async (req) => {
       const { data, error } = await supabase.rpc(fn, args)
       if (error) return jsonResponse({ error: error.message }, 400)
       return jsonResponse(data, 200)
+    }
+
+    if (body.action !== 'cast_vote') {
+      return jsonResponse({ error: 'UNKNOWN_ACTION' }, 400)
     }
 
     const { data, error } = await supabase.rpc('cast_vote', {

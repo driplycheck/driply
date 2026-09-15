@@ -43,7 +43,7 @@ function DripMark({ size = 22, color = '#1a1300' }) {
 
 async function castVote(postId, amount) {
   const { data, error } = await supabase.functions.invoke('quick-handler', {
-    body: { initData: getInitData(), post_id: postId, amount },
+    body: { action: 'cast_vote', initData: getInitData(), post_id: postId, amount },
   })
   if (!error) return { ok: true, ...data }
   try {

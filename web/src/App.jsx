@@ -47,12 +47,13 @@ export default function App() {
     const u = initTelegram()
     setTgUser(u)
     if (!u?.id) { setProfile(null); return }
-    supabase
-      .rpc('my_profile', { p_tid: u.id })
-      .then(({ data }) => {
-        setProfile(data?.display_name ? data : null)
-      })
+    loadProfile(u.id)
   }, [])
+
+  async function loadProfile(telegramId) {
+    const { data } = await supabase.rpc('my_profile', { p_tid: telegramId })
+    setProfile(data?.display_name ? data : null)
+  }
 
   function changeLang(code) { saveLang(code); setLang(code) }
   function changeSide(nextSide) { saveSide(nextSide); setSide(nextSide) }
@@ -66,7 +67,7 @@ export default function App() {
   if (profile === undefined) return <div className="state">Загрузка…</div>
 
   if (profile === null && tgUser?.id) {
-    return <Onboarding tgUser={tgUser} onDone={(p) => setProfile(p)} />
+    return <Onboarding tgUser={tgUser} onDone={() => loadProfile(tgUser.id)} />
   }
 
   return (
@@ -75,7 +76,7 @@ export default function App() {
         key={feedKey}
         selfId={profile?.id ?? null}
         onOpenProfile={(id) => push('profile', { userId: id })}
-        onPost={() => push('composer', { gender: profile?.gender })}
+        onPost={() => push('composer')}
       />
 
       <button className="search-btn" onClick={() => push('search')} aria-label="Поиск">
@@ -112,7 +113,7 @@ export default function App() {
 
       {top?.type === 'composer' && (
         <Overlay onClose={pop}>
-          <PostComposer onClose={pop} onPosted={onPosted} gender={top.props.gender} />
+          <PostComposer onClose={pop} onPosted={onPosted} />
         </Overlay>
       )}
 
@@ -157,7 +158,7 @@ export default function App() {
             selfId={profile?.id}
             onClose={pop}
             onOpenProfile={(id) => replace('profile', { userId: id })}
-            onPost={() => push('composer', { gender: profile?.gender })}
+            onPost={() => push('composer')}
             onChanged={onPostDeleted}
           />
         </Overlay>

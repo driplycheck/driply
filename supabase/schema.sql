@@ -32,7 +32,7 @@ create table if not exists public.items (
   id         bigint generated always as identity primary key,
   name       text not null,
   brand      text,
-  category   text not null check (category in ('top','bottoms','shoes','accessory','other')),
+  category   text not null check (category in ('top','bottoms','shoes','accessory','other','dress','skirt','bag')),
   created_at timestamptz not null default now()
 );
 
