@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from './supabase.js'
 import { getInitData } from './telegram.js'
+import { t } from './i18n.js'
 
 export default function PostsArchive({ onClose, onChanged }) {
   const [posts, setPosts] = useState(null)
@@ -40,20 +41,20 @@ export default function PostsArchive({ onClose, onChanged }) {
   return (
     <div className="archive">
       <header className="archive__top">
-        <button className="archive__close" onClick={onClose}>‹ Назад</button>
-        <span className="archive__title">История публикаций</span>
+        <button className="archive__close" onClick={onClose}>{t('back')}</button>
+        <span className="archive__title">{t('archive_title')}</span>
         <span className="archive__spacer" />
       </header>
       <div className="archive__body">
         {!posts ? (
-          <div className="state">Загрузка…</div>
+          <div className="state">{t('loading')}</div>
         ) : posts.length === 0 ? (
-          <div className="state">Пока нет публикаций</div>
+          <div className="state">{t('no_posts')}</div>
         ) : (
           posts.map((p) => (
             <div className={`arow ${p.hidden ? 'arow--hidden' : ''}`} key={p.id}>
               <div className="arow__thumb" style={{ backgroundImage: `url(${p.media_url})` }}>
-                {p.hidden && <span className="arow__badge">скрыт</span>}
+                {p.hidden && <span className="arow__badge">{t('hidden_badge')}</span>}
               </div>
               <div className="arow__mid">
                 <div className="arow__score">💧 {p.score}</div>
@@ -62,11 +63,11 @@ export default function PostsArchive({ onClose, onChanged }) {
               <div className="arow__acts">
                 <button className="arow__btn" disabled={busyId === p.id}
                   onClick={() => toggleHidden(p)}>
-                  {p.hidden ? 'Вернуть' : 'Скрыть'}
+                  {p.hidden ? t('restore') : t('hide')}
                 </button>
                 <button className="arow__btn arow__btn--del" disabled={busyId === p.id}
                   onClick={() => setConfirmId(p.id)}>
-                  Удалить
+                  {t('delete')}
                 </button>
               </div>
             </div>
@@ -77,15 +78,14 @@ export default function PostsArchive({ onClose, onChanged }) {
       {confirmId && (
         <div className="confirm">
           <div className="confirm__box">
-            <div className="confirm__title">Удалить навсегда?</div>
+            <div className="confirm__title">{t('delete_forever')}</div>
             <div className="confirm__hint">
-              Примечание: очки, набранные за этот образ, будут списаны с твоего рейтинга.
-              Награда за публикацию останется. Действие необратимо.
+              {t('delete_hint')}
             </div>
             <div className="confirm__row">
-              <button className="confirm__no" onClick={() => setConfirmId(null)} disabled={!!busyId}>Отмена</button>
+              <button className="confirm__no" onClick={() => setConfirmId(null)} disabled={!!busyId}>{t('cancel')}</button>
               <button className="confirm__yes confirm__yes--danger" onClick={() => removeForever(confirmId)} disabled={!!busyId}>
-                {busyId ? '…' : 'Удалить'}
+                {busyId ? '…' : t('delete')}
               </button>
             </div>
           </div>

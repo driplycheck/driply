@@ -1,13 +1,14 @@
 import { useState } from 'react'
 import { supabase } from './supabase.js'
 import { getInitData } from './telegram.js'
+import { t } from './i18n.js'
 
 const REASONS = [
-  { key: 'nsfw', label: 'Откровенный контент' },
-  { key: 'harassment', label: 'Оскорбление / травля' },
-  { key: 'spam', label: 'Спам или реклама' },
-  { key: 'not_outfit', label: 'Не образ / не по теме' },
-  { key: 'other', label: 'Другое' },
+  { key: 'nsfw', labelKey: 'r_nsfw' },
+  { key: 'harassment', labelKey: 'r_harassment' },
+  { key: 'spam', labelKey: 'r_spam' },
+  { key: 'not_outfit', labelKey: 'r_not_outfit' },
+  { key: 'other', labelKey: 'r_other' },
 ]
 
 export default function ReportModal({ postId, targetId, onClose, onReported }) {
@@ -30,8 +31,8 @@ export default function ReportModal({ postId, targetId, onClose, onReported }) {
     return (
       <div className="confirm" onClick={onClose}>
         <div className="confirm__box">
-          <div className="confirm__title">Жалоба отправлена</div>
-          <div className="confirm__hint">Спасибо, мы проверим.</div>
+          <div className="confirm__title">{t('report_sent')}</div>
+          <div className="confirm__hint">{t('report_thanks')}</div>
         </div>
       </div>
     )
@@ -40,8 +41,8 @@ export default function ReportModal({ postId, targetId, onClose, onReported }) {
   return (
     <div className="confirm">
       <div className="confirm__box">
-        <div className="confirm__title">{postId ? 'Пожаловаться на образ' : 'Пожаловаться на профиль'}</div>
-        <div className="confirm__hint">Выбери причину — мы проверим.</div>
+        <div className="confirm__title">{postId ? t('report_look') : t('report_profile')}</div>
+        <div className="confirm__hint">{t('report_reason')}</div>
         {REASONS.map((r) => (
           <button
             key={r.key}
@@ -56,7 +57,7 @@ export default function ReportModal({ postId, targetId, onClose, onReported }) {
             onClick={() => send(r.key)}
             disabled={busy}
           >
-            {r.label}
+            {t(r.labelKey)}
           </button>
         ))}
         <button
@@ -74,7 +75,7 @@ export default function ReportModal({ postId, targetId, onClose, onReported }) {
             cursor: 'pointer',
           }}
         >
-          Отмена
+          {t('cancel')}
         </button>
       </div>
     </div>

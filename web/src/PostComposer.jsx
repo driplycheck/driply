@@ -2,21 +2,9 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 import { supabase } from './supabase.js'
 import { getInitData } from './telegram.js'
 import { matchBrands } from './brands.js'
+import { t, styleName } from './i18n.js'
 
-const EXTRA_CATEGORIES = [
-  { value: 'dress', label: '👗 Платье' },
-  { value: 'skirt', label: '👚 Юбка' },
-  { value: 'bag', label: '👜 Сумка' },
-]
-
-const CATEGORIES = [
-  { value: 'top', label: '👕 Верх' },
-  { value: 'bottoms', label: '👖 Низ' },
-  { value: 'shoes', label: '👟 Обувь' },
-  { value: 'accessory', label: '🧢 Аксессуар' },
-  { value: 'other', label: '✨ Другое' },
-  ...EXTRA_CATEGORIES,
-]
+const CATEGORY_VALUES = ['top', 'bottoms', 'shoes', 'accessory', 'other', 'dress', 'skirt', 'bag']
 
 // '%', '_' и '*' — wildcard-символы ilike, из пользовательского ввода их убираем
 function cleanTerm(value) {
@@ -72,7 +60,7 @@ function StylePicker({ styles, selectedId, onSelect }) {
 
   return (
     <div className="stylepick">
-      <div className="stylepick__lbl">Стиль (необязательно)</div>
+      <div className="stylepick__lbl">{t('style_label')}</div>
       <div className="stylepick__row">
         {styles.map((style) => (
           <button
@@ -80,7 +68,7 @@ function StylePicker({ styles, selectedId, onSelect }) {
             className={`stylechip ${selectedId === style.id ? 'stylechip--on' : ''}`}
             onClick={() => onSelect(style.id)}
           >
-            {style.emoji} {style.name_ru || style.name_en}
+            {style.emoji} {styleName(style)}
           </button>
         ))}
       </div>
@@ -109,14 +97,14 @@ function ItemForm({ categories, category, brand, name, brandSuggestions, nameSug
   return (
     <div className="itemadd">
       <select className="field" value={category} onChange={(e) => onCategory(e.target.value)}>
-        {categories.map((item) => (
-          <option key={item.value} value={item.value}>{item.label}</option>
+        {categories.map((value) => (
+          <option key={value} value={value}>{t(`cat_${value}`)}</option>
         ))}
       </select>
       <div className="field-wrap">
         <input
           className="field"
-          placeholder="Бренд"
+          placeholder={t('brand_placeholder')}
           value={brand}
           onChange={(e) => onBrand(e.target.value)}
           onFocus={() => setFocused('brand')}
@@ -133,7 +121,7 @@ function ItemForm({ categories, category, brand, name, brandSuggestions, nameSug
         <input
           ref={nameRef}
           className="field"
-          placeholder="Название"
+          placeholder={t('name_placeholder')}
           value={name}
           onChange={(e) => onName(e.target.value)}
           onFocus={() => setFocused('name')}
@@ -226,7 +214,7 @@ export default function PostComposer({ onClose, onPosted, firstPost = false }) {
   }
 
   async function submit() {
-    if (!file) { setError('Добавь фото'); return }
+    if (!file) { setError(t('photo_required')); return }
     setBusy(true)
     setError(null)
     try {
@@ -255,7 +243,7 @@ export default function PostComposer({ onClose, onPosted, firstPost = false }) {
       }
       onPosted(result)
     } catch (e) {
-      setError('Не удалось выложить, попробуй ещё раз')
+      setError(t('post_failed'))
       setBusy(false)
     }
   }
@@ -264,23 +252,23 @@ export default function PostComposer({ onClose, onPosted, firstPost = false }) {
     <div className="composer">
       <header className="composer__top">
         <button className="composer__close" onClick={onClose}>✕</button>
-        <span className="composer__title">{firstPost ? 'Твой первый образ' : 'Новый образ'}</span>
+        <span className="composer__title">{firstPost ? t('composer_first') : t('composer_new')}</span>
         <button className="composer__post" onClick={submit} disabled={busy || !file}>
-          {busy ? '…' : 'Выложить'}
+          {busy ? '…' : t('post_btn')}
         </button>
       </header>
 
       <div className="composer__body">
         <label className="photo">
-          {preview ? <img src={preview} alt="" /> : <span>+ Добавить фото</span>}
+          {preview ? <img src={preview} alt="" /> : <span>{t('add_photo')}</span>}
           <input type="file" accept="image/*" onChange={onPickFile} hidden />
         </label>
 
-        {firstPost && <p className="composer__hint">Достаточно фото. Детали можно добавить сейчас или позже.</p>}
+        {firstPost && <p className="composer__hint">{t('first_post_hint')}</p>}
 
         {firstPost && (
           <button className="details-toggle" type="button" onClick={() => setShowDetails((visible) => !visible)}>
-            {showDetails ? 'Скрыть детали' : detailsCount > 0 ? `Детали · ${detailsCount}` : 'Добавить детали'}
+            {showDetails ? t('details_hide') : detailsCount > 0 ? t('details_count', { n: detailsCount }) : t('details_add')}
             <span aria-hidden="true">{showDetails ? '⌃' : '⌄'}</span>
           </button>
         )}
@@ -289,7 +277,7 @@ export default function PostComposer({ onClose, onPosted, firstPost = false }) {
           <>
             <input
               className="field"
-              placeholder="Подпись (необязательно)"
+              placeholder={t('caption_placeholder')}
               value={caption}
               onChange={(e) => setCaption(e.target.value)}
             />
@@ -299,7 +287,7 @@ export default function PostComposer({ onClose, onPosted, firstPost = false }) {
               onSelect={(id) => setStyleId((current) => (current === id ? null : id))}
             />
             <ItemForm
-              categories={CATEGORIES}
+              categories={CATEGORY_VALUES}
               category={cat}
               brand={brand}
               name={name}

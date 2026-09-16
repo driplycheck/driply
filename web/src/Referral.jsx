@@ -37,7 +37,7 @@ export default function Referral({ me, onClose }) {
       setCopied(true)
       setTimeout(() => setCopied(false), 1500)
     } catch {
-      flash('Не удалось скопировать')
+      flash(t('copy_failed'))
     }
   }
 
@@ -103,7 +103,7 @@ export default function Referral({ me, onClose }) {
 
         {invited && invited.length > 0 && (
           <div className="reflist">
-            <div className="reflist__label">Приглашённые</div>
+            <div className="reflist__label">{t('ref_invited_list')}</div>
             {invited.map((r) => (
               <div className="refrow" key={r.id}>
                 {r.avatar_url && <img className="refrow__ava" src={r.avatar_url} alt="" />}
@@ -111,7 +111,7 @@ export default function Referral({ me, onClose }) {
                   <div className="refrow__name">{r.display_name || '@' + (r.username || 'user')}</div>
                 </div>
                 <div className={`refrow__status ${r.rewarded ? 'refrow__status--on' : ''}`}>
-                  {r.rewarded ? '✓ +500' : '⏳ ждёт поста'}
+                  {r.rewarded ? '✓ +500' : t('ref_waiting')}
                 </div>
               </div>
             ))}

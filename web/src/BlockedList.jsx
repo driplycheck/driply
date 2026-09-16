@@ -36,7 +36,7 @@ export default function BlockedList({ onClose }) {
       </header>
       <div className="follist__body">
         {!people ? (
-          <div className="state">Загрузка…</div>
+          <div className="state">{t('loading')}</div>
         ) : people.length === 0 ? (
           <div className="state">{t('no_blocks')}</div>
         ) : (

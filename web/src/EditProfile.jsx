@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { supabase } from './supabase.js'
 import { getInitData } from './telegram.js'
 import { avatarTier } from './tiers.js'
+import { t } from './i18n.js'
 
 export default function EditProfile({ me, onClose, onSaved }) {
   const [name, setName] = useState(me?.display_name || '')
@@ -26,7 +27,7 @@ export default function EditProfile({ me, onClose, onSaved }) {
 
   async function save() {
     const nick = name.trim()
-    if (!nick) { setError('Ник не может быть пустым'); return }
+    if (!nick) { setError(t('nick_empty')); return }
     setBusy(true)
     setError(null)
     try {
@@ -57,7 +58,7 @@ export default function EditProfile({ me, onClose, onSaved }) {
       }
       onSaved({ display_name: nick, avatar_url: avatarUrl, bio: bio.trim() })
     } catch (e) {
-      setError('Не получилось сохранить, попробуй ещё раз')
+      setError(t('save_failed'))
       setBusy(false)
     }
   }
@@ -66,10 +67,10 @@ export default function EditProfile({ me, onClose, onSaved }) {
     <div className="edit">
       <div className="edit__body">
         <div className="edit__top">
-          <button className="edit__cancel" onClick={onClose}>Отмена</button>
-          <span>Профиль</span>
+          <button className="edit__cancel" onClick={onClose}>{t('cancel')}</button>
+          <span>{t('profile')}</span>
           <button className="edit__save" onClick={save} disabled={busy || !name.trim()}>
-            {busy ? '…' : 'Сохранить'}
+            {busy ? '…' : t('save')}
           </button>
         </div>
 
@@ -80,18 +81,18 @@ export default function EditProfile({ me, onClose, onSaved }) {
           {preview ? <img src={preview} alt="" /> : <span className="onb__plus">＋</span>}
         </div>
         <input ref={fileRef} type="file" accept="image/*" onChange={onPickFile} style={{ display: 'none' }} />
-        <span className="onb__avahint">Нажми, чтобы сменить фото</span>
+        <span className="onb__avahint">{t('avatar_hint')}</span>
 
         <input
           className="field onb__nick"
-          placeholder="Ник"
+          placeholder={t('nick_placeholder')}
           maxLength={24}
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
         <textarea
           className="field edit__bio"
-          placeholder="О себе (био)"
+          placeholder={t('bio_placeholder')}
           maxLength={160}
           rows={3}
           value={bio}

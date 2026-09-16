@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from './supabase.js'
 import { getInitData } from './telegram.js'
 import PostCard from './PostCard.jsx'
+import { t } from './i18n.js'
 
 const SELECT =
   'id, media_url, caption, score, user_id, hidden, ' +
@@ -38,25 +39,25 @@ export default function PostView({ postId, selfId, onClose, onOpenProfile, onPos
 
   return (
     <div className="postview">
-      <button className="postview__close" onClick={onClose} aria-label="Закрыть">✕</button>
+      <button className="postview__close" onClick={onClose} aria-label={t('close_aria')}>✕</button>
       {isOwn && (
-        <button className="postview__del" onClick={() => setConfirm(true)} aria-label="Скрыть образ">🙈</button>
+        <button className="postview__del" onClick={() => setConfirm(true)} aria-label={t('hide_look_aria')}>🙈</button>
       )}
       {loading ? (
-        <div className="state">Загрузка…</div>
+        <div className="state">{t('loading')}</div>
       ) : !post ? (
-        <div className="state">Пост не найден</div>
+        <div className="state">{t('post_not_found')}</div>
       ) : (
         <PostCard post={post} alreadyVoted={false} selfId={selfId} onOpenProfile={onOpenProfile} onPost={onPost} />
       )}
       {confirm && (
         <div className="confirm">
           <div className="confirm__box">
-            <div className="confirm__title">Скрыть образ из ленты?</div>
-            <div className="confirm__hint">Очки сохранятся. Вернуть можно из истории публикаций.</div>
+            <div className="confirm__title">{t('hide_confirm')}</div>
+            <div className="confirm__hint">{t('hide_confirm_hint')}</div>
             <div className="confirm__row">
-              <button className="confirm__no" onClick={() => setConfirm(false)} disabled={busy}>Отмена</button>
-              <button className="confirm__yes" onClick={hide} disabled={busy}>{busy ? '…' : 'Скрыть'}</button>
+              <button className="confirm__no" onClick={() => setConfirm(false)} disabled={busy}>{t('cancel')}</button>
+              <button className="confirm__yes" onClick={hide} disabled={busy}>{busy ? '…' : t('hide')}</button>
             </div>
           </div>
         </div>

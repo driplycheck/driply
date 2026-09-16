@@ -3,6 +3,7 @@ import { supabase } from './supabase.js'
 import { getInitData } from './telegram.js'
 import { avatarTier } from './tiers.js'
 import ReportModal from './ReportModal.jsx'
+import { t } from './i18n.js'
 
 const CATEGORY_ICON = {
   top: '👕',
@@ -17,11 +18,11 @@ const CATEGORY_ICON = {
 
 const AMOUNTS = [10, 50, 100]
 
-const ERRORS = {
-  ALREADY_VOTED: 'Ты уже оценил этот образ',
-  NOT_ENOUGH_CREDITS: 'Не хватает кредитов',
-  CANNOT_VOTE_OWN: 'Нельзя голосовать за свой образ',
-  AUTH_FAILED: 'Не удалось подтвердить вход',
+const ERROR_KEYS = {
+  ALREADY_VOTED: 'already_voted',
+  NOT_ENOUGH_CREDITS: 'not_enough_credits',
+  CANNOT_VOTE_OWN: 'cannot_vote_own',
+  AUTH_FAILED: 'auth_failed',
 }
 
 function getItems(post) {
@@ -119,7 +120,7 @@ function VoteControl({ score, voted, busy, picking, drips, onVote, onCoin }) {
           ))}
         </div>
       )}
-      <button className={`vote ${voted ? 'vote--done' : ''}`} disabled={busy} onClick={onCoin} aria-label="Оценить образ">
+      <button className={`vote ${voted ? 'vote--done' : ''}`} disabled={busy} onClick={onCoin} aria-label={t('vote_aria')}>
         <span className="vote__coin">
           {voted ? '✓' : busy ? '…' : <DripMark size={22} color="#1a1300" />}
         </span>
@@ -133,10 +134,10 @@ function VoteControl({ score, voted, busy, picking, drips, onVote, onCoin }) {
 function CardRail({ hasItems, showItems, onToggleItems, onPost, onReport, ...voteProps }) {
   return (
     <div className="rail">
-      {onReport && <RailButton label="Пожаловаться" onClick={onReport}>🚩</RailButton>}
-      <RailButton label="Выложить образ" onClick={onPost}><PlusIcon /></RailButton>
+      {onReport && <RailButton label={t('report')} onClick={onReport}>🚩</RailButton>}
+      <RailButton label={t('post_look')} onClick={onPost}><PlusIcon /></RailButton>
       {hasItems && (
-        <RailButton label="Вещи на образе" active={showItems} onClick={onToggleItems}>
+        <RailButton label={t('items_aria')} active={showItems} onClick={onToggleItems}>
           <ItemsIcon />
         </RailButton>
       )}
@@ -177,15 +178,15 @@ export default function PostCard({ post, alreadyVoted, onOpenProfile, onPost, se
       const id = Date.now()
       setDrips((d) => [...d, { id, amount }])
       setTimeout(() => setDrips((d) => d.filter((x) => x.id !== id)), 900)
-      flash(`Осталось ${res.remaining_credits} кредитов`)
+      flash(t('credits_left', { n: res.remaining_credits }))
     } else {
       if (res.code === 'ALREADY_VOTED') setVotedLocal(true)
-      flash(ERRORS[res.code] || 'Не получилось, попробуй ещё раз')
+      flash(ERROR_KEYS[res.code] ? t(ERROR_KEYS[res.code]) : t('retry_failed'))
     }
   }
 
   function onCoin() {
-    if (voted) return flash('Уже оценил')
+    if (voted) return flash(t('already_voted_short'))
     setPicking((p) => !p)
   }
 

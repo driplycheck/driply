@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from './supabase.js'
 import { avatarTier } from './tiers.js'
+import { t, styleName } from './i18n.js'
 
 function PostGrid({ posts, onOpenPost }) {
   return (
@@ -70,7 +71,7 @@ export default function Search({ onClose, onOpenProfile, onOpenPost, onOpenTop }
   }
 
   async function openStyle(s) {
-    const label = `${s.emoji || ''} ${s.name_ru}`.trim()
+    const label = `${s.emoji || ''} ${styleName(s)}`.trim()
     setItemView({ label, posts: null })
     const { data } = await supabase.rpc('posts_by_style', { p_uid: 0, p_style_id: s.id })
     setItemView({ label, posts: data || [] })
@@ -80,15 +81,15 @@ export default function Search({ onClose, onOpenProfile, onOpenPost, onOpenTop }
     return (
       <div className="search">
         <header className="search__top">
-          <button className="search__close" onClick={() => setItemView(null)}>‹ Назад</button>
+          <button className="search__close" onClick={() => setItemView(null)}>{t('back')}</button>
           <span className="search__title">{itemView.label}</span>
           <span className="search__spacer" />
         </header>
         <div className="search__body">
           {!itemView.posts ? (
-            <div className="state">Загрузка…</div>
+            <div className="state">{t('loading')}</div>
           ) : itemView.posts.length === 0 ? (
-            <div className="state">Пока нет образов в этой категории</div>
+            <div className="state">{t('no_looks_in_style')}</div>
           ) : (
             <PostGrid posts={itemView.posts} onOpenPost={onOpenPost} />
           )}
@@ -100,10 +101,10 @@ export default function Search({ onClose, onOpenProfile, onOpenPost, onOpenTop }
   return (
     <div className="search">
       <header className="search__top">
-        <button className="search__close" onClick={onClose}>‹ Назад</button>
+        <button className="search__close" onClick={onClose}>{t('back')}</button>
         <input
           className="search__input field"
-          placeholder="Люди и вещи"
+          placeholder={t('search_placeholder')}
           value={q}
           onChange={(e) => setQ(e.target.value)}
           autoFocus
@@ -113,37 +114,37 @@ export default function Search({ onClose, onOpenProfile, onOpenPost, onOpenTop }
         {q.trim().length < 2 ? (
           <>
             <div className="ssection">
-              <div className="ssection__h">Рейтинг</div>
+              <div className="ssection__h">{t('sec_rating')}</div>
               <button className="sresult" onClick={onOpenTop}>
                 <div className="sresult__icon">🏆</div>
                 <div className="sresult__text">
-                  <div className="sresult__name">Топ по стилю</div>
-                  <div className="sresult__sub">Кто на каком месте</div>
+                  <div className="sresult__name">{t('top_style')}</div>
+                  <div className="sresult__sub">{t('top_style_sub')}</div>
                 </div>
               </button>
             </div>
             {styles.length > 0 && (
               <div className="ssection">
-                <div className="ssection__h">Стили</div>
+                <div className="ssection__h">{t('sec_styles')}</div>
                 <div className="stylegrid">
                   {styles.map((s) => (
                     <button className="stylecard" key={s.id} onClick={() => openStyle(s)}>
                       <span className="stylecard__emoji">{s.emoji}</span>
-                      <span className="stylecard__name">{s.name_ru}</span>
+                      <span className="stylecard__name">{styleName(s)}</span>
                     </button>
                   ))}
                 </div>
               </div>
             )}
-            <div className="state">Введи ник человека или вещь</div>
+            <div className="state">{t('search_hint')}</div>
           </>
         ) : loading ? (
-          <div className="state">Ищем…</div>
+          <div className="state">{t('searching')}</div>
         ) : (
           <>
             {people.length > 0 && (
               <div className="ssection">
-                <div className="ssection__h">Люди</div>
+                <div className="ssection__h">{t('sec_people')}</div>
                 {people.map((u) => (
                   <button className="sresult" key={u.id} onClick={() => onOpenProfile(u.id)}>
                     {u.avatar_url && (
@@ -161,7 +162,7 @@ export default function Search({ onClose, onOpenProfile, onOpenPost, onOpenTop }
             )}
             {items.length > 0 && (
               <div className="ssection">
-                <div className="ssection__h">Вещи</div>
+                <div className="ssection__h">{t('sec_items')}</div>
                 {items.map((it) => (
                   <button className="sresult" key={it.id} onClick={() => openItem(it)}>
                     <div className="sresult__icon">🔖</div>
@@ -174,7 +175,7 @@ export default function Search({ onClose, onOpenProfile, onOpenPost, onOpenTop }
               </div>
             )}
             {people.length === 0 && items.length === 0 && (
-              <div className="state">Ничего не найдено</div>
+              <div className="state">{t('nothing_found')}</div>
             )}
           </>
         )}

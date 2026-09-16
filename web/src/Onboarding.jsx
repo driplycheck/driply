@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from './supabase.js'
 import { getInitData, getStartParam } from './telegram.js'
+import { t } from './i18n.js'
 
 export default function Onboarding({ tgUser, onDone }) {
   const [name, setName] = useState(tgUser?.first_name || '')
@@ -24,7 +25,7 @@ export default function Onboarding({ tgUser, onDone }) {
 
   async function submit() {
     const nick = name.trim()
-    if (!nick) { setError('Придумай ник'); return }
+    if (!nick) { setError(t('nick_required')); return }
     setBusy(true)
     setError(null)
     try {
@@ -65,7 +66,7 @@ export default function Onboarding({ tgUser, onDone }) {
       }
       onDone({ display_name: nick, avatar_url: avatarUrl })
     } catch (e) {
-      setError('Не получилось сохранить, попробуй ещё раз')
+      setError(t('save_failed'))
       setBusy(false)
     }
   }
@@ -73,18 +74,18 @@ export default function Onboarding({ tgUser, onDone }) {
   return (
     <div className="onb">
       <div className="onb__body">
-        <h1 className="onb__title">Создай профиль</h1>
-        <p className="onb__sub">Так тебя увидят в Driply</p>
+        <h1 className="onb__title">{t('onb_title')}</h1>
+        <p className="onb__sub">{t('onb_sub')}</p>
 
         <label className="onb__ava tier-base">
           {preview ? <img src={preview} alt="" /> : <span className="onb__plus">＋</span>}
           <input type="file" accept="image/*" onChange={onPickFile} hidden />
         </label>
-        <span className="onb__avahint">Нажми, чтобы сменить фото</span>
+        <span className="onb__avahint">{t('avatar_hint')}</span>
 
         <input
           className="field onb__nick"
-          placeholder="Ник"
+          placeholder={t('nick_placeholder')}
           maxLength={24}
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -92,18 +93,18 @@ export default function Onboarding({ tgUser, onDone }) {
 
         <div className="gender-pick">
           <button type="button" className={`gender-opt ${gender === 'male' ? 'gender-opt--on' : ''}`}
-            onClick={() => setGender('male')}>👨 Парень</button>
+            onClick={() => setGender('male')}>👨 {t('gender_male')}</button>
           <button type="button" className={`gender-opt ${gender === 'female' ? 'gender-opt--on' : ''}`}
-            onClick={() => setGender('female')}>👩 Девушка</button>
+            onClick={() => setGender('female')}>👩 {t('gender_female')}</button>
         </div>
         <button type="button" className="gender-skip" onClick={() => setGender(null)}>
-          Пропустить
+          {t('skip')}
         </button>
 
         {error && <div className="composer__err">{error}</div>}
 
         <button className="onb__btn" onClick={submit} disabled={busy || !name.trim()}>
-          {busy ? '…' : 'Продолжить'}
+          {busy ? '…' : t('continue')}
         </button>
       </div>
     </div>

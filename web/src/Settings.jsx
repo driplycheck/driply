@@ -149,7 +149,7 @@ export default function Settings({ me, lang, onLang, side, onSide, onClose, onEd
           <span className="srow__label">{t('support')}</span>
           <span className="srow__chev">›</span>
         </a>
-        <SettingsLink label="О Driply" onClick={() => setAboutOpen(true)} />
+        <SettingsLink label={t('about_app')} onClick={() => setAboutOpen(true)} />
         <div className="srow">
           <span className="srow__label">{t('version')}</span>
           <span className="srow__hint">{APP_VERSION}</span>

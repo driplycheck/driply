@@ -124,24 +124,24 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
         <button className="profile__close" onClick={onClose}>{t('back')}</button>
         <div className="profile__topright">
           {isSelf && (
-            <button className="profile__archive" onClick={onOpenVotes} aria-label="Мои оценки">💧</button>
+            <button className="profile__archive" onClick={onOpenVotes} aria-label={t('my_votes')}>💧</button>
           )}
           {isSelf && (
-            <button className="profile__archive" onClick={onOpenArchive} aria-label="Архив">🗂</button>
+            <button className="profile__archive" onClick={onOpenArchive} aria-label={t('archive_aria')}>🗂</button>
           )}
           {isSelf && (
-            <button className="profile__settings" onClick={onOpenSettings} aria-label="Настройки">⚙</button>
+            <button className="profile__settings" onClick={onOpenSettings} aria-label={t('settings')}>⚙</button>
           )}
           {!isSelf && (
             <>
               <button className={`profile__block ${blocked ? 'profile__block--on' : ''}`}
                 onClick={() => setBlockState(!blocked)} disabled={busyBlock}
-                aria-label="Заблокировать" title={blocked ? t('unblock_user') : t('block_user')}>
+                aria-label={blocked ? t('unblock_user') : t('block_user')} title={blocked ? t('unblock_user') : t('block_user')}>
                 {blocked ? '↺' : '⊘'}
               </button>
               <button className="profile__block"
                 onClick={() => setReportOpen(true)}
-                aria-label="Пожаловаться" title="Пожаловаться">
+                aria-label={t('report')} title={t('report')}>
                 🚩
               </button>
             </>
@@ -149,9 +149,9 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
         </div>
       </header>
       {loading ? (
-        <div className="state">Загрузка…</div>
+        <div className="state">{t('loading')}</div>
       ) : !user ? (
-        <div className="state">Профиль не найден</div>
+        <div className="state">{t('profile_not_found')}</div>
       ) : (
         <div className="profile__body">
           <div className="profile__head">
@@ -174,7 +174,7 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
               <div className="status-wrap">
                 <div className={`status-plate status-plate--${user.badge}`}>
                   {
-                    { founder: '★ Основатель', cofounder: '★ Основатель', first_drip: '💧 first drip' }[user.badge]
+                    { founder: t('badge_founder'), cofounder: t('badge_founder'), first_drip: '💧 first drip' }[user.badge]
                     || user.badge
                   }
                 </div>
@@ -193,9 +193,9 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
 
           </div>
           <div className="profile__stats">
-            <div className="stat"><div className="stat__num">★ {user.style_score}</div><div className="stat__lbl">очки стиля</div></div>
-            <button className="stat stat--tap" onClick={onOpenTop}><div className="stat__num">#{rank}</div><div className="stat__lbl">в рейтинге</div></button>
-            <div className="stat"><div className="stat__num">{posts.length}</div><div className="stat__lbl">образов</div></div>
+            <div className="stat"><div className="stat__num">★ {user.style_score}</div><div className="stat__lbl">{t('stat_style_score')}</div></div>
+            <button className="stat stat--tap" onClick={onOpenTop}><div className="stat__num">#{rank}</div><div className="stat__lbl">{t('stat_rank')}</div></button>
+            <div className="stat"><div className="stat__num">{posts.length}</div><div className="stat__lbl">{t('stat_looks')}</div></div>
           </div>
           {posts.length > 0 ? (
             <div className="grid">
@@ -208,7 +208,7 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
               ))}
             </div>
           ) : (
-            <div className="state">Пока нет образов</div>
+            <div className="state">{t('no_looks')}</div>
           )}
         </div>
       )}

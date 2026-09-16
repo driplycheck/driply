@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from './supabase.js'
 import './MyVotes.css'
+import { t } from './i18n.js'
 
 function tgId() {
   return window.Telegram?.WebApp?.initDataUnsafe?.user?.id ?? 0
@@ -25,13 +26,13 @@ export default function MyVotes({ onClose, onOpenPost }) {
   return (
     <div className="myvotes">
       <div className="myvotes__head">
-        <button className="myvotes__back" onClick={onClose} aria-label="Назад">←</button>
-        <div className="myvotes__title">Мои оценки</div>
+        <button className="myvotes__back" onClick={onClose} aria-label={t('back')}>←</button>
+        <div className="myvotes__title">{t('my_votes')}</div>
       </div>
       <div className="myvotes__body">
-        {loading && <div className="myvotes__empty">Загрузка…</div>}
+        {loading && <div className="myvotes__empty">{t('loading')}</div>}
         {!loading && votes.length === 0 && (
-          <div className="myvotes__empty">Ты ещё не голосовал ни за один образ.</div>
+          <div className="myvotes__empty">{t('votes_empty')}</div>
         )}
         {votes.map((v) => {
           const name = v.author_name || (v.author_hide ? 'user' : '@' + (v.author_username || 'user'))
@@ -40,7 +41,7 @@ export default function MyVotes({ onClose, onOpenPost }) {
               {v.media_url && <img className="myvotes__thumb" src={v.media_url} alt="" />}
               <div className="myvotes__info">
                 <div className="myvotes__author">{name}</div>
-                <div className="myvotes__meta">Рейтинг образа: {v.score}</div>
+                <div className="myvotes__meta">{t('look_score', { n: v.score })}</div>
               </div>
               <div className="myvotes__amount">{v.amount} 💧</div>
             </button>

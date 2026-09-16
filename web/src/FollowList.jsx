@@ -35,10 +35,10 @@ export default function FollowList({ userId, mode, onClose, onOpenProfile }) {
 
       <div className="follist__body">
         {!people ? (
-          <div className="state">Загрузка…</div>
+          <div className="state">{t('loading')}</div>
         ) : people.length === 0 ? (
           <div className="state">
-            {tab === 'followers' ? 'Пока нет подписчиков' : 'Пока ни на кого не подписан'}
+            {tab === 'followers' ? t('no_followers') : t('no_following')}
           </div>
         ) : (
           people.map((u) => (

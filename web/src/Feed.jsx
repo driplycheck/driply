@@ -50,14 +50,14 @@ export default function Feed({ selfId, onOpenProfile, onPost }) {
       </div>
 
       {error ? (
-        <div className="state">Лента не загрузилась. {error}</div>
+        <div className="state">{t('feed_error')} {error}</div>
       ) : !posts ? (
-        <div className="state">Загружаем ленту…</div>
+        <div className="state">{t('feed_loading')}</div>
       ) : posts.length === 0 ? (
         <div className="state">
           {tab === 'following'
-            ? 'Пока пусто. Подпишись на кого-нибудь — их образы появятся здесь.'
-            : 'Пока пусто. Первый образ — за тобой.'}
+            ? t('feed_empty_following')
+            : t('feed_empty_all')}
         </div>
       ) : (
         <div className="feed">

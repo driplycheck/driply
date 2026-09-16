@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { initTelegram } from './telegram.js'
 import { supabase } from './supabase.js'
 import { avatarTier } from './tiers.js'
-import { loadLang, saveLang, setActiveLang } from './i18n.js'
+import { t, loadLang, saveLang, setActiveLang } from './i18n.js'
 import { loadSide, saveSide, setActiveSide } from './side.js'
 import { useOverlayStack } from './useOverlayStack.js'
 import Overlay from './ui/Overlay.jsx'
@@ -64,7 +64,8 @@ export default function App() {
     push('composer', { firstPost: true })
   }, [profile, openFirstComposer, push])
 
-  function changeLang(code) { saveLang(code); setLang(code) }
+  // setActiveLang до setLang: иначе перерисовка успевает пройти на старом языке
+  function changeLang(code) { saveLang(code); setActiveLang(code); setLang(code) }
   function changeSide(nextSide) { saveSide(nextSide); setSide(nextSide) }
 
   function flash(text) {
@@ -82,14 +83,14 @@ export default function App() {
       setProfile((p) => (p ? { ...p, daily_credits: result.balance } : p))
     }
     const gained = (result?.reward ?? 0) + (result?.ref_bonus ?? 0)
-    if (gained > 0) flash(`+${gained} 💧 за образ`)
+    if (gained > 0) flash(t('reward_toast', { n: gained }))
   }
   function onSaved(update) { setProfile((p) => ({ ...p, ...update })); pop(); touch('profile') }
   function onSettingsChanged(update) { setProfile((p) => ({ ...p, ...update })); touch('profile') }
   function onFollowChanged() { setFeedKey((k) => k + 1) }
   function onPostDeleted() { pop(); setFeedKey((k) => k + 1); touch('profile') }
 
-  if (profile === undefined) return <div className="state">Загрузка…</div>
+  if (profile === undefined) return <div className="state">{t('loading')}</div>
 
   if (profile === null && tgUser?.id) {
     return (
@@ -112,7 +113,7 @@ export default function App() {
         onPost={() => push('composer')}
       />
 
-      <button className="search-btn" onClick={() => push('search')} aria-label="Поиск">
+      <button className="search-btn" onClick={() => push('search')} aria-label={t('search_aria')}>
         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
           strokeWidth="2" strokeLinecap="round">
           <circle cx="11" cy="11" r="7" />
@@ -124,7 +125,7 @@ export default function App() {
         <button
           className={`me ${avatarTier(profile.style_score)}`}
           onClick={() => push('profile', { userId: profile.id })}
-          aria-label="Мой профиль"
+          aria-label={t('my_profile_aria')}
         >
           <img src={profile.avatar_url} alt="" />
         </button>

@@ -1,6 +1,7 @@
 import { supabase } from './supabase.js'
 import { tg } from './telegram.js'
 import { getInitData } from './telegram.js'
+import { t } from './i18n.js'
 
 function loadImg(src) {
   return new Promise((res) => {
@@ -40,11 +41,11 @@ function render({ user, rank, postsCount, avatarImg }) {
   ctx.fillStyle = '#f4c430'; ctx.font = '700 130px sans-serif'
   ctx.fillText('★ ' + user.style_score, W / 2, 1230)
   ctx.fillStyle = '#9a9aa2'; ctx.font = '400 50px sans-serif'
-  ctx.fillText('очки стиля', W / 2, 1300)
+  ctx.fillText(t('stat_style_score'), W / 2, 1300)
   ctx.fillStyle = '#fff'; ctx.font = '700 100px sans-serif'
-  ctx.fillText('#' + rank + ' в рейтинге', W / 2, 1470)
+  ctx.fillText(t('story_rank', { n: rank }), W / 2, 1470)
   ctx.fillStyle = '#9a9aa2'; ctx.font = '400 54px sans-serif'
-  ctx.fillText(postsCount + ' образов', W / 2, 1560)
+  ctx.fillText(t('story_looks', { n: postsCount }), W / 2, 1560)
   ctx.fillStyle = '#6a6a72'; ctx.font = '400 46px sans-serif'
   ctx.fillText('t.me/Driplycheckbot', W / 2, 1800)
   return c
@@ -74,7 +75,7 @@ export async function shareRankCard({ user, rank, postsCount }) {
   const { data: pub } = supabase.storage.from('outfits').getPublicUrl(path)
   try {
     tg.shareToStory(pub.publicUrl, {
-      text: 'Мой стиль в Driply 🔥',
+      text: t('story_share_text'),
       widget_link: { url: 'https://t.me/Driplycheckbot', name: 'Driply' },
     })
   } catch {
