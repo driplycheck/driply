@@ -147,6 +147,7 @@
   width: 46px;
   cursor: pointer;
 }
+.itemadd__btn:disabled { opacity: 0.4; cursor: default; }
 
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .chip {

@@ -250,6 +250,23 @@ body {
   100% { opacity: 0; transform: translate(-50%, -52px) scale(1.15); }
 }
 
+.app-toast {
+  position: fixed;
+  left: 50%;
+  top: calc(env(safe-area-inset-top) + 68px);
+  transform: translateX(-50%);
+  z-index: 200;
+  background: rgba(244, 196, 48, 0.94);
+  color: #1a1300;
+  font-weight: 700;
+  font-size: 14px;
+  padding: 9px 16px;
+  border-radius: 999px;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+  white-space: nowrap;
+  animation: screenIn 0.2s ease-out;
+}
+
 .toast {
   position: absolute;
   left: 50%;

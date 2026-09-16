@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { supabase } from './supabase.js'
 import { getInitData } from './telegram.js'
+import { matchBrands } from './brands.js'
 
 const EXTRA_CATEGORIES = [
   { value: 'dress', label: '👗 Платье' },
@@ -16,6 +17,55 @@ const CATEGORIES = [
   { value: 'other', label: '✨ Другое' },
   ...EXTRA_CATEGORIES,
 ]
+
+// '%', '_' и '*' — wildcard-символы ilike, из пользовательского ввода их убираем
+function cleanTerm(value) {
+  return value.trim().replace(/[%_*]/g, ' ').replace(/\s+/g, ' ').trim()
+}
+
+// «Stussy» и «stussy» — один и тот же бренд, в списке он должен быть один раз
+function dedupe(values) {
+  const seen = new Set()
+  const out = []
+  for (const value of values) {
+    const text = (value || '').trim()
+    const key = text.toLowerCase()
+    if (!key || seen.has(key)) continue
+    seen.add(key)
+    out.push(text)
+  }
+  return out
+}
+
+// Подсказки из таблицы items: debounce, чтобы не дёргать базу на каждый символ
+function useItemSuggestions(column, term, brandFilter = '') {
+  const [remote, setRemote] = useState([])
+  const clean = cleanTerm(term)
+  const cleanBrand = cleanTerm(brandFilter)
+
+  useEffect(() => {
+    if (clean.length < 2) {
+      setRemote([])
+      return
+    }
+    let active = true
+    const timer = setTimeout(async () => {
+      let query = supabase
+        .from('items')
+        .select(column)
+        .ilike(column, `%${clean}%`)
+        .not(column, 'is', null)
+        .limit(24)
+      if (cleanBrand) query = query.ilike('brand', `%${cleanBrand}%`)
+      const { data, error } = await query
+      if (!active || error) return
+      setRemote(dedupe((data || []).map((row) => row[column])).slice(0, 6))
+    }, 250)
+    return () => { active = false; clearTimeout(timer) }
+  }, [column, clean, cleanBrand])
+
+  return remote
+}
 
 function StylePicker({ styles, selectedId, onSelect }) {
   if (styles.length === 0) return null
@@ -53,6 +103,9 @@ function SuggestionList({ suggestions, onSelect }) {
 }
 
 function ItemForm({ categories, category, brand, name, brandSuggestions, nameSuggestions, onCategory, onBrand, onName, onBrandSelect, onNameSelect, onAdd }) {
+  const [focused, setFocused] = useState(null)
+  const nameRef = useRef(null)
+
   return (
     <div className="itemadd">
       <select className="field" value={category} onChange={(e) => onCategory(e.target.value)}>
@@ -61,14 +114,39 @@ function ItemForm({ categories, category, brand, name, brandSuggestions, nameSug
         ))}
       </select>
       <div className="field-wrap">
-        <input className="field" placeholder="Бренд" value={brand} onChange={(e) => onBrand(e.target.value)} />
-        <SuggestionList suggestions={brandSuggestions} onSelect={onBrandSelect} />
+        <input
+          className="field"
+          placeholder="Бренд"
+          value={brand}
+          onChange={(e) => onBrand(e.target.value)}
+          onFocus={() => setFocused('brand')}
+          onBlur={() => setFocused(null)}
+        />
+        {focused === 'brand' && (
+          <SuggestionList
+            suggestions={brandSuggestions}
+            onSelect={(value) => { onBrandSelect(value); nameRef.current?.focus() }}
+          />
+        )}
       </div>
       <div className="field-wrap">
-        <input className="field" placeholder="Название" value={name} onChange={(e) => onName(e.target.value)} />
-        <SuggestionList suggestions={nameSuggestions} onSelect={onNameSelect} />
+        <input
+          ref={nameRef}
+          className="field"
+          placeholder="Название"
+          value={name}
+          onChange={(e) => onName(e.target.value)}
+          onFocus={() => setFocused('name')}
+          onBlur={() => setFocused(null)}
+        />
+        {focused === 'name' && (
+          <SuggestionList
+            suggestions={nameSuggestions}
+            onSelect={(value) => { onNameSelect(value); nameRef.current?.blur() }}
+          />
+        )}
       </div>
-      <button className="itemadd__btn" onClick={onAdd}>+</button>
+      <button className="itemadd__btn" onClick={onAdd} disabled={!name.trim()}>+</button>
     </div>
   )
 }
@@ -80,7 +158,7 @@ function AddedItems({ items, onRemove }) {
     <div className="chips">
       {items.map((item, index) => (
         <span className="chip" key={index} onClick={() => onRemove(index)}>
-          {item.brand} {item.name} ✕
+          {[item.brand, item.name].filter(Boolean).join(' ')} ✕
         </span>
       ))}
     </div>
@@ -99,9 +177,18 @@ export default function PostComposer({ onClose, onPosted, firstPost = false }) {
   const [error, setError] = useState(null)
   const [styles, setStyles] = useState([])
   const [styleId, setStyleId] = useState(null)
-  const [brandSuggestions, setBrandSuggestions] = useState([])
-  const [nameSuggestions, setNameSuggestions] = useState([])
   const [showDetails, setShowDetails] = useState(!firstPost)
+
+  // что уже заполнено в свёрнутых деталях: вещи, подпись, стиль
+  const detailsCount = items.length + (caption.trim() ? 1 : 0) + (styleId ? 1 : 0)
+
+  const remoteBrands = useItemSuggestions('brand', brand)
+  const nameSuggestions = useItemSuggestions('name', name, brand)
+  // сначала известные бренды (отвечают сразу), потом то, что уже вводили другие
+  const brandSuggestions = useMemo(
+    () => dedupe([...matchBrands(brand), ...remoteBrands]).slice(0, 6),
+    [brand, remoteBrands],
+  )
 
   useEffect(() => {
     let active = true
@@ -109,9 +196,7 @@ export default function PostComposer({ onClose, onPosted, firstPost = false }) {
       .select('id, name_ru, name_en, emoji')
       .eq('active', true)
       .order('sort_order')
-      .then(({ data, error }) => {
-        if (error) { console.error('STYLES_LOAD_ERROR', error); alert('styles error: ' + error.message) }
-        else { console.log('STYLES_LOADED', data?.length, data) }
+      .then(({ data }) => {
         if (active) setStyles(data || [])
       })
     return () => { active = false }
@@ -120,49 +205,6 @@ export default function PostComposer({ onClose, onPosted, firstPost = false }) {
   useEffect(() => () => {
     if (preview) URL.revokeObjectURL(preview)
   }, [preview])
-
-  useEffect(() => {
-    const term = brand.trim()
-    if (term.length < 2) {
-      setBrandSuggestions([])
-      return
-    }
-    let active = true
-    const timer = setTimeout(async () => {
-      const { data } = await supabase
-        .from('items')
-        .select('brand')
-        .ilike('brand', `%${term}%`)
-        .not('brand', 'is', null)
-        .limit(24)
-      if (!active) return
-      const brands = [...new Set((data || []).map((item) => item.brand).filter(Boolean))]
-      setBrandSuggestions(brands.slice(0, 6))
-    }, 250)
-    return () => { active = false; clearTimeout(timer) }
-  }, [brand])
-
-  useEffect(() => {
-    const term = name.trim()
-    if (term.length < 2) {
-      setNameSuggestions([])
-      return
-    }
-    let active = true
-    const timer = setTimeout(async () => {
-      let query = supabase
-        .from('items')
-        .select('name')
-        .ilike('name', `%${term}%`)
-        .limit(24)
-      if (brand.trim()) query = query.ilike('brand', brand.trim())
-      const { data } = await query
-      if (!active) return
-      const names = [...new Set((data || []).map((item) => item.name).filter(Boolean))]
-      setNameSuggestions(names.slice(0, 6))
-    }, 250)
-    return () => { active = false; clearTimeout(timer) }
-  }, [name, brand])
 
   function onPickFile(e) {
     const f = e.target.files?.[0]
@@ -177,8 +219,6 @@ export default function PostComposer({ onClose, onPosted, firstPost = false }) {
     setItems((arr) => [...arr, { category: cat, brand: brand.trim(), name: name.trim() }])
     setBrand('')
     setName('')
-    setBrandSuggestions([])
-    setNameSuggestions([])
   }
 
   function removeItem(idx) {
@@ -198,7 +238,7 @@ export default function PostComposer({ onClose, onPosted, firstPost = false }) {
       if (upErr) throw new Error('upload')
       const { data: pub } = supabase.storage.from('outfits').getPublicUrl(path)
 
-      const { error } = await supabase.functions.invoke('quick-handler', {
+      const { data: result, error } = await supabase.functions.invoke('quick-handler', {
         body: {
           action: 'create_post',
           initData: getInitData(),
@@ -213,7 +253,7 @@ export default function PostComposer({ onClose, onPosted, firstPost = false }) {
         try { code = (await error.context.json()).error } catch {}
         throw new Error(code)
       }
-      onPosted()
+      onPosted(result)
     } catch (e) {
       setError('Не удалось выложить, попробуй ещё раз')
       setBusy(false)
@@ -240,7 +280,7 @@ export default function PostComposer({ onClose, onPosted, firstPost = false }) {
 
         {firstPost && (
           <button className="details-toggle" type="button" onClick={() => setShowDetails((visible) => !visible)}>
-            {showDetails ? 'Скрыть детали' : 'Добавить детали'}
+            {showDetails ? 'Скрыть детали' : detailsCount > 0 ? `Детали · ${detailsCount}` : 'Добавить детали'}
             <span aria-hidden="true">{showDetails ? '⌃' : '⌄'}</span>
           </button>
         )}
@@ -268,8 +308,8 @@ export default function PostComposer({ onClose, onPosted, firstPost = false }) {
               onCategory={setCat}
               onBrand={setBrand}
               onName={setName}
-              onBrandSelect={(value) => { setBrand(value); setBrandSuggestions([]) }}
-              onNameSelect={(value) => { setName(value); setNameSuggestions([]) }}
+              onBrandSelect={setBrand}
+              onNameSelect={setName}
               onAdd={addItem}
             />
             <AddedItems items={items} onRemove={removeItem} />

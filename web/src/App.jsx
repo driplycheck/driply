@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { initTelegram } from './telegram.js'
 import { supabase } from './supabase.js'
 import { avatarTier } from './tiers.js'
@@ -33,6 +33,8 @@ export default function App() {
   const [side, setSide] = useState(loadSide())
   const [feedKey, setFeedKey] = useState(0)
   const [openFirstComposer, setOpenFirstComposer] = useState(false)
+  const [toast, setToast] = useState(null)
+  const toastTimer = useRef(null)
 
   const { top, push, replace, pop, touch } = useOverlayStack()
 
@@ -65,7 +67,23 @@ export default function App() {
   function changeLang(code) { saveLang(code); setLang(code) }
   function changeSide(nextSide) { saveSide(nextSide); setSide(nextSide) }
 
-  function onPosted() { pop(); setFeedKey((k) => k + 1) }
+  function flash(text) {
+    setToast(text)
+    clearTimeout(toastTimer.current)
+    toastTimer.current = setTimeout(() => setToast(null), 2600)
+  }
+
+  // create_post возвращает награду и новый баланс — иначе пилюля висит со старым числом
+  function onPosted(result) {
+    pop()
+    setFeedKey((k) => k + 1)
+    touch('profile')
+    if (result?.balance != null) {
+      setProfile((p) => (p ? { ...p, daily_credits: result.balance } : p))
+    }
+    const gained = (result?.reward ?? 0) + (result?.ref_bonus ?? 0)
+    if (gained > 0) flash(`+${gained} 💧 за образ`)
+  }
   function onSaved(update) { setProfile((p) => ({ ...p, ...update })); pop(); touch('profile') }
   function onSettingsChanged(update) { setProfile((p) => ({ ...p, ...update })); touch('profile') }
   function onFollowChanged() { setFeedKey((k) => k + 1) }
@@ -114,6 +132,8 @@ export default function App() {
       {profile && (
         <div className="balance-pill">💧 {profile.daily_credits ?? 0}</div>
       )}
+
+      {toast && <div className="app-toast">{toast}</div>}
 
       {top?.type === 'search' && (
         <Overlay onClose={pop}>
