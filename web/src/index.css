@@ -1,7 +1,5 @@
 :root {
   --muted: #9a9aa3;
-  --gold: #f4c430;
-  --gold-soft: rgba(244, 196, 48, 0.16);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -73,9 +71,9 @@ body {
   font-family: var(--font-display);
   font-weight: 700;
   font-size: 13px;
-  color: var(--gold);
-  background: var(--gold-soft);
-  border: 1px solid rgba(244, 196, 48, 0.35);
+  color: var(--on-photo);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
   padding: 6px 12px;
   border-radius: 999px;
   backdrop-filter: blur(8px);
@@ -139,7 +137,7 @@ body {
   transition: transform 0.12s ease, border-color 0.12s ease;
 }
 .menu__btn:active { transform: scale(0.9); }
-.menu__btn--on { border-color: var(--gold); color: var(--gold); }
+.menu__btn--on { background: var(--on-photo); border-color: var(--on-photo); color: var(--on-photo-ink); }
 .menu__btn--post svg { display: block; }
 
 .votewrap {
@@ -314,7 +312,7 @@ body {
   transition: transform 0.12s ease, background 0.15s ease;
 }
 .railic:active { transform: scale(0.9); }
-.railic--on { background: var(--gold); color: #1a1300; border-color: var(--gold); }
+.railic--on { background: var(--on-photo); color: var(--on-photo-ink); border-color: var(--on-photo); }
 .vote__score { display: inline-flex; align-items: center; gap: 5px; }
 .vote__coin { display: grid; place-items: center; }
 

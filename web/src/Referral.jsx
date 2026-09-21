@@ -97,7 +97,7 @@ export default function Referral({ me, onClose }) {
           </div>
         </div>
 
-        <button className="ref-action ref-action--gold" onClick={shareLink}>{t('invite_friend')}</button>
+        <button className="ref-action ref-action--primary" onClick={shareLink}>{t('invite_friend')}</button>
         <button className="ref-action" onClick={shareStory} disabled={busyShare}>
           {busyShare ? '…' : t('share_story')}
         </button>

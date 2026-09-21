@@ -57,7 +57,7 @@
   width: 44px; height: 44px; flex: none;
   border-radius: 12px;
   display: grid; place-items: center;
-  background: var(--gold-soft);
+  background: var(--surface-2);
   font-size: 20px;
 }
 .sresult__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
@@ -74,8 +74,8 @@
   font-weight: 700;
   font-size: 14px;
   cursor: pointer;
-  background: var(--gold);
-  color: #1a1300;
+  background: var(--primary);
+  color: var(--on-primary);
 }
 .follow-btn--on {
   background: rgba(255, 255, 255, 0.08);
@@ -124,7 +124,7 @@
   cursor: pointer;
   text-transform: capitalize;
 }
-.follist__tab--on { background: var(--gold); color: #1a1300; border-color: var(--gold); }
+.follist__tab--on { background: var(--primary); color: var(--on-primary); border-color: var(--primary); }
 
 .stylegrid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 12px; }
 .stylecard { display: flex; align-items: center; gap: 8px; padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.04); color: #fff; cursor: pointer; }
@@ -136,6 +136,6 @@
 
 .about-body { padding: 16px; color: #fff; line-height: 1.5; }
 .about-body p { margin: 0 0 16px; color: rgba(255,255,255,0.85); font-size: 14px; }
-.about-body h3 { font-size: 15px; font-weight: 600; margin: 20px 0 10px; color: #f5c451; }
+.about-body h3 { font-size: 15px; font-weight: 600; margin: 20px 0 10px; color: var(--text); }
 .about-body ul { margin: 0 0 16px; padding-left: 18px; }
 .about-body li { margin-bottom: 8px; font-size: 14px; color: rgba(255,255,255,0.8); }

@@ -39,7 +39,7 @@ const DICT = {
     referral: 'Реферальная программа',
     ref_invited: 'приглашено', ref_earned: 'заработано',
     ref_your_link: 'Твоя ссылка', copy: 'Копировать',
-    ref_note: 'Друг получит 200 кредитов, ты — 500, когда он выложит первый образ.',
+    ref_note: 'Друг получит 200 дрипов, ты — 500, когда он выложит первый образ.',
     side_right: 'Справа', side_left: 'Слева',
     tab_all: 'Все', tab_following: 'Подписки',
     follow: 'Подписаться', unfollow: 'Отписаться',
@@ -88,10 +88,10 @@ const DICT = {
     report: 'Пожаловаться',
     post_look: 'Выложить образ',
     items_aria: 'Вещи на образе',
-    credits_left: 'Осталось {n} кредитов',
+    credits_left: 'Осталось дрипов: {n}',
     already_voted: 'Ты уже оценил этот образ',
     already_voted_short: 'Уже оценил',
-    not_enough_credits: 'Не хватает кредитов',
+    not_enough_credits: 'Не хватает дрипов',
     cannot_vote_own: 'Нельзя голосовать за свой образ',
     auth_failed: 'Не удалось подтвердить вход',
 
@@ -199,7 +199,7 @@ const DICT = {
     referral: 'Referral program',
     ref_invited: 'invited', ref_earned: 'earned',
     ref_your_link: 'Your link', copy: 'Copy',
-    ref_note: 'Your friend gets 200 credits, you get 500 once they post their first look.',
+    ref_note: 'Your friend gets 200 drips, you get 500 once they post their first look.',
     side_right: 'Right', side_left: 'Left',
     tab_all: 'All', tab_following: 'Following',
     follow: 'Follow', unfollow: 'Unfollow',
@@ -248,10 +248,10 @@ const DICT = {
     report: 'Report',
     post_look: 'Post a look',
     items_aria: 'Items in this look',
-    credits_left: '{n} credits left',
+    credits_left: '{n} drips left',
     already_voted: 'You already rated this look',
     already_voted_short: 'Already rated',
-    not_enough_credits: 'Not enough credits',
+    not_enough_credits: 'Not enough drips',
     cannot_vote_own: 'You can’t rate your own look',
     auth_failed: 'Couldn’t verify your login',
 
@@ -345,7 +345,7 @@ let active = loadLang()
 export function setActiveLang(l) { if (DICT[l]) active = l }
 export function activeLang() { return active }
 
-// t('credits_left', { n: 5 }) → «Осталось 5 кредитов»
+// t('credits_left', { n: 5 }) → «Осталось дрипов: 5»
 export function t(key, params) {
   const raw = (DICT[active] && DICT[active][key]) || DICT.ru[key] || key
   if (!params) return raw

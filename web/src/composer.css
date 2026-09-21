@@ -6,15 +6,15 @@
   height: 44px;
   border-radius: 50%;
   border: none;
-  background: var(--gold);
-  color: #1a1300;
+  background: var(--primary);
+  color: var(--on-primary);
   font-size: 26px;
   font-weight: 700;
   line-height: 1;
   display: grid;
   place-items: center;
   cursor: pointer;
-  box-shadow: 0 6px 18px rgba(244, 196, 48, 0.4);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
   z-index: 50;
 }
 .fab:active { transform: scale(0.9); }
@@ -45,7 +45,7 @@
 .composer__post {
   font-family: var(--font-display);
   font-weight: 700;
-  color: var(--gold);
+  color: var(--primary);
 }
 .composer__post:disabled { opacity: 0.5; }
 .composer__title { font-weight: 600; font-size: 16px; }
@@ -56,10 +56,10 @@
   justify-content: space-between;
   width: 100%;
   padding: 13px 14px;
-  border: 1px solid rgba(244, 196, 48, 0.35);
+  border: 1px solid var(--border);
   border-radius: 12px;
-  background: rgba(244, 196, 48, 0.08);
-  color: var(--gold);
+  background: var(--surface-2);
+  color: var(--text);
   font: inherit;
   font-size: 14px;
   font-weight: 600;
@@ -138,8 +138,8 @@
 }
 .suggestion:hover, .suggestion:focus-visible { background: rgba(255, 255, 255, 0.1); outline: none; }
 .itemadd__btn {
-  background: var(--gold);
-  color: #1a1300;
+  background: var(--primary);
+  color: var(--on-primary);
   border: none;
   border-radius: 12px;
   font-size: 22px;
@@ -152,9 +152,9 @@
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .chip {
   font-size: 13px;
-  background: var(--gold-soft);
-  border: 1px solid rgba(244, 196, 48, 0.35);
-  color: var(--gold);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text);
   padding: 7px 12px;
   border-radius: 12px;
   cursor: pointer;
@@ -171,4 +171,4 @@
 .stylepick__row { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
 .stylepick__row::-webkit-scrollbar { display: none; }
 .stylechip { flex-shrink: 0; padding: 7px 12px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.16); background: rgba(255,255,255,0.04); color: #fff; font-size: 13px; white-space: nowrap; cursor: pointer; }
-.stylechip--on { background: #f5c451; border-color: #f5c451; color: #0a0a0b; font-weight: 600; }
+.stylechip--on { background: var(--primary); border-color: var(--primary); color: var(--on-primary); font-weight: 600; }

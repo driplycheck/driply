@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from './supabase.js'
 import { avatarTier } from './tiers.js'
 import { t, styleName } from './i18n.js'
+import DripCoin from './components/ui/DripCoin.jsx'
 
 function PostGrid({ posts, onOpenPost }) {
   return (
@@ -13,7 +14,7 @@ function PostGrid({ posts, onOpenPost }) {
           style={{ backgroundImage: `url(${post.media_url})` }}
           onClick={() => onOpenPost(post.id)}
         >
-          <span className="grid__score">★ {post.score}</span>
+          <span className="grid__score"><DripCoin size={11} /> {post.score}</span>
         </button>
       ))}
     </div>

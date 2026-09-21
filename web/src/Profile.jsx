@@ -194,7 +194,7 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
 
           </div>
           <div className="profile__stats">
-            <div className="stat"><div className="stat__num">★ {user.style_score}</div><div className="stat__lbl">{t('stat_style_score')}</div></div>
+            <div className="stat"><div className="stat__num"><DripCoin size={16} /> {user.style_score}</div><div className="stat__lbl">{t('stat_style_score')}</div></div>
             <button className="stat stat--tap" onClick={onOpenTop}><div className="stat__num">#{rank}</div><div className="stat__lbl">{t('stat_rank')}</div></button>
             <div className="stat"><div className="stat__num">{posts.length}</div><div className="stat__lbl">{t('stat_looks')}</div></div>
           </div>
@@ -204,7 +204,7 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
                 <button className="grid__item" key={p.id}
                   style={{ backgroundImage: `url(${p.media_url})` }}
                   onClick={() => onOpenPost(p.id)}>
-                  <span className="grid__score">★ {p.score}</span>
+                  <span className="grid__score"><DripCoin size={11} /> {p.score}</span>
                 </button>
               ))}
             </div>

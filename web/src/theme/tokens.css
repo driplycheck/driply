@@ -4,6 +4,7 @@
 :root {
   --on-photo: #FFFFFF;
   --on-photo-muted: rgba(255, 255, 255, 0.72);
+  --on-photo-ink: #0A0A0A;
   --scrim: linear-gradient(transparent, rgba(0, 0, 0, 0.85));
 
   --glass-bg: rgba(9, 9, 11, 0.45);
@@ -34,6 +35,7 @@
   --on-drip: #09090B;
   --notify: #F2F2F2;
   --status: #D4D4D4;
+  --on-status: #0A0A0A;
   --glow-1: transparent;
   --glow-2: transparent;
   --tabbar-bg: rgba(22, 22, 22, 0.9);
@@ -55,6 +57,7 @@
   --on-drip: #09090B;
   --notify: #FF4D8D;
   --status: #7C5CFF;
+  --on-status: #09090B;
   --glow-1: rgba(124, 92, 255, 0.35);
   --glow-2: rgba(198, 255, 61, 0.12);
   --tabbar-bg: rgba(22, 22, 28, 0.9);
@@ -69,13 +72,14 @@
   --border: rgba(17, 17, 17, 0.08);
   --text: #111111;
   --text-2: #5E5A52;
-  --text-muted: #7A766E;
+  --text-muted: #6E6A62;
   --primary: #111111;
   --on-primary: #F3F1EC;
   --drip: #111111;
   --on-drip: #F3F1EC;
   --notify: #FF4D2E;
   --status: #5E5A52;
+  --on-status: #F3F1EC;
   --glow-1: transparent;
   --glow-2: transparent;
   --tabbar-bg: rgba(255, 255, 255, 0.9);

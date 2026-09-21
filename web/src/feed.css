@@ -20,7 +20,7 @@
   padding: 7px 16px; border-radius: 999px; cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease;
 }
-.feed-tab--on { background: var(--gold); color: #1a1300; }
+.feed-tab--on { background: var(--on-photo); color: var(--on-photo-ink); }
 
 /* --- viewport + zoom fixes (грузится последним, перекрывает базу) --- */
 html, body, #root { height: var(--app-height, 100dvh); overflow-x: hidden; -webkit-text-size-adjust: 100%; }
@@ -66,7 +66,7 @@ input, textarea, select, .field { font-size: 16px; }
 
 
 .confirm__hint { font-size: 12px; color: var(--muted); text-align: center; margin: -8px 0 16px; }
-.confirm__yes { background: var(--gold) !important; color: #1a1300 !important; }
+.confirm__yes { background: var(--primary) !important; color: var(--on-primary) !important; }
 
 .balance-pill {
   position: fixed;
@@ -88,4 +88,4 @@ input, textarea, select, .field { font-size: 16px; }
 }
 
 .card__style { margin: 4px 0; }
-.stylebadge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 999px; background: rgba(245,196,81,0.18); border: 1px solid rgba(245,196,81,0.4); color: #f5c451; font-size: 12px; font-weight: 600; }
+.stylebadge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 999px; background: var(--glass-bg); border: 1px solid var(--glass-border); color: var(--on-photo); backdrop-filter: blur(16px); font-size: 12px; font-weight: 600; }
