@@ -3,8 +3,12 @@ import { supabase } from './supabase.js'
 import { getInitData } from './telegram.js'
 import { avatarTier } from './tiers.js'
 import ReportModal from './ReportModal.jsx'
-import { t } from './i18n.js'
+import { Flag, Shirt, Check } from 'lucide-react'
+import { t, styleName, timeAgo } from './i18n.js'
 import DripCoin from './components/ui/DripCoin.jsx'
+import OutfitCard from './components/ui/OutfitCard.jsx'
+import GlassBadge from './components/ui/GlassBadge.jsx'
+import Button from './components/ui/Button.jsx'
 
 const CATEGORY_ICON = {
   top: '👕',
@@ -47,106 +51,51 @@ async function castVote(postId, amount) {
   }
 }
 
-function CardContent({ post, author, authorName, items, showItems, onOpenProfile }) {
+function DripControl({ voted, busy, picking, drips, onVote, onOpen }) {
   return (
-    <div className="card__bottom">
-      <div className="author" onClick={onOpenProfile} style={{ cursor: 'pointer' }}>
-        {author.avatar_url && (
-          <img className={`author__ava ${avatarTier(author.style_score)}`} src={author.avatar_url} alt="" />
-        )}
-        <span className="author__name">{authorName}</span>
-      </div>
-      {post.caption && <p className="caption">{post.caption}</p>}
-      {post.style && (
-        <div className="card__style">
-          <span className="stylebadge">{post.style.emoji} {post.style.name_ru}</span>
-        </div>
-      )}
-      {showItems && items.length > 0 && (
-        <div className="tags">
-          {items.map((item, index) => (
-            <span className="tag" key={index}>
-              {CATEGORY_ICON[item.category] || '✨'} {item.brand} {item.name}
-            </span>
+    <div className="dripctl">
+      {picking && !voted && (
+        <div className="dripctl__picker">
+          {AMOUNTS.map((amount) => (
+            <button key={amount} className="dripctl__opt" onClick={() => onVote(amount)}>
+              <DripCoin size={14} tone="ink" /> +{amount}
+            </button>
           ))}
         </div>
       )}
+      {voted ? (
+        <Button variant="secondary" className="dripctl__done" onClick={onOpen}>
+          <Check size={16} strokeWidth={2.6} /> {t('dripped')}
+        </Button>
+      ) : (
+        <Button variant="drip" disabled={busy} onClick={onOpen} aria-label={t('vote_aria')}
+          aria-expanded={picking}>
+          {busy ? '…' : t('drip_it')}
+        </Button>
+      )}
+      {drips.map((drip) => <span className="dripctl__float" key={drip.id}>+{drip.amount}</span>)}
     </div>
   )
 }
 
-function PlusIcon() {
+function IconAction({ label, active = false, onClick, children }) {
   return (
-    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
-      <path d="M12 5v14M5 12h14" />
-    </svg>
-  )
-}
-
-function ItemsIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 4a2 2 0 0 0-1 3.7L12 9l1-1.3A2 2 0 0 0 12 4z" />
-      <path d="M12 9c-1 1.5-7 4.5-8.5 6.5C2 17 3 19 5 19h14c2 0 3-2 1.5-3.5C19 13.5 13 10.5 12 9z" />
-    </svg>
-  )
-}
-
-function RailButton({ label, active = false, onClick, children }) {
-  return (
-    <button className={`railic ${active ? 'railic--on' : ''}`} onClick={onClick} aria-label={label}>
+    <button className={`ocard__icon ${active ? 'ocard__icon--on' : ''}`} onClick={onClick} aria-label={label}
+      aria-pressed={active}>
       {children}
     </button>
   )
 }
 
-function VoteControl({ score, voted, busy, picking, drips, onVote, onCoin }) {
-  return (
-    <>
-      {picking && !voted && (
-        <div className="picker">
-          {AMOUNTS.map((amount) => (
-            <button key={amount} className="picker__opt" onClick={() => onVote(amount)}>
-              +{amount}
-            </button>
-          ))}
-        </div>
-      )}
-      <button className={`vote ${voted ? 'vote--done' : ''}`} disabled={busy} onClick={onCoin} aria-label={t('vote_aria')}>
-        <span className="vote__coin">
-          {voted ? '✓' : busy ? '…' : <DripCoin size={26} tone="ink" />}
-        </span>
-        {drips.map((drip) => <span className="drip" key={drip.id}>+{drip.amount}</span>)}
-      </button>
-      <span className="vote__score"><DripCoin size={14} /> {score}</span>
-    </>
-  )
-}
-
-function CardRail({ hasItems, showItems, onToggleItems, onPost, onReport, ...voteProps }) {
-  return (
-    <div className="rail">
-      {onReport && <RailButton label={t('report')} onClick={onReport}>🚩</RailButton>}
-      <RailButton label={t('post_look')} onClick={onPost}><PlusIcon /></RailButton>
-      {hasItems && (
-        <RailButton label={t('items_aria')} active={showItems} onClick={onToggleItems}>
-          <ItemsIcon />
-        </RailButton>
-      )}
-      <VoteControl {...voteProps} />
-    </div>
-  )
-}
-
-export default function PostCard({ post, alreadyVoted, onOpenProfile, onPost, selfId, onReported }) {
+export default function PostCard({ post, alreadyVoted, onOpenProfile, selfId, onReported }) {
   const [reportOpen, setReportOpen] = useState(false)
   const author = post.users || {}
   const items = getItems(post)
-  const authorName = getAuthorName(author)
+  const style = post.style || post.styles || null
 
   const [score, setScore] = useState(post.score)
   const [votedLocal, setVotedLocal] = useState(false)
-  const voted = votedLocal || alreadyVoted
+  const voted = votedLocal || alreadyVoted || !!post.voted
   const [picking, setPicking] = useState(false)
   const [busy, setBusy] = useState(false)
   const [toast, setToast] = useState(null)
@@ -177,44 +126,64 @@ export default function PostCard({ post, alreadyVoted, onOpenProfile, onPost, se
     }
   }
 
-  function onCoin() {
+  function onOpenDrip() {
     if (voted) return flash(t('already_voted_short'))
     setPicking((p) => !p)
   }
 
   const openProfile = () => author.id && onOpenProfile?.(author.id)
-  const reportPost = selfId && post.user_id !== selfId && post.users?.id !== selfId
+  const canReport = selfId && post.user_id !== selfId && post.users?.id !== selfId
 
   return (
-    <section className="card" style={{ '--img': `url(${post.media_url})` }}>
-      <div className="card__bg" />
-      <div className="card__scrim" />
-
-      <CardContent
-        post={post}
-        author={author}
-        authorName={authorName}
-        items={items}
-        showItems={showItems}
-        onOpenProfile={openProfile}
-      />
-      <CardRail
-        hasItems={items.length > 0}
-        showItems={showItems}
-        onToggleItems={() => setShowItems((visible) => !visible)}
-        onPost={onPost}
-        onReport={reportPost ? () => setReportOpen(true) : null}
-        score={score}
-        voted={voted}
-        busy={busy}
-        picking={picking}
-        drips={drips}
-        onVote={vote}
-        onCoin={onCoin}
-      />
-
-      {toast && <div className="toast">{toast}</div>}
+    <OutfitCard
+      imageUrl={post.media_url}
+      badge={style && <GlassBadge>{styleName(style)}</GlassBadge>}
+      author={{
+        name: getAuthorName(author),
+        avatarUrl: author.avatar_url,
+        tierClass: avatarTier(author.style_score),
+        meta: post.created_at ? timeAgo(post.created_at) : null,
+        onClick: openProfile,
+      }}
+      caption={post.caption}
+      tags={showItems && items.length > 0 && (
+        <div className="ocard__tags">
+          {items.map((item, index) => (
+            <span className="ocard__tag" key={index}>
+              {CATEGORY_ICON[item.category] || '✨'} {item.brand} {item.name}
+            </span>
+          ))}
+        </div>
+      )}
+      actions={
+        <>
+          <span className="ocard__score" aria-label={t('look_score', { n: score })}>
+            <DripCoin size={20} /> {score}
+          </span>
+          {items.length > 0 && (
+            <IconAction label={t('items_aria')} active={showItems} onClick={() => setShowItems((v) => !v)}>
+              <Shirt size={22} strokeWidth={1.9} />
+            </IconAction>
+          )}
+          {canReport && (
+            <IconAction label={t('report')} onClick={() => setReportOpen(true)}>
+              <Flag size={20} strokeWidth={1.9} />
+            </IconAction>
+          )}
+          <span className="ocard__spacer" />
+          <DripControl
+            voted={voted}
+            busy={busy}
+            picking={picking}
+            drips={drips}
+            onVote={vote}
+            onOpen={onOpenDrip}
+          />
+        </>
+      }
+    >
+      {toast && <div className="ocard__toast">{toast}</div>}
       {reportOpen && <ReportModal postId={post.id} onClose={() => setReportOpen(false)} onReported={onReported} />}
-    </section>
+    </OutfitCard>
   )
 }

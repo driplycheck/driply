@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { initTelegram } from './telegram.js'
 import { supabase } from './supabase.js'
-import { avatarTier } from './tiers.js'
 import { t, loadLang, saveLang, setActiveLang } from './i18n.js'
 import { loadSide, saveSide, setActiveSide } from './side.js'
 import { useOverlayStack } from './useOverlayStack.js'
@@ -20,6 +19,7 @@ import TopUsers from './TopUsers.jsx'
 import BlockedList from './BlockedList.jsx'
 import Referral from './Referral.jsx'
 import Appearance from './Appearance.jsx'
+import TabBar from './components/ui/TabBar.jsx'
 import DripCoin from './components/ui/DripCoin.jsx'
 import { useTheme } from './theme/ThemeProvider.jsx'
 import './composer.css'
@@ -35,6 +35,7 @@ export default function App() {
   const [lang, setLang] = useState(loadLang())
   const [side, setSide] = useState(loadSide())
   const [feedKey, setFeedKey] = useState(0)
+  const [scrollTopKey, setScrollTopKey] = useState(0)
   const [openFirstComposer, setOpenFirstComposer] = useState(false)
   const [toast, setToast] = useState(null)
   const toastTimer = useRef(null)
@@ -119,30 +120,20 @@ export default function App() {
       <Feed
         key={feedKey}
         selfId={profile?.id ?? null}
+        balance={profile ? (profile.daily_credits ?? 0) : null}
+        scrollTopKey={scrollTopKey}
         onOpenProfile={(id) => push('profile', { userId: id })}
-        onPost={() => push('composer')}
       />
 
-      <button className="search-btn" onClick={() => push('search')} aria-label={t('search_aria')}>
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
-          strokeWidth="2" strokeLinecap="round">
-          <circle cx="11" cy="11" r="7" />
-          <path d="M21 21l-4.3-4.3" />
-        </svg>
-      </button>
-
-      {profile?.avatar_url && (
-        <button
-          className={`me ${avatarTier(profile.style_score)}`}
-          onClick={() => push('profile', { userId: profile.id })}
-          aria-label={t('my_profile_aria')}
-        >
-          <img src={profile.avatar_url} alt="" />
-        </button>
-      )}
-      {profile && (
-        <div className="balance-pill"><DripCoin size={13} /> {profile.daily_credits ?? 0}</div>
-      )}
+      <div className="tabbar-fade" aria-hidden="true" />
+      <TabBar
+        active="home"
+        onHome={() => setScrollTopKey((k) => k + 1)}
+        onSearch={() => push('search')}
+        onCreate={() => push('composer')}
+        onTop={() => push('top')}
+        onProfile={() => profile?.id && push('profile', { userId: profile.id })}
+      />
 
       {toast && <div className="app-toast">{toast}</div>}
 
@@ -205,7 +196,6 @@ export default function App() {
             selfId={profile?.id}
             onClose={pop}
             onOpenProfile={(id) => replace('profile', { userId: id })}
-            onPost={() => push('composer')}
             onChanged={onPostDeleted}
           />
         </Overlay>

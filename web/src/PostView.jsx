@@ -5,16 +5,17 @@ import PostCard from './PostCard.jsx'
 import { t } from './i18n.js'
 
 const SELECT =
-  'id, media_url, caption, score, user_id, hidden, ' +
+  'id, media_url, caption, score, user_id, hidden, created_at, ' +
   'users(id, username, display_name, avatar_url, style_score), ' +
   'post_items(items(name, brand, category)), ' +
   'styles(name_ru, name_en, emoji)'
 
-export default function PostView({ postId, selfId, onClose, onOpenProfile, onPost, onChanged }) {
+export default function PostView({ postId, selfId, onClose, onOpenProfile, onChanged }) {
   const [post, setPost] = useState(null)
   const [loading, setLoading] = useState(true)
   const [confirm, setConfirm] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [voted, setVoted] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -22,6 +23,14 @@ export default function PostView({ postId, selfId, onClose, onOpenProfile, onPos
       .then(({ data }) => { if (active) { setPost(data); setLoading(false) } })
     return () => { active = false }
   }, [postId])
+
+  useEffect(() => {
+    if (!selfId) return
+    let active = true
+    supabase.from('votes').select('post_id').eq('voter_id', selfId).eq('post_id', postId).maybeSingle()
+      .then(({ data }) => { if (active) setVoted(!!data) })
+    return () => { active = false }
+  }, [postId, selfId])
 
   const isOwn = post && selfId && (post.user_id === selfId || post.users?.id === selfId)
 
@@ -48,7 +57,7 @@ export default function PostView({ postId, selfId, onClose, onOpenProfile, onPos
       ) : !post ? (
         <div className="state">{t('post_not_found')}</div>
       ) : (
-        <PostCard post={post} alreadyVoted={false} selfId={selfId} onOpenProfile={onOpenProfile} onPost={onPost} />
+        <PostCard post={post} alreadyVoted={voted} selfId={selfId} onOpenProfile={onOpenProfile} />
       )}
       {confirm && (
         <div className="confirm">

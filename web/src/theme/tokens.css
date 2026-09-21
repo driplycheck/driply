@@ -40,6 +40,9 @@
   --glow-2: transparent;
   --tabbar-bg: rgba(22, 22, 22, 0.9);
   --shadow-drip: 0 6px 20px rgba(198, 255, 61, 0.35);
+  --photo-drip: #C6FF3D;
+  --photo-on-drip: #09090B;
+  --photo-shadow-drip: 0 6px 20px rgba(198, 255, 61, 0.35);
   color-scheme: dark;
 }
 
@@ -62,6 +65,9 @@
   --glow-2: rgba(198, 255, 61, 0.12);
   --tabbar-bg: rgba(22, 22, 28, 0.9);
   --shadow-drip: 0 6px 20px rgba(198, 255, 61, 0.45);
+  --photo-drip: #C6FF3D;
+  --photo-on-drip: #09090B;
+  --photo-shadow-drip: 0 6px 20px rgba(198, 255, 61, 0.45);
   color-scheme: dark;
 }
 
@@ -84,6 +90,9 @@
   --glow-2: transparent;
   --tabbar-bg: rgba(255, 255, 255, 0.9);
   --shadow-drip: 0 6px 20px rgba(0, 0, 0, 0.12);
+  --photo-drip: #FFFFFF;
+  --photo-on-drip: #111111;
+  --photo-shadow-drip: 0 6px 20px rgba(0, 0, 0, 0.3);
   color-scheme: light;
 }
 

@@ -1,13 +1,22 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from './supabase.js'
-import { t } from './i18n.js'
+import { t, styleName } from './i18n.js'
+import DripCoin from './components/ui/DripCoin.jsx'
+import Chip from './components/ui/Chip.jsx'
 import PostCard from './PostCard.jsx'
 
-export default function Feed({ selfId, onOpenProfile, onPost }) {
+export default function Feed({ selfId, balance, scrollTopKey, onOpenProfile }) {
   const [tab, setTab] = useState('all')
   const [posts, setPosts] = useState(null)
   const [votedIds, setVotedIds] = useState(new Set())
   const [error, setError] = useState(null)
+  const [styleId, setStyleId] = useState(null)
+  const scroller = useRef(null)
+
+  // повторный тап по «Ленте» в таб-баре — наверх
+  useEffect(() => {
+    if (scrollTopKey) scroller.current?.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [scrollTopKey])
 
   useEffect(() => {
     if (!selfId) return
@@ -25,6 +34,7 @@ export default function Feed({ selfId, onOpenProfile, onPost }) {
     let active = true
     setPosts(null)
     setError(null)
+    setStyleId(null)
     ;(async () => {
       if (tab === 'following') {
         if (!selfId) { if (active) setPosts([]); return }
@@ -42,26 +52,56 @@ export default function Feed({ selfId, onOpenProfile, onPost }) {
     return () => { active = false }
   }, [tab, selfId])
 
+  // чипы — только стили, которые реально есть в ленте: пустой фильтр хуже, чем никакого
+  const styles = useMemo(() => {
+    const seen = new Map()
+    for (const p of posts || []) if (p.style && !seen.has(p.style.id)) seen.set(p.style.id, p.style)
+    return [...seen.values()]
+  }, [posts])
+  const visible = styleId ? (posts || []).filter((p) => p.style?.id === styleId) : posts
+
   return (
-    <>
-      <div className="feed-tabs">
-        <button className={`feed-tab ${tab === 'all' ? 'feed-tab--on' : ''}`} onClick={() => setTab('all')}>{t('tab_all')}</button>
-        <button className={`feed-tab ${tab === 'following' ? 'feed-tab--on' : ''}`} onClick={() => setTab('following')}>{t('tab_following')}</button>
-      </div>
+    <div className="feed" ref={scroller}>
+      <header className="feed-head">
+        <span className="logo">driply<i className="logo__dot" /></span>
+        {balance != null && (
+          <span className="feed-balance" aria-label={t('balance_aria', { n: balance })}>
+            <DripCoin size={20} /> {Number(balance).toLocaleString('ru-RU')}
+          </span>
+        )}
+      </header>
+
+      <nav className="feed-tabs" role="tablist">
+        {['all', 'following'].map((id) => (
+          <button key={id} role="tab" aria-selected={tab === id}
+            className={`feed-tab ${tab === id ? 'feed-tab--on' : ''}`} onClick={() => setTab(id)}>
+            {t(id === 'all' ? 'tab_all' : 'tab_following')}
+          </button>
+        ))}
+      </nav>
+
+      {tab === 'all' && styles.length > 1 && (
+        <div className="feed-chips">
+          <Chip active={!styleId} onClick={() => setStyleId(null)}>{t('chip_all')}</Chip>
+          {styles.map((s) => (
+            <Chip key={s.id} active={styleId === s.id} onClick={() => setStyleId(s.id)}>{styleName(s)}</Chip>
+          ))}
+        </div>
+      )}
 
       {error ? (
-        <div className="state">{t('feed_error')} {error}</div>
+        <div className="feed-state">{t('feed_error')} {error}</div>
       ) : !posts ? (
-        <div className="state">{t('feed_loading')}</div>
-      ) : posts.length === 0 ? (
-        <div className="state">
-          {tab === 'following'
-            ? t('feed_empty_following')
-            : t('feed_empty_all')}
+        <div className="feed-list">
+          <div className="feed-skeleton" /><div className="feed-skeleton" />
+        </div>
+      ) : visible.length === 0 ? (
+        <div className="feed-state">
+          {tab === 'following' ? t('feed_empty_following') : t('feed_empty_all')}
         </div>
       ) : (
-        <div className="feed">
-          {posts.map((post) => (
+        <div className="feed-list">
+          {visible.map((post) => (
             <PostCard
               key={post.id}
               post={post}
@@ -69,11 +109,10 @@ export default function Feed({ selfId, onOpenProfile, onPost }) {
               selfId={selfId}
               onReported={(id) => setPosts((ps) => ps.filter((x) => x.id !== id))}
               onOpenProfile={onOpenProfile}
-              onPost={onPost}
             />
           ))}
         </div>
       )}
-    </>
+    </div>
   )
 }

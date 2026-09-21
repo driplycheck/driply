@@ -1,0 +1,165 @@
+/* Базовые компоненты. Только токены из theme/tokens.css. */
+
+/* --- Chip --- */
+.ui-chip {
+  flex: none;
+  padding: 9px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-2);
+  font: 500 14px/1.15 var(--font-body);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: var(--theme-transition), transform 0.12s;
+  -webkit-tap-highlight-color: transparent;
+}
+.ui-chip:active { transform: scale(0.96); }
+.ui-chip--on { background: var(--primary); border-color: var(--primary); color: var(--on-primary); font-weight: 700; }
+
+/* --- Button --- */
+.ui-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border-radius: var(--r-md);
+  border: 1px solid transparent;
+  font: 700 14px/1.15 var(--font-body);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: var(--theme-transition), transform 0.12s, box-shadow 0.25s;
+  -webkit-tap-highlight-color: transparent;
+}
+.ui-btn:active { transform: scale(0.96); }
+.ui-btn:disabled { opacity: 0.6; cursor: default; }
+.ui-btn--primary { background: var(--primary); color: var(--on-primary); }
+.ui-btn--secondary { background: var(--surface-2); color: var(--text); border-color: var(--border); }
+.ui-btn--drip { background: var(--drip); color: var(--on-drip); box-shadow: var(--shadow-drip); border-radius: 20px; padding: 10px 16px 10px 14px; }
+
+/* --- GlassBadge --- */
+.ui-glass-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: 14px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  color: var(--on-photo);
+  font: 700 11px/1.1 var(--font-body);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* --- OutfitCard --- */
+.ocard {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 5 / 7;
+  border-radius: var(--r-xl);
+  overflow: hidden;
+  background: var(--surface);
+  color: var(--on-photo);
+  /* фото всегда тёмное под скримом: дрип-элементы берут фото-вариант токенов */
+  --drip: var(--photo-drip);
+  --on-drip: var(--photo-on-drip);
+  --shadow-drip: var(--photo-shadow-drip);
+}
+.ocard__img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.ocard__scrim {
+  position: absolute;
+  inset: 45% 0 0;
+  background: var(--scrim);
+  pointer-events: none;
+}
+.ocard__top { position: absolute; top: 16px; left: 16px; right: 16px; display: flex; gap: 8px; }
+.ocard__bottom {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.ocard__author {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 0;
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.ocard__ava { flex: none; width: 42px; height: 42px; border-radius: 50%; object-fit: cover; }
+.ocard__ava--empty { background: var(--glass-bg); border: 1px solid var(--glass-border); }
+.ocard__who { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.ocard__name { font: 600 15px/1.2 var(--font-body); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ocard__meta { font: 400 12px/1.2 var(--font-body); color: var(--on-photo-muted); }
+.ocard__caption {
+  font: 400 14px/1.4 var(--font-body);
+  color: var(--on-photo);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.ocard__actions { display: flex; align-items: center; gap: 16px; }
+
+/* --- TabBar --- */
+.ui-tabbar {
+  position: fixed;
+  left: var(--gutter);
+  right: var(--gutter);
+  bottom: calc(16px + max(var(--safe-bottom, 0px), env(safe-area-inset-bottom)));
+  z-index: 60;
+  height: 68px;
+  padding: 0 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 34px;
+  background: var(--tabbar-bg);
+  border: 1px solid var(--border);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  transition: var(--theme-transition);
+}
+.ui-tab {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color 0.2s, transform 0.12s;
+  -webkit-tap-highlight-color: transparent;
+}
+.ui-tab:active { transform: scale(0.9); }
+.ui-tab--on { color: var(--text); }
+.ui-tabbar__create {
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: none;
+  background: var(--primary);
+  color: var(--on-primary);
+  cursor: pointer;
+  transition: var(--theme-transition), transform 0.12s;
+  -webkit-tap-highlight-color: transparent;
+}
+.ui-tabbar__create:active { transform: scale(0.92); }

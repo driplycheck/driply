@@ -41,7 +41,10 @@ const DICT = {
     ref_your_link: 'Твоя ссылка', copy: 'Копировать',
     ref_note: 'Друг получит 200 дрипов, ты — 500, когда он выложит первый образ.',
     side_right: 'Справа', side_left: 'Слева',
-    tab_all: 'Все', tab_following: 'Подписки',
+    tab_all: 'Для тебя', tab_following: 'Подписки', chip_all: 'Все',
+    tab_home_aria: 'Лента', balance_aria: 'Баланс: {n} дрипов', tab_top_aria: 'Рейтинг',
+    drip_it: 'Дрипнуть', dripped: 'Дрипнуто',
+    ago_now: 'только что', ago_min: '{n} мин назад', ago_h: '{n} ч назад', ago_d: '{n} д назад',
     follow: 'Подписаться', unfollow: 'Отписаться',
     followers: 'подписчиков', following_cnt: 'подписок',
     share_story: 'Поделиться в Stories',
@@ -201,7 +204,10 @@ const DICT = {
     ref_your_link: 'Your link', copy: 'Copy',
     ref_note: 'Your friend gets 200 drips, you get 500 once they post their first look.',
     side_right: 'Right', side_left: 'Left',
-    tab_all: 'All', tab_following: 'Following',
+    tab_all: 'For you', tab_following: 'Following', chip_all: 'All',
+    tab_home_aria: 'Feed', balance_aria: 'Balance: {n} drips', tab_top_aria: 'Leaderboard',
+    drip_it: 'Drip', dripped: 'Dripped',
+    ago_now: 'just now', ago_min: '{n}m ago', ago_h: '{n}h ago', ago_d: '{n}d ago',
     follow: 'Follow', unfollow: 'Unfollow',
     followers: 'followers', following_cnt: 'following',
     share_story: 'Share to Stories',
@@ -359,3 +365,16 @@ export function styleName(style) {
   return preferred || style.name_ru || style.name_en || ''
 }
 
+// «2 ч назад»; старше недели — дата
+export function timeAgo(iso) {
+  const ms = Date.now() - new Date(iso).getTime()
+  if (!Number.isFinite(ms)) return ''
+  const min = Math.floor(ms / 60000)
+  if (min < 1) return t('ago_now')
+  if (min < 60) return t('ago_min', { n: min })
+  const h = Math.floor(min / 60)
+  if (h < 24) return t('ago_h', { n: h })
+  const d = Math.floor(h / 24)
+  if (d < 7) return t('ago_d', { n: d })
+  return new Date(iso).toLocaleDateString(active === 'en' ? 'en-US' : 'ru-RU', { day: 'numeric', month: 'short' })
+}

@@ -56,22 +56,6 @@
 .tier-silver { box-shadow: 0 0 0 2px #d0d0d8, 0 0 8px rgba(208, 208, 216, 0.45); }
 .tier-gold   { box-shadow: 0 0 0 2px #f4c430, 0 0 14px rgba(244, 196, 48, 0.7); }
 
-.me {
-  position: fixed;
-  top: calc(env(safe-area-inset-top) + 12px);
-  right: 16px;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: none;
-  padding: 0;
-  overflow: hidden;
-  cursor: pointer;
-  background: rgba(255, 255, 255, 0.1);
-  z-index: 50;
-}
-.me img { width: 100%; height: 100%; object-fit: cover; display: block; }
-
 .edit__top {
   width: 100%;
   display: flex;
