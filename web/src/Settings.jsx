@@ -4,8 +4,10 @@ import { supabase } from './supabase.js'
 import { getInitData } from './telegram.js'
 import { t, LANGS } from './i18n.js'
 import { useTheme } from './theme/ThemeProvider.jsx'
+import pkg from '../package.json'
 
-const APP_VERSION = '1.0'
+// версия — в package.json: заметный деплой +0.1, конец редизайна — 2.0
+const APP_VERSION = pkg.version.split('.').slice(0, 2).join('.')
 const SUPPORT_URL = 'https://t.me/Driplycheckbot'
 
 function SettingsLink({ label, onClick }) {

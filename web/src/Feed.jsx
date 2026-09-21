@@ -4,6 +4,7 @@ import { t, styleName } from './i18n.js'
 import DripCoin from './components/ui/DripCoin.jsx'
 import Chip from './components/ui/Chip.jsx'
 import PostCard from './PostCard.jsx'
+import { usePager } from './usePager.js'
 
 export default function Feed({ selfId, balance, scrollTopKey, onOpenProfile }) {
   const [tab, setTab] = useState('all')
@@ -12,6 +13,7 @@ export default function Feed({ selfId, balance, scrollTopKey, onOpenProfile }) {
   const [error, setError] = useState(null)
   const [styleId, setStyleId] = useState(null)
   const scroller = useRef(null)
+  usePager(scroller, '.feed-list > .ocard', [])
 
   // повторный тап по «Ленте» в таб-баре — наверх
   useEffect(() => {

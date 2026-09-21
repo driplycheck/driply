@@ -48,8 +48,7 @@ input, textarea, select, .field { font-size: 16px; }
   height: var(--app-height, 100dvh);
   overflow-y: auto;
   overscroll-behavior: contain;
-  /* один свайп — один пост: snap-stop не даёт проскочить несколько карточек разом */
-  scroll-snap-type: y mandatory;
+  /* листает usePager: один жест — один пост; padding — отступ остановки */
   scroll-padding-top: calc(env(safe-area-inset-top) + 12px);
   padding-bottom: calc(132px + max(var(--safe-bottom, 0px), env(safe-area-inset-bottom)));
   scrollbar-width: none;
@@ -58,7 +57,6 @@ input, textarea, select, .field { font-size: 16px; }
 .feed::-webkit-scrollbar { display: none; }
 
 .feed-head {
-  scroll-snap-align: start;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -123,8 +121,6 @@ input, textarea, select, .field { font-size: 16px; }
 .feed-chips::-webkit-scrollbar { display: none; }
 
 .feed-list > .ocard {
-  scroll-snap-align: start;
-  scroll-snap-stop: always;
   /* на низких экранах карточка не уходит под таб-бар */
   max-height: calc(var(--app-height, 100dvh) - 128px - env(safe-area-inset-top) - max(var(--safe-bottom, 0px), env(safe-area-inset-bottom)));
 }
