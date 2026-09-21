@@ -48,34 +48,6 @@
 .sresult__name { font-size: 15px; color: #fff; font-weight: 600; }
 .sresult__sub { font-size: 13px; color: var(--muted); }
 
-.profile__follows { color: #d8d8de; font-size: 13px; margin-top: 4px; }
-.follow-btn {
-  margin-top: 12px;
-  padding: 9px 26px;
-  border-radius: 999px;
-  border: none;
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 14px;
-  cursor: pointer;
-  background: var(--primary);
-  color: var(--on-primary);
-}
-.follow-btn--on {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #fff;
-}
-.follow-btn:disabled { opacity: 0.5; }
-
-.profile__follows { display: flex; align-items: center; gap: 8px; }
-.flink {
-  background: none; border: none; cursor: pointer;
-  color: #d8d8de; font-size: 13px; padding: 2px 0;
-}
-.flink b { color: #fff; font-weight: 700; }
-.flink__dot { color: var(--muted); }
-
 .follist { animation: screenIn 0.22s ease-out;
   position: fixed; inset: 0; z-index: 97;
   background: #0a0a0b;

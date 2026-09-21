@@ -162,6 +162,7 @@ export default function App() {
             onClose={pop}
             onOpenProfile={(id) => replace('profile', { userId: id })}
             onOpenSettings={() => push('settings')}
+            onEditProfile={() => push('editProfile')}
             onOpenArchive={() => push('archive')}
             onOpenVotes={() => push('votes')}
             onOpenTop={() => push('top')}
@@ -230,7 +231,7 @@ export default function App() {
 
       {top?.type === 'top' && (
         <Overlay onClose={pop}>
-          <TopUsers onClose={pop} onOpenProfile={(id) => replace('profile', { userId: id })} />
+          <TopUsers selfId={profile?.id} onClose={pop} onOpenProfile={(id) => replace('profile', { userId: id })} />
         </Overlay>
       )}
 

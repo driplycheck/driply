@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react'
 import { supabase } from './supabase.js'
 import { getInitData } from './telegram.js'
-import { avatarTier } from './tiers.js'
-import { t } from './i18n.js'
+import { ChevronLeft, Settings as SettingsIcon, Share, Grid3x3, Crown, Ban, Undo2, Flag } from 'lucide-react'
+import { avatarTier, tierProgress } from './tiers.js'
+import { shareRankCard } from './storyCard.js'
+import Button from './components/ui/Button.jsx'
+import { t, activeLang } from './i18n.js'
 import DripCoin from './components/ui/DripCoin.jsx'
 import FollowList from './FollowList.jsx'
 import ReportModal from './ReportModal.jsx'
@@ -43,7 +46,7 @@ async function fetchProfileData(userId, selfId) {
   }
 }
 
-export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpenPost, onOpenProfile, onOpenArchive, onOpenVotes, onOpenTop, onFollowChanged }) {
+export default function Profile({ userId, selfId, onClose, onOpenSettings, onEditProfile, onOpenPost, onOpenProfile, onOpenArchive, onOpenVotes, onOpenTop, onFollowChanged }) {
   const [user, setUser] = useState(null)
   const [rank, setRank] = useState(null)
   const [posts, setPosts] = useState([])
@@ -56,6 +59,8 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
   const [listMode, setListMode] = useState(null)
   const [blocked, setBlocked] = useState(false)
   const [busyBlock, setBusyBlock] = useState(false)
+  const [busyShare, setBusyShare] = useState(false)
+  const [toast, setToast] = useState(null)
 
   useEffect(() => {
     let active = true
@@ -110,6 +115,17 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
     }
   }
 
+  async function share() {
+    if (busyShare || !user) return
+    setBusyShare(true)
+    const res = await shareRankCard({ user, rank, postsCount: posts.length })
+    setBusyShare(false)
+    if (!res.ok) {
+      setToast(res.reason === 'unsupported' ? t('share_unsupported') : t('share_failed'))
+      setTimeout(() => setToast(null), 2200)
+    }
+  }
+
   function openPerson(id) {
     setListMode(null)
     if (id !== userId) onOpenProfile?.(id)
@@ -118,86 +134,101 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
   const isSelf = user && selfId && user.id === selfId
   const displayName = user?.display_name || (user?.username ? '@' + user.username : 'user')
   const showHandle = user?.username && (isSelf || !user.hide_username)
+  const progress = tierProgress(user?.style_score ?? 0)
+  const compact = (n) => Number(n || 0).toLocaleString(activeLang() === 'en' ? 'en-US' : 'ru-RU', { notation: n >= 10000 ? 'compact' : 'standard', maximumFractionDigits: 1 })
 
   return (
     <div className="profile">
+      {user?.avatar_url && <div className="profile__cover" style={{ backgroundImage: `url(${user.avatar_url})` }} aria-hidden="true" />}
       <header className="profile__top">
-        <button className="profile__close" onClick={onClose}>{t('back')}</button>
+        <button className="profile__icon" onClick={onClose} aria-label={t('back')}>
+          <ChevronLeft size={22} strokeWidth={2} />
+        </button>
         <div className="profile__topright">
           {isSelf && (
-            <button className="profile__archive" onClick={onOpenVotes} aria-label={t('my_votes')}><DripCoin size={20} tone="ink" /></button>
+            <button className="profile__icon" onClick={onOpenSettings} aria-label={t('settings')}>
+              <SettingsIcon size={20} strokeWidth={1.9} />
+            </button>
           )}
-          {isSelf && (
-            <button className="profile__archive" onClick={onOpenArchive} aria-label={t('archive_aria')}>🗂</button>
-          )}
-          {isSelf && (
-            <button className="profile__settings" onClick={onOpenSettings} aria-label={t('settings')}>⚙</button>
-          )}
-          {!isSelf && (
+          {user && !isSelf && (
             <>
-              <button className={`profile__block ${blocked ? 'profile__block--on' : ''}`}
+              <button className={`profile__icon ${blocked ? 'profile__icon--on' : ''}`}
                 onClick={() => setBlockState(!blocked)} disabled={busyBlock}
                 aria-label={blocked ? t('unblock_user') : t('block_user')} title={blocked ? t('unblock_user') : t('block_user')}>
-                {blocked ? '↺' : '⊘'}
+                {blocked ? <Undo2 size={19} strokeWidth={1.9} /> : <Ban size={19} strokeWidth={1.9} />}
               </button>
-              <button className="profile__block"
-                onClick={() => setReportOpen(true)}
+              <button className="profile__icon" onClick={() => setReportOpen(true)}
                 aria-label={t('report')} title={t('report')}>
-                🚩
+                <Flag size={18} strokeWidth={1.9} />
               </button>
             </>
           )}
         </div>
       </header>
       {loading ? (
-        <div className="state">{t('loading')}</div>
+        <div className="profile__state">{t('loading')}</div>
       ) : !user ? (
-        <div className="state">{t('profile_not_found')}</div>
+        <div className="profile__state">{t('profile_not_found')}</div>
       ) : (
         <div className="profile__body">
           <div className="profile__head">
-            {user.avatar_url && (
-              <img className={`profile__ava ${avatarTier(user.style_score)}`} src={user.avatar_url} alt="" />
-            )}
-            <div className="profile__name">{displayName}</div>
-            {showHandle && <div className="profile__handle">@{user.username}</div>}
-            {user.bio && <p className="profile__bio">{user.bio}</p>}
-            <div className="profile__follows">
-              <button className="flink" onClick={() => setListMode('followers')}>
-                <b>{followers}</b> {t('followers')}
-              </button>
-              <span className="flink__dot">·</span>
-              <button className="flink" onClick={() => setListMode('following')}>
-                <b>{followingCount}</b> {t('following_cnt')}
-              </button>
-            </div>
-            {user.badge && (
-              <div className="status-wrap">
-                <div className={`status-plate status-plate--${user.badge}`}>
-                  {
-                    { founder: t('badge_founder'), cofounder: t('badge_founder'), first_drip: <><DripCoin size={12} /> {t('badge_first_drip')}</> }[user.badge]
-                    || user.badge
-                  }
-                </div>
+            {user.avatar_url
+              ? <img className={`profile__ava ${avatarTier(user.style_score)}`} src={user.avatar_url} alt="" />
+              : <span className="profile__ava profile__ava--empty" />}
+            <h1 className="profile__name">{displayName}</h1>
+            {(showHandle || user.badge) && (
+              <div className="profile__handle-row">
+                {showHandle && <span className="profile__handle">@{user.username}</span>}
+                {(user.badge === 'founder' || user.badge === 'cofounder') && (
+                  <span className="profile__badge"><Crown size={11} strokeWidth={2.4} /> {t('badge_founder_short')}</span>
+                )}
+                {user.badge === 'first_drip' && (
+                  <span className="profile__badge profile__badge--drip"><DripCoin size={11} /> {t('badge_first_drip')}</span>
+                )}
               </div>
             )}
-            {!isSelf && (
-              <button
-                className={`follow-btn ${following ? 'follow-btn--on' : ''}`}
-                onClick={() => setFollowState(!following)} disabled={busyFollow}
-              >
+            {user.bio && <p className="profile__bio">{user.bio}</p>}
+          </div>
+
+          <div className="pstats">
+            <div className="pstat"><b>{compact(posts.length)}</b><span>{t('stat_looks_short')}</span></div>
+            <button className="pstat" onClick={() => setListMode('followers')}><b>{compact(followers)}</b><span>{t('stat_followers')}</span></button>
+            <button className="pstat" onClick={() => setListMode('following')}><b>{compact(followingCount)}</b><span>{t('stat_following')}</span></button>
+            <div className="pstat pstat--drip"><b>{compact(user.style_score)}</b><span>{t('stat_drips')}</span></div>
+          </div>
+
+          <button className="rankcard" onClick={onOpenTop}>
+            <span className="rankcard__label">{t('rank_label')} · {t('rank_place', { n: rank })}</span>
+            <span className="rankcard__row">
+              <span className="rankcard__tier">{t('tier_' + progress.tier)}</span>
+              <span className="rankcard__next">
+                {progress.next ? t('rank_next', { tier: t('tier_to_' + progress.next), pct: progress.pct }) : t('rank_max')}
+              </span>
+            </span>
+            <span className="rankcard__bar"><i style={{ width: progress.pct + '%' }} /></span>
+          </button>
+
+          <div className="profile__actions">
+            {isSelf ? (
+              <>
+                <Button variant="secondary" onClick={onEditProfile}>{t('profile_edit')}</Button>
+                <Button variant="primary" onClick={share} disabled={busyShare}>
+                  <Share size={18} strokeWidth={2} /> {busyShare ? '…' : t('profile_share')}
+                </Button>
+              </>
+            ) : (
+              <Button variant={following ? 'secondary' : 'primary'} onClick={() => setFollowState(!following)} disabled={busyFollow}>
                 {following ? t('unfollow') : t('follow')}
-              </button>
+              </Button>
             )}
-
-
-
           </div>
-          <div className="profile__stats">
-            <div className="stat"><div className="stat__num"><DripCoin size={16} /> {user.style_score}</div><div className="stat__lbl">{t('stat_style_score')}</div></div>
-            <button className="stat stat--tap" onClick={onOpenTop}><div className="stat__num">#{rank}</div><div className="stat__lbl">{t('stat_rank')}</div></button>
-            <div className="stat"><div className="stat__num">{posts.length}</div><div className="stat__lbl">{t('stat_looks')}</div></div>
-          </div>
+
+          <nav className="ptabs">
+            <span className="ptab ptab--on" aria-label={t('profile_looks_tab')}><Grid3x3 size={20} strokeWidth={1.9} /></span>
+            {isSelf && <button className="ptab" onClick={onOpenArchive}>{t('archive_aria')}</button>}
+            {isSelf && <button className="ptab" onClick={onOpenVotes}>{t('my_votes')}</button>}
+          </nav>
+
           {posts.length > 0 ? (
             <div className="grid">
               {posts.map((p) => (
@@ -209,10 +240,11 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
               ))}
             </div>
           ) : (
-            <div className="state">{t('no_looks')}</div>
+            <div className="profile__state">{t('no_looks')}</div>
           )}
         </div>
       )}
+      {toast && <div className="app-toast">{toast}</div>}
 
       {listMode && (
         <FollowList

@@ -103,6 +103,12 @@ const DICT = {
     profile_not_found: 'Профиль не найден',
     badge_founder: '★ Основатель', badge_first_drip: 'первый дрип',
     stat_style_score: 'очки стиля', stat_rank: 'в рейтинге', stat_looks: 'образов',
+    stat_looks_short: 'образы', stat_followers: 'подписчики', stat_following: 'подписки', stat_drips: 'дрипов',
+    rank_label: 'Ранг', rank_place: '#{n} в рейтинге', rank_next: 'до {tier} · {pct}%', rank_max: 'максимальный уровень',
+    tier_base: 'Новичок', tier_bronze: 'Бронза', tier_silver: 'Серебро', tier_gold: 'Золото',
+    tier_to_bronze: 'Бронзы', tier_to_silver: 'Серебра', tier_to_gold: 'Золота',
+    profile_edit: 'Редактировать', profile_share: 'Поделиться', profile_looks_tab: 'Образы',
+    badge_founder_short: 'Founder', you: 'ты', leaderboard: 'Рейтинг', leaderboard_sub: 'Очки стиля — сколько дрипов собрали образы',
     no_looks: 'Пока нет образов',
 
     // история публикаций
@@ -266,6 +272,12 @@ const DICT = {
     profile_not_found: 'Profile not found',
     badge_founder: '★ Founder', badge_first_drip: 'first drip',
     stat_style_score: 'style points', stat_rank: 'in ranking', stat_looks: 'looks',
+    stat_looks_short: 'looks', stat_followers: 'followers', stat_following: 'following', stat_drips: 'drips',
+    rank_label: 'Rank', rank_place: '#{n} in ranking', rank_next: 'to {tier} · {pct}%', rank_max: 'top tier',
+    tier_base: 'Rookie', tier_bronze: 'Bronze', tier_silver: 'Silver', tier_gold: 'Gold',
+    tier_to_bronze: 'Bronze', tier_to_silver: 'Silver', tier_to_gold: 'Gold',
+    profile_edit: 'Edit', profile_share: 'Share', profile_looks_tab: 'Looks',
+    badge_founder_short: 'Founder', you: 'you', leaderboard: 'Leaderboard', leaderboard_sub: 'Style points — drips collected by looks',
     no_looks: 'No looks yet',
 
     // post history
