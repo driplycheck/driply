@@ -1,11 +1,7 @@
 :root {
-  --bg: #0a0a0b;
-  --text: #ffffff;
   --muted: #9a9aa3;
   --gold: #f4c430;
   --gold-soft: rgba(244, 196, 48, 0.16);
-  --font-display: 'Unbounded', system-ui, sans-serif;
-  --font-body: 'Inter', system-ui, sans-serif;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -17,6 +13,7 @@ body {
   font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
   overscroll-behavior: none;
+  transition: var(--theme-transition);
 }
 
 .state {

@@ -19,6 +19,8 @@ import MyVotes from './MyVotes.jsx'
 import TopUsers from './TopUsers.jsx'
 import BlockedList from './BlockedList.jsx'
 import Referral from './Referral.jsx'
+import Appearance from './Appearance.jsx'
+import { useTheme } from './theme/ThemeProvider.jsx'
 import './composer.css'
 import './profile.css'
 import './onboarding.css'
@@ -37,6 +39,7 @@ export default function App() {
   const toastTimer = useRef(null)
 
   const { top, push, replace, pop, touch } = useOverlayStack()
+  const { allowPreview } = useTheme()
 
   useEffect(() => {
     setActiveLang(lang)
@@ -57,6 +60,12 @@ export default function App() {
     const { data } = await supabase.rpc('my_profile', { p_tid: telegramId })
     setProfile(data?.display_name ? data : null)
   }
+
+  // темы в предпросмотре: пока экраны не перекрашены, их видят только фаундеры
+  const isFounder = profile ? !!profile.is_founder : null
+  useEffect(() => {
+    if (isFounder !== null) allowPreview(isFounder)
+  }, [isFounder, allowPreview])
 
   useEffect(() => {
     if (!profile || !openFirstComposer) return
@@ -183,6 +192,7 @@ export default function App() {
             onChanged={onSettingsChanged}
             onOpenBlocked={() => push('blocked')}
             onOpenReferral={() => push('referral')}
+            onOpenAppearance={() => push('appearance')}
           />
         </Overlay>
       )}
@@ -197,6 +207,12 @@ export default function App() {
             onPost={() => push('composer')}
             onChanged={onPostDeleted}
           />
+        </Overlay>
+      )}
+
+      {top?.type === 'appearance' && (
+        <Overlay onClose={pop}>
+          <Appearance onClose={pop} />
         </Overlay>
       )}
 

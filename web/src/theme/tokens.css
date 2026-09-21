@@ -1,0 +1,98 @@
+/* Темы — только подмена токенов. Селекторы без :root, чтобы
+   data-theme работал и на вложенных элементах (превью в «Оформлении»). */
+
+:root {
+  --on-photo: #FFFFFF;
+  --on-photo-muted: rgba(255, 255, 255, 0.72);
+  --scrim: linear-gradient(transparent, rgba(0, 0, 0, 0.85));
+
+  --glass-bg: rgba(9, 9, 11, 0.45);
+  --glass-border: rgba(255, 255, 255, 0.15);
+
+  --r-sm: 12px;
+  --r-md: 16px;
+  --r-lg: 22px;
+  --r-xl: 28px;
+  --gutter: 16px;
+
+  --font-display: 'Unbounded', system-ui, sans-serif;
+  --font-body: 'Onest', system-ui, sans-serif;
+  --theme-transition: background-color 0.25s, color 0.25s, border-color 0.25s;
+}
+
+[data-theme="dark"] {
+  --bg: #0A0A0A;
+  --surface: #141414;
+  --surface-2: #1A1A1A;
+  --border: rgba(255, 255, 255, 0.08);
+  --text: #F5F5F5;
+  --text-2: #B5B5B5;
+  --text-muted: #8A8A8A;
+  --primary: #F2F2F2;
+  --on-primary: #0A0A0A;
+  --drip: #C6FF3D;
+  --on-drip: #09090B;
+  --notify: #F2F2F2;
+  --status: #D4D4D4;
+  --glow-1: transparent;
+  --glow-2: transparent;
+  --tabbar-bg: rgba(22, 22, 22, 0.9);
+  --shadow-drip: 0 6px 20px rgba(198, 255, 61, 0.35);
+  color-scheme: dark;
+}
+
+[data-theme="neon"] {
+  --bg: #09090B;
+  --surface: #141418;
+  --surface-2: #1C1C22;
+  --border: rgba(255, 255, 255, 0.08);
+  --text: #F5F5F7;
+  --text-2: #B8B8C4;
+  --text-muted: #8A8A96;
+  --primary: #C6FF3D;
+  --on-primary: #09090B;
+  --drip: #C6FF3D;
+  --on-drip: #09090B;
+  --notify: #FF4D8D;
+  --status: #7C5CFF;
+  --glow-1: rgba(124, 92, 255, 0.35);
+  --glow-2: rgba(198, 255, 61, 0.12);
+  --tabbar-bg: rgba(22, 22, 28, 0.9);
+  --shadow-drip: 0 6px 20px rgba(198, 255, 61, 0.45);
+  color-scheme: dark;
+}
+
+[data-theme="light"] {
+  --bg: #F3F1EC;
+  --surface: #FFFFFF;
+  --surface-2: #FFFFFF;
+  --border: rgba(17, 17, 17, 0.08);
+  --text: #111111;
+  --text-2: #5E5A52;
+  --text-muted: #7A766E;
+  --primary: #111111;
+  --on-primary: #F3F1EC;
+  --drip: #111111;
+  --on-drip: #F3F1EC;
+  --notify: #FF4D2E;
+  --status: #5E5A52;
+  --glow-1: transparent;
+  --glow-2: transparent;
+  --tabbar-bg: rgba(255, 255, 255, 0.9);
+  --shadow-drip: 0 6px 20px rgba(0, 0, 0, 0.12);
+  color-scheme: light;
+}
+
+/* декоративные пятна: в dark/light прозрачные, отдельного JSX под тему нет */
+.theme-glow {
+  position: fixed;
+  z-index: -1;
+  width: 70vw;
+  height: 70vw;
+  border-radius: 50%;
+  filter: blur(120px);
+  pointer-events: none;
+  transition: background-color 0.25s;
+}
+.theme-glow--1 { top: -25vw; left: -20vw; background: var(--glow-1); }
+.theme-glow--2 { bottom: -25vw; right: -20vw; background: var(--glow-2); }

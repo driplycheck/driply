@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { supabase } from './supabase.js'
 import { getInitData } from './telegram.js'
 import { t, LANGS } from './i18n.js'
+import { useTheme } from './theme/ThemeProvider.jsx'
 
 const APP_VERSION = '1.0'
 const SUPPORT_URL = 'https://t.me/Driplycheckbot'
@@ -24,7 +25,8 @@ function Toggle({ active, onClick, disabled, label }) {
   )
 }
 
-export default function Settings({ me, lang, onLang, side, onSide, onClose, onEditProfile, onChanged, onOpenBlocked, onOpenReferral }) {
+export default function Settings({ me, lang, onLang, side, onSide, onClose, onEditProfile, onChanged, onOpenBlocked, onOpenReferral, onOpenAppearance }) {
+  const { enabled: themesEnabled } = useTheme()
   const [hide, setHide] = useState(!!me.hide_username)
   const [gender, setGender] = useState(me.gender ?? null)
   const [prefs, setPrefs] = useState({
@@ -87,6 +89,7 @@ export default function Settings({ me, lang, onLang, side, onSide, onClose, onEd
 
         <div className="ssection">{t('sec_general')}</div>
         <SettingsLink label={t('edit_profile')} onClick={onEditProfile} />
+        {themesEnabled && <SettingsLink label={t('appearance')} onClick={onOpenAppearance} />}
         <div className="srow srow--col">
           <div className="srow__label">{t('interface_side')}</div>
           <div className="langrow">
