@@ -1,13 +1,32 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>Driply</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Unbounded:wght@600;700;800&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Onest:wght@400..700&family=Unbounded:wght@600..900&display=swap" rel="stylesheet" />
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script>
+      // Выключатель тем для всех. false — все видят dark, кроме тех, у кого включён предпросмотр.
+      window.__DRIPLY_THEMES__ = false;
+      // Ставим тему до монтирования React, иначе первый кадр мигнёт чужим фоном.
+      (function () {
+        var choice = 'auto', preview = false;
+        try {
+          choice = localStorage.getItem('driply_theme') || 'auto';
+          preview = localStorage.getItem('driply_theme_preview') === '1';
+        } catch (e) {}
+        var tg = window.Telegram && window.Telegram.WebApp;
+        var theme = choice === 'auto'
+          ? (tg && tg.colorScheme === 'light' ? 'light' : 'dark')
+          : choice;
+        if (!window.__DRIPLY_THEMES__ && !preview) theme = 'dark';
+        if (theme !== 'dark' && theme !== 'light' && theme !== 'neon') theme = 'dark';
+        document.documentElement.setAttribute('data-theme', theme);
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

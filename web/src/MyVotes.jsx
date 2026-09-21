@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from './supabase.js'
 import './MyVotes.css'
 import { t } from './i18n.js'
+import DripCoin from './components/ui/DripCoin.jsx'
 
 function tgId() {
   return window.Telegram?.WebApp?.initDataUnsafe?.user?.id ?? 0
@@ -43,7 +44,7 @@ export default function MyVotes({ onClose, onOpenPost }) {
                 <div className="myvotes__author">{name}</div>
                 <div className="myvotes__meta">{t('look_score', { n: v.score })}</div>
               </div>
-              <div className="myvotes__amount">{v.amount} 💧</div>
+              <div className="myvotes__amount">{v.amount} <DripCoin size={15} /></div>
             </button>
           )
         })}

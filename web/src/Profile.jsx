@@ -3,6 +3,7 @@ import { supabase } from './supabase.js'
 import { getInitData } from './telegram.js'
 import { avatarTier } from './tiers.js'
 import { t } from './i18n.js'
+import DripCoin from './components/ui/DripCoin.jsx'
 import FollowList from './FollowList.jsx'
 import ReportModal from './ReportModal.jsx'
 
@@ -124,7 +125,7 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
         <button className="profile__close" onClick={onClose}>{t('back')}</button>
         <div className="profile__topright">
           {isSelf && (
-            <button className="profile__archive" onClick={onOpenVotes} aria-label={t('my_votes')}>💧</button>
+            <button className="profile__archive" onClick={onOpenVotes} aria-label={t('my_votes')}><DripCoin size={20} tone="ink" /></button>
           )}
           {isSelf && (
             <button className="profile__archive" onClick={onOpenArchive} aria-label={t('archive_aria')}>🗂</button>
@@ -174,7 +175,7 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onOpe
               <div className="status-wrap">
                 <div className={`status-plate status-plate--${user.badge}`}>
                   {
-                    { founder: t('badge_founder'), cofounder: t('badge_founder'), first_drip: '💧 first drip' }[user.badge]
+                    { founder: t('badge_founder'), cofounder: t('badge_founder'), first_drip: <><DripCoin size={12} /> {t('badge_first_drip')}</> }[user.badge]
                     || user.badge
                   }
                 </div>

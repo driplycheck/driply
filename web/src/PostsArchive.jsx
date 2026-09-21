@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { supabase } from './supabase.js'
 import { getInitData } from './telegram.js'
 import { t } from './i18n.js'
+import DripCoin from './components/ui/DripCoin.jsx'
 
 export default function PostsArchive({ onClose, onChanged }) {
   const [posts, setPosts] = useState(null)
@@ -57,7 +58,7 @@ export default function PostsArchive({ onClose, onChanged }) {
                 {p.hidden && <span className="arow__badge">{t('hidden_badge')}</span>}
               </div>
               <div className="arow__mid">
-                <div className="arow__score">💧 {p.score}</div>
+                <div className="arow__score"><DripCoin size={14} /> {p.score}</div>
                 {p.caption && <div className="arow__cap">{p.caption}</div>}
               </div>
               <div className="arow__acts">

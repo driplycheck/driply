@@ -1,0 +1,157 @@
+.appearance {
+  animation: screenIn 0.22s ease-out;
+  position: fixed;
+  inset: 0;
+  z-index: 96;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  transition: var(--theme-transition);
+}
+.appearance__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: calc(env(safe-area-inset-top) + 12px) var(--gutter) 12px;
+  border-bottom: 1px solid var(--border);
+  transition: var(--theme-transition);
+}
+.appearance__back {
+  width: 70px;
+  background: none;
+  border: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 17px;
+  text-align: left;
+  cursor: pointer;
+}
+.appearance__title { font-weight: 600; font-size: 16px; }
+.appearance__spacer { width: 70px; }
+.appearance__body { padding: 20px var(--gutter) 40px; display: flex; flex-direction: column; gap: 16px; }
+.appearance__hint { font-size: 13px; line-height: 1.45; color: var(--text-muted); }
+.appearance__note {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-2);
+  padding: 10px 12px;
+  border: 1px dashed var(--border);
+  border-radius: var(--r-sm);
+}
+
+.themegrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+
+.themeopt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--text-2);
+  font: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.themeopt__frame {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 5 / 7;
+  border-radius: var(--r-sm);
+  outline: 1px solid var(--border);
+  outline-offset: 0;
+  transition: outline-color 0.2s, transform 0.12s;
+}
+.themeopt:active .themeopt__frame { transform: scale(0.97); }
+.themeopt--on .themeopt__frame { outline: 2px solid var(--primary); outline-offset: 2px; }
+.themeopt__label { font-size: 12px; font-weight: 500; text-align: center; line-height: 1.2; }
+.themeopt--on .themeopt__label { color: var(--text); font-weight: 600; }
+.themeopt__check {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--primary);
+  color: var(--on-primary);
+  box-shadow: 0 0 0 2px var(--bg);
+}
+.themeopt__split { display: flex; width: 100%; height: 100%; border-radius: inherit; overflow: hidden; }
+.themeopt__split .sketch { flex: 1; border-radius: 0; }
+.themeopt__split .sketch:last-child { justify-content: flex-start; }
+
+/* скетч: всё — токены своей темы */
+.sketch {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 6%;
+  padding: 10% 9%;
+  border-radius: var(--r-sm);
+  background: var(--bg);
+}
+.sketch__glow {
+  position: absolute;
+  top: -30%;
+  left: -20%;
+  width: 90%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--glow-1);
+  filter: blur(14px);
+}
+.sketch__logo {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 9px;
+  letter-spacing: -0.03em;
+  color: var(--text);
+}
+.sketch__logo i { width: 3px; height: 3px; border-radius: 50%; background: var(--drip); }
+.sketch__chips { position: relative; display: flex; gap: 4%; }
+.sketch__chip { width: 34%; height: 7px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--border); }
+.sketch__chip--on { background: var(--primary); border-color: var(--primary); }
+.sketch__card {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6%;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+.sketch__photo { flex: 1; border-radius: 5px; background: var(--surface-2); border: 1px solid var(--border); }
+.sketch__line { height: 4px; width: 80%; border-radius: 2px; background: var(--text-muted); opacity: 0.6; }
+.sketch__line--short { width: 45%; }
+.sketch__row { display: flex; align-items: center; justify-content: space-between; }
+.sketch__coin {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--drip);
+  color: var(--on-drip);
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 7px;
+  line-height: 1;
+}

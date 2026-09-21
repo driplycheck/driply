@@ -19,6 +19,9 @@ import MyVotes from './MyVotes.jsx'
 import TopUsers from './TopUsers.jsx'
 import BlockedList from './BlockedList.jsx'
 import Referral from './Referral.jsx'
+import Appearance from './Appearance.jsx'
+import DripCoin from './components/ui/DripCoin.jsx'
+import { useTheme } from './theme/ThemeProvider.jsx'
 import './composer.css'
 import './profile.css'
 import './onboarding.css'
@@ -37,6 +40,7 @@ export default function App() {
   const toastTimer = useRef(null)
 
   const { top, push, replace, pop, touch } = useOverlayStack()
+  const { allowPreview } = useTheme()
 
   useEffect(() => {
     setActiveLang(lang)
@@ -57,6 +61,12 @@ export default function App() {
     const { data } = await supabase.rpc('my_profile', { p_tid: telegramId })
     setProfile(data?.display_name ? data : null)
   }
+
+  // темы в предпросмотре: пока экраны не перекрашены, их видят только фаундеры
+  const isFounder = profile ? !!profile.is_founder : null
+  useEffect(() => {
+    if (isFounder !== null) allowPreview(isFounder)
+  }, [isFounder, allowPreview])
 
   useEffect(() => {
     if (!profile || !openFirstComposer) return
@@ -83,7 +93,7 @@ export default function App() {
       setProfile((p) => (p ? { ...p, daily_credits: result.balance } : p))
     }
     const gained = (result?.reward ?? 0) + (result?.ref_bonus ?? 0)
-    if (gained > 0) flash(t('reward_toast', { n: gained }))
+    if (gained > 0) flash(<><DripCoin size={15} tone="ink" /> {t('reward_toast', { n: gained })}</>)
   }
   function onSaved(update) { setProfile((p) => ({ ...p, ...update })); pop(); touch('profile') }
   function onSettingsChanged(update) { setProfile((p) => ({ ...p, ...update })); touch('profile') }
@@ -131,7 +141,7 @@ export default function App() {
         </button>
       )}
       {profile && (
-        <div className="balance-pill">💧 {profile.daily_credits ?? 0}</div>
+        <div className="balance-pill"><DripCoin size={13} /> {profile.daily_credits ?? 0}</div>
       )}
 
       {toast && <div className="app-toast">{toast}</div>}
@@ -183,6 +193,7 @@ export default function App() {
             onChanged={onSettingsChanged}
             onOpenBlocked={() => push('blocked')}
             onOpenReferral={() => push('referral')}
+            onOpenAppearance={() => push('appearance')}
           />
         </Overlay>
       )}
@@ -197,6 +208,12 @@ export default function App() {
             onPost={() => push('composer')}
             onChanged={onPostDeleted}
           />
+        </Overlay>
+      )}
+
+      {top?.type === 'appearance' && (
+        <Overlay onClose={pop}>
+          <Appearance onClose={pop} />
         </Overlay>
       )}
 

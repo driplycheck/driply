@@ -13,6 +13,10 @@ const DICT = {
     write_msg: 'Написать',
     language: 'Язык',
     interface_side: 'Расположение кнопок',
+    appearance: 'Оформление',
+    theme_auto: 'Как в Telegram', theme_dark: 'Тёмная', theme_light: 'Светлая', theme_neon: 'Цветная',
+    theme_auto_hint: '«Как в Telegram» — тема переключается вместе с темой Telegram.',
+    theme_preview_note: 'Предпросмотр: темы видишь только ты. Остальные экраны перекрашиваются постепенно.',
     gender: 'Пол', gender_male: 'Парень', gender_female: 'Девушка',
     notifications: 'Уведомления',
     notify_follows: 'Подписки',
@@ -77,7 +81,7 @@ const DICT = {
     cat_top: '👕 Верх', cat_bottoms: '👖 Низ', cat_shoes: '👟 Обувь',
     cat_accessory: '🧢 Аксессуар', cat_other: '✨ Другое',
     cat_dress: '👗 Платье', cat_skirt: '👚 Юбка', cat_bag: '👜 Сумка',
-    reward_toast: '+{n} 💧 за образ',
+    reward_toast: '+{n} за образ',
 
     // карточка образа
     vote_aria: 'Оценить образ',
@@ -94,7 +98,7 @@ const DICT = {
     // профиль
     my_votes: 'Мои оценки', archive_aria: 'Архив',
     profile_not_found: 'Профиль не найден',
-    badge_founder: '★ Основатель',
+    badge_founder: '★ Основатель', badge_first_drip: 'первый дрип',
     stat_style_score: 'очки стиля', stat_rank: 'в рейтинге', stat_looks: 'образов',
     no_looks: 'Пока нет образов',
 
@@ -169,6 +173,10 @@ const DICT = {
     write_msg: 'Message',
     language: 'Language',
     interface_side: 'Buttons side',
+    appearance: 'Appearance',
+    theme_auto: 'Like Telegram', theme_dark: 'Dark', theme_light: 'Light', theme_neon: 'Neon',
+    theme_auto_hint: '“Like Telegram” follows your Telegram theme automatically.',
+    theme_preview_note: 'Preview: only you can see themes. Other screens are being restyled step by step.',
     gender: 'Gender', gender_male: 'Male', gender_female: 'Female',
     notifications: 'Notifications',
     notify_follows: 'Follows',
@@ -233,7 +241,7 @@ const DICT = {
     cat_top: '👕 Top', cat_bottoms: '👖 Bottoms', cat_shoes: '👟 Shoes',
     cat_accessory: '🧢 Accessory', cat_other: '✨ Other',
     cat_dress: '👗 Dress', cat_skirt: '👚 Skirt', cat_bag: '👜 Bag',
-    reward_toast: '+{n} 💧 for the look',
+    reward_toast: '+{n} for the look',
 
     // post card
     vote_aria: 'Rate this look',
@@ -250,7 +258,7 @@ const DICT = {
     // profile
     my_votes: 'My votes', archive_aria: 'Archive',
     profile_not_found: 'Profile not found',
-    badge_founder: '★ Founder',
+    badge_founder: '★ Founder', badge_first_drip: 'first drip',
     stat_style_score: 'style points', stat_rank: 'in ranking', stat_looks: 'looks',
     no_looks: 'No looks yet',
 

@@ -104,7 +104,7 @@ a.srow { text-decoration: none; }
 .refcard { background: linear-gradient(135deg, rgba(244,196,48,0.14), rgba(244,196,48,0.04)); border: 1px solid rgba(244,196,48,0.3); border-radius: 18px; padding: 20px; }
 .refcard__row { display: flex; justify-content: space-around; }
 .refstat { text-align: center; }
-.refstat__num { font-size: 26px; font-weight: 800; color: var(--gold); font-family: var(--font-display); }
+.refstat__num { display: inline-flex; align-items: center; gap: 8px; font-size: 26px; font-weight: 800; color: var(--gold); font-family: var(--font-display); }
 .refstat__lbl { font-size: 12px; color: var(--muted); margin-top: 4px; }
 .reflink__label { font-size: 13px; color: var(--muted); margin-bottom: 8px; }
 .reflink__box { display: flex; gap: 8px; align-items: center; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; padding: 8px 8px 8px 12px; }

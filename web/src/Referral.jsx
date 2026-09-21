@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from './supabase.js'
 import { tg } from './telegram.js'
 import { t } from './i18n.js'
+import DripCoin from './components/ui/DripCoin.jsx'
 import { shareRankCard } from './storyCard.js'
 
 export default function Referral({ me, onClose }) {
@@ -80,7 +81,7 @@ export default function Referral({ me, onClose }) {
               <div className="refstat__lbl">{t('ref_invited')}</div>
             </div>
             <div className="refstat">
-              <div className="refstat__num">💧 {stats?.earned ?? 0}</div>
+              <div className="refstat__num"><DripCoin size={22} /> {stats?.earned ?? 0}</div>
               <div className="refstat__lbl">{t('ref_earned')}</div>
             </div>
           </div>

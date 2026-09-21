@@ -16,8 +16,6 @@ export function initTelegram() {
   tg.ready()
   tg.expand()
   if (tg.disableVerticalSwipes) tg.disableVerticalSwipes()
-  if (tg.setHeaderColor) tg.setHeaderColor('#0a0a0b')
-  if (tg.setBackgroundColor) tg.setBackgroundColor('#0a0a0b')
   applyViewport()
   if (tg.onEvent) {
     tg.onEvent('viewportChanged', applyViewport)
@@ -36,6 +34,10 @@ export function setBackHandler(onBack) {
     tg.BackButton.hide()
   }
   return () => tg.BackButton.offClick(onBack)
+}
+
+export function hapticSelect() {
+  tg?.HapticFeedback?.selectionChanged?.()
 }
 
 export function haptic(style = 'light') {
