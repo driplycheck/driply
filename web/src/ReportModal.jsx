@@ -70,7 +70,7 @@ export default function ReportModal({ postId, targetId, onClose, onReported }) {
             padding: '10px 0',
             background: 'transparent',
             border: 'none',
-            color: '#8a8a8a',
+            color: 'var(--text-muted)',
             fontSize: 15,
             cursor: 'pointer',
           }}

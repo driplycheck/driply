@@ -1,5 +1,5 @@
 :root {
-  --muted: #9a9aa3;
+  --muted: var(--text-muted);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -48,7 +48,7 @@ body {
 .postview { animation: screenIn 0.22s ease-out;
   position: fixed;
   inset: 0;
-  background: #0a0a0b;
+  background: var(--bg);
   z-index: 100;
   overflow: hidden;
 }

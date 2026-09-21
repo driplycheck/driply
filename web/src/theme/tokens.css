@@ -9,6 +9,7 @@
 
   --glass-bg: rgba(9, 9, 11, 0.45);
   --glass-border: rgba(255, 255, 255, 0.15);
+  --danger: #FF4D4F;
 
   --r-sm: 12px;
   --r-md: 16px;
@@ -22,6 +23,7 @@
 }
 
 [data-theme="dark"] {
+  --track: rgba(255, 255, 255, 0.18);
   --bg: #0A0A0A;
   --surface: #141414;
   --surface-2: #1A1A1A;
@@ -47,6 +49,7 @@
 }
 
 [data-theme="neon"] {
+  --track: rgba(255, 255, 255, 0.18);
   --bg: #09090B;
   --surface: #141418;
   --surface-2: #1C1C22;
@@ -72,6 +75,7 @@
 }
 
 [data-theme="light"] {
+  --track: rgba(17, 17, 17, 0.14);
   --bg: #F3F1EC;
   --surface: #FFFFFF;
   --surface-2: #FFFFFF;
