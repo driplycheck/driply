@@ -4,6 +4,7 @@ import { getInitData } from './telegram.js'
 import { avatarTier } from './tiers.js'
 import ReportModal from './ReportModal.jsx'
 import { t } from './i18n.js'
+import DripCoin from './components/ui/DripCoin.jsx'
 
 const CATEGORY_ICON = {
   top: '👕',
@@ -31,15 +32,6 @@ function getItems(post) {
 
 function getAuthorName(author) {
   return author.display_name || '@' + (author.username || 'user')
-}
-
-function DripMark({ size = 22, color = '#1a1300' }) {
-  return (
-    <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true">
-      <path d="M12 2.5c4.2 5 6.5 8.2 6.5 11.3A6.5 6.5 0 0 1 12 20.3a6.5 6.5 0 0 1-6.5-6.5C5.5 10.7 7.8 7.5 12 2.5z"
-        fill={color} />
-    </svg>
-  )
 }
 
 async function castVote(postId, amount) {
@@ -122,11 +114,11 @@ function VoteControl({ score, voted, busy, picking, drips, onVote, onCoin }) {
       )}
       <button className={`vote ${voted ? 'vote--done' : ''}`} disabled={busy} onClick={onCoin} aria-label={t('vote_aria')}>
         <span className="vote__coin">
-          {voted ? '✓' : busy ? '…' : <DripMark size={22} color="#1a1300" />}
+          {voted ? '✓' : busy ? '…' : <DripCoin size={26} tone="ink" />}
         </span>
         {drips.map((drip) => <span className="drip" key={drip.id}>+{drip.amount}</span>)}
       </button>
-      <span className="vote__score"><DripMark size={13} color="#f4c430" /> {score}</span>
+      <span className="vote__score"><DripCoin size={14} /> {score}</span>
     </>
   )
 }

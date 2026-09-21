@@ -10,4 +10,4 @@
 .myvotes__info { flex: 1; min-width: 0; }
 .myvotes__author { color: #fff; font-size: 15px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .myvotes__meta { color: rgba(255,255,255,0.5); font-size: 13px; margin-top: 2px; }
-.myvotes__amount { color: #f5c451; font-weight: 600; font-size: 15px; flex-shrink: 0; }
+.myvotes__amount { display: inline-flex; align-items: center; gap: 5px; color: var(--text); font-weight: 600; font-size: 15px; flex-shrink: 0; }

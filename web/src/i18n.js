@@ -81,7 +81,7 @@ const DICT = {
     cat_top: '👕 Верх', cat_bottoms: '👖 Низ', cat_shoes: '👟 Обувь',
     cat_accessory: '🧢 Аксессуар', cat_other: '✨ Другое',
     cat_dress: '👗 Платье', cat_skirt: '👚 Юбка', cat_bag: '👜 Сумка',
-    reward_toast: '+{n} 💧 за образ',
+    reward_toast: '+{n} за образ',
 
     // карточка образа
     vote_aria: 'Оценить образ',
@@ -98,7 +98,7 @@ const DICT = {
     // профиль
     my_votes: 'Мои оценки', archive_aria: 'Архив',
     profile_not_found: 'Профиль не найден',
-    badge_founder: '★ Основатель',
+    badge_founder: '★ Основатель', badge_first_drip: 'первый дрип',
     stat_style_score: 'очки стиля', stat_rank: 'в рейтинге', stat_looks: 'образов',
     no_looks: 'Пока нет образов',
 
@@ -241,7 +241,7 @@ const DICT = {
     cat_top: '👕 Top', cat_bottoms: '👖 Bottoms', cat_shoes: '👟 Shoes',
     cat_accessory: '🧢 Accessory', cat_other: '✨ Other',
     cat_dress: '👗 Dress', cat_skirt: '👚 Skirt', cat_bag: '👜 Bag',
-    reward_toast: '+{n} 💧 for the look',
+    reward_toast: '+{n} for the look',
 
     // post card
     vote_aria: 'Rate this look',
@@ -258,7 +258,7 @@ const DICT = {
     // profile
     my_votes: 'My votes', archive_aria: 'Archive',
     profile_not_found: 'Profile not found',
-    badge_founder: '★ Founder',
+    badge_founder: '★ Founder', badge_first_drip: 'first drip',
     stat_style_score: 'style points', stat_rank: 'in ranking', stat_looks: 'looks',
     no_looks: 'No looks yet',
 
