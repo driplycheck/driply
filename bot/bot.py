@@ -22,24 +22,12 @@ dp = Dispatcher()
 
 WELCOME = {
     "ru": {
-        "text": (
-            "<b>Driply</b> — лента образов, где стиль оценивают дрипами 💧\n\n"
-            "Выкладываешь свой лук — другие голосуют за него дрипами.\n"
-            "Голосуешь за чужие — решаешь, кто поднимется в топ.\n\n"
-            "На старте у тебя <b>200 💧</b>, за первый образ дадим ещё <b>300</b>.\n"
-            "Дрипы нельзя купить — только заработать."
-        ),
-        "button": "Выложить первый образ",
+        "text": "<b>Driply</b> — открывай мини-апп, там всё 👇",
+        "button": "Открыть Driply",
     },
     "en": {
-        "text": (
-            "<b>Driply</b> is a feed of outfits where style is rated in drips 💧\n\n"
-            "Post your look and others vote for it with drips.\n"
-            "Vote for theirs and you decide who climbs the top.\n\n"
-            "You start with <b>200 💧</b>, and your first look earns <b>300</b> more.\n"
-            "Drips can’t be bought, only earned."
-        ),
-        "button": "Post your first look",
+        "text": "<b>Driply</b> — open the mini app, it’s all there 👇",
+        "button": "Open Driply",
     },
 }
 
