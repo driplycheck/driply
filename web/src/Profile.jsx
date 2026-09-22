@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from './supabase.js'
-import { getInitData } from './telegram.js'
-import { ChevronLeft, Settings as SettingsIcon, Share, Grid3x3, Crown, Ban, Undo2, Flag } from 'lucide-react'
+import { getInitData, tg } from './telegram.js'
+import { ChevronLeft, Settings as SettingsIcon, Share, Grid3x3, Crown, Ban, Undo2, Flag, MessageCircle } from 'lucide-react'
 import { avatarTier, tierProgress } from './tiers.js'
 import { shareRankCard } from './storyCard.js'
 import Button from './components/ui/Button.jsx'
@@ -135,6 +135,13 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onEdi
   const displayName = user?.display_name || (user?.username ? '@' + user.username : 'user')
   const showHandle = user?.username && (isSelf || !user.hide_username)
   const progress = tierProgress(user?.style_score ?? 0)
+  // «Написать» — только если человек разрешил и ник не скрыт: иначе ссылку не собрать
+  const canMessage = !isSelf && user?.allow_dm && user?.username && !user?.hide_username
+  function openChat() {
+    const url = 'https://t.me/' + user.username
+    if (tg?.openTelegramLink) tg.openTelegramLink(url)
+    else window.open(url, '_blank', 'noopener')
+  }
   const compact = (n) => Number(n || 0).toLocaleString(activeLang() === 'en' ? 'en-US' : 'ru-RU', { notation: n >= 10000 ? 'compact' : 'standard', maximumFractionDigits: 1 })
 
   return (
@@ -217,9 +224,16 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onEdi
                 </Button>
               </>
             ) : (
-              <Button variant={following ? 'secondary' : 'primary'} onClick={() => setFollowState(!following)} disabled={busyFollow}>
-                {following ? t('unfollow') : t('follow')}
-              </Button>
+              <>
+                <Button variant={following ? 'secondary' : 'primary'} onClick={() => setFollowState(!following)} disabled={busyFollow}>
+                  {following ? t('unfollow') : t('follow')}
+                </Button>
+                {canMessage && (
+                  <Button variant="secondary" onClick={openChat}>
+                    <MessageCircle size={18} strokeWidth={2} /> {t('write_msg')}
+                  </Button>
+                )}
+              </>
             )}
           </div>
 

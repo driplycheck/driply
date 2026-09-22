@@ -29,8 +29,6 @@ function Toggle({ active, onClick, disabled, label }) {
 
 export default function Settings({ me, lang, onLang, side, onSide, onClose, onEditProfile, onChanged, onOpenBlocked, onOpenReferral, onOpenAppearance }) {
   const { enabled: themesEnabled } = useTheme()
-  const [hide, setHide] = useState(!!me.hide_username)
-  const [gender, setGender] = useState(me.gender ?? null)
   const [prefs, setPrefs] = useState({
     all: me.notify_prefs?.all !== false,
     follows: me.notify_prefs?.follows !== false,
@@ -39,25 +37,6 @@ export default function Settings({ me, lang, onLang, side, onSide, onClose, onEd
   })
   const [busy, setBusy] = useState(false)
   const [aboutOpen, setAboutOpen] = useState(false)
-
-  async function saveProfile(update, rollback) {
-    if (busy) return
-    setBusy(true)
-    const { error } = await supabase.functions.invoke('quick-handler', {
-      body: { action: 'set_profile', initData: getInitData(),
-        display_name: me.display_name, avatar_url: me.avatar_url, ...update },
-    })
-    setBusy(false)
-    if (error) { rollback(); return false }
-    onChanged(update)
-    return true
-  }
-
-  async function toggleHide() {
-    const next = !hide
-    setHide(next)
-    await saveProfile({ hide_username: next }, () => setHide(!next))
-  }
 
   async function togglePref(key) {
     if (busy) return
@@ -71,14 +50,6 @@ export default function Settings({ me, lang, onLang, side, onSide, onClose, onEd
     if (error) { setPrefs(prefs); return }
     onChanged({ notify_prefs: updated })
   }
-
-  async function changeGender(g) {
-    if (busy) return
-    const previous = gender
-    setGender(g)
-    await saveProfile({ gender: g }, () => setGender(previous))
-  }
-
 
   return (
     <div className="settings">
@@ -107,22 +78,8 @@ export default function Settings({ me, lang, onLang, side, onSide, onClose, onEd
             ))}
           </div>
         </div>
-        <div className="srow srow--col">
-          <div className="srow__label">{t('gender')}</div>
-          <div className="langrow">
-            <button className={`langopt ${gender === 'male' ? 'langopt--on' : ''}`} onClick={() => changeGender('male')}>👨 {t('gender_male')}</button>
-            <button className={`langopt ${gender === 'female' ? 'langopt--on' : ''}`} onClick={() => changeGender('female')}>👩 {t('gender_female')}</button>
-          </div>
-        </div>
 
         <div className="ssection">{t('sec_privacy')}</div>
-        <div className="srow">
-          <div className="srow__text">
-            <div className="srow__label">{t('hide_username')}</div>
-            <div className="srow__hint">{t('hide_username_hint')}</div>
-          </div>
-          <Toggle active={hide} onClick={toggleHide} disabled={busy} label="hide" />
-        </div>
         <SettingsLink label={t('blocked_list')} onClick={onOpenBlocked} />
 
         <div className="ssection">{t('sec_notify')}</div>

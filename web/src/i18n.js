@@ -66,13 +66,16 @@ const DICT = {
     nick_required: 'Придумай ник',
     nick_empty: 'Ник не может быть пустым',
     skip: 'Пропустить', continue: 'Продолжить',
-    profile: 'Профиль', bio_placeholder: 'О себе (био)',
+    profile: 'Профиль', bio_placeholder: 'О себе (био)', bio_label: 'О себе',
+    dm_needs_username: 'Кнопка «Написать» появится, когда ник не скрыт',
 
     // публикация
     composer_new: 'Новый образ',
     composer_first: 'Твой первый образ',
     post_btn: 'Выложить',
-    add_photo: '+ Добавить фото',
+    add_photo: '+ Добавить фото', add_photo_title: 'Добавить фото', photo_change: 'Сменить фото',
+    style_title: 'Стиль', tag_items: 'Отметить вещи', tag_items_hint: 'Подписчики увидят, что на тебе',
+    publish: 'Опубликовать',
     photo_required: 'Добавь фото',
     post_failed: 'Не удалось выложить, попробуй ещё раз',
     first_post_hint: 'Достаточно фото. Детали можно добавить сейчас или позже.',
@@ -108,7 +111,11 @@ const DICT = {
     tier_base: 'Новичок', tier_bronze: 'Бронза', tier_silver: 'Серебро', tier_gold: 'Золото',
     tier_to_bronze: 'Бронзы', tier_to_silver: 'Серебра', tier_to_gold: 'Золота',
     profile_edit: 'Редактировать', profile_share: 'Поделиться', profile_looks_tab: 'Образы',
-    badge_founder_short: 'Founder', you: 'ты', leaderboard: 'Рейтинг', leaderboard_sub: 'Очки стиля — сколько дрипов собрали образы',
+    badge_founder_short: 'Founder', you: 'Ты',
+    your_drips: 'Твои дрипы', how_to_earn: 'Как заработать', earn_title: 'Как заработать дрипы',
+    earn_start: 'Старт в Driply', earn_first: 'Первый образ', earn_next: 'Каждый следующий образ',
+    earn_ref: 'Друг по твоей ссылке выложил образ', earn_story: 'История в Stories, раз в сутки',
+    earn_vote_note: 'Дрипы за голос уходят автору образа и растят его очки стиля. Купить дрипы нельзя — только заработать.', leaderboard: 'Рейтинг', leaderboard_sub: 'Очки стиля — сколько дрипов собрали образы',
     no_looks: 'Пока нет образов',
 
     // история публикаций
@@ -235,13 +242,16 @@ const DICT = {
     nick_required: 'Pick a nickname',
     nick_empty: 'Nickname can’t be empty',
     skip: 'Skip', continue: 'Continue',
-    profile: 'Profile', bio_placeholder: 'About you (bio)',
+    profile: 'Profile', bio_placeholder: 'About you (bio)', bio_label: 'About',
+    dm_needs_username: 'The Message button shows only when your handle is visible',
 
     // composer
     composer_new: 'New look',
     composer_first: 'Your first look',
     post_btn: 'Post',
-    add_photo: '+ Add photo',
+    add_photo: '+ Add photo', add_photo_title: 'Add a photo', photo_change: 'Change photo',
+    style_title: 'Style', tag_items: 'Tag items', tag_items_hint: 'Followers will see what you wear',
+    publish: 'Publish',
     photo_required: 'Add a photo',
     post_failed: 'Couldn’t post, try again',
     first_post_hint: 'A photo is enough. Details can be added now or later.',
@@ -277,7 +287,11 @@ const DICT = {
     tier_base: 'Rookie', tier_bronze: 'Bronze', tier_silver: 'Silver', tier_gold: 'Gold',
     tier_to_bronze: 'Bronze', tier_to_silver: 'Silver', tier_to_gold: 'Gold',
     profile_edit: 'Edit', profile_share: 'Share', profile_looks_tab: 'Looks',
-    badge_founder_short: 'Founder', you: 'you', leaderboard: 'Leaderboard', leaderboard_sub: 'Style points — drips collected by looks',
+    badge_founder_short: 'Founder', you: 'You',
+    your_drips: 'Your drips', how_to_earn: 'How to earn', earn_title: 'How to earn drips',
+    earn_start: 'Joining Driply', earn_first: 'Your first look', earn_next: 'Every next look',
+    earn_ref: 'A friend you invited posts a look', earn_story: 'Story on Telegram, once a day',
+    earn_vote_note: 'Drips you give go to the look’s author and grow their style points. Drips can’t be bought — only earned.', leaderboard: 'Leaderboard', leaderboard_sub: 'Style points — drips collected by looks',
     no_looks: 'No looks yet',
 
     // post history

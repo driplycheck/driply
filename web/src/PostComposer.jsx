@@ -2,7 +2,16 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 import { supabase } from './supabase.js'
 import { getInitData } from './telegram.js'
 import { matchBrands } from './brands.js'
+import { X, Check, Tag, ImagePlus } from 'lucide-react'
 import { t, styleName } from './i18n.js'
+import DripCoin from './components/ui/DripCoin.jsx'
+import Chip from './components/ui/Chip.jsx'
+import GlassBadge from './components/ui/GlassBadge.jsx'
+
+const CAPTION_MAX = 300
+// экономика: первый образ +300, следующие +100 (create_post)
+const REWARD_FIRST = 300
+const REWARD_NEXT = 100
 
 const CATEGORY_VALUES = ['top', 'bottoms', 'shoes', 'accessory', 'other', 'dress', 'skirt', 'bag']
 
@@ -59,20 +68,20 @@ function StylePicker({ styles, selectedId, onSelect }) {
   if (styles.length === 0) return null
 
   return (
-    <div className="stylepick">
-      <div className="stylepick__lbl">{t('style_label')}</div>
-      <div className="stylepick__row">
-        {styles.map((style) => (
-          <button
-            key={style.id}
-            className={`stylechip ${selectedId === style.id ? 'stylechip--on' : ''}`}
-            onClick={() => onSelect(style.id)}
-          >
-            {style.emoji} {styleName(style)}
-          </button>
-        ))}
+    <section className="csec">
+      <h2 className="csec__title">{t('style_title')}</h2>
+      <div className="stylepick">
+        {styles.map((style) => {
+          const on = selectedId === style.id
+          return (
+            <Chip key={style.id} active={on} onClick={() => onSelect(style.id)}>
+              {on && <Check size={14} strokeWidth={3} className="stylepick__check" />}
+              {styleName(style)}
+            </Chip>
+          )
+        })}
       </div>
-    </div>
+    </section>
   )
 }
 
@@ -153,7 +162,7 @@ function AddedItems({ items, onRemove }) {
   )
 }
 
-export default function PostComposer({ onClose, onPosted, firstPost = false }) {
+export default function PostComposer({ selfId, onClose, onPosted, firstPost = false }) {
   const [file, setFile] = useState(null)
   const [preview, setPreview] = useState(null)
   const [caption, setCaption] = useState('')
@@ -165,10 +174,9 @@ export default function PostComposer({ onClose, onPosted, firstPost = false }) {
   const [error, setError] = useState(null)
   const [styles, setStyles] = useState([])
   const [styleId, setStyleId] = useState(null)
-  const [showDetails, setShowDetails] = useState(!firstPost)
-
-  // что уже заполнено в свёрнутых деталях: вещи, подпись, стиль
-  const detailsCount = items.length + (caption.trim() ? 1 : 0) + (styleId ? 1 : 0)
+  const [tagItems, setTagItems] = useState(false)
+  const [hasPosts, setHasPosts] = useState(firstPost ? false : null)
+  const reward = hasPosts === false ? REWARD_FIRST : hasPosts ? REWARD_NEXT : null
 
   const remoteBrands = useItemSuggestions('brand', brand)
   const nameSuggestions = useItemSuggestions('name', name, brand)
@@ -193,6 +201,15 @@ export default function PostComposer({ onClose, onPosted, firstPost = false }) {
   useEffect(() => () => {
     if (preview) URL.revokeObjectURL(preview)
   }, [preview])
+
+  // награда на кнопке: первый образ даёт больше
+  useEffect(() => {
+    if (firstPost || !selfId) return
+    let active = true
+    supabase.from('posts').select('id', { count: 'exact', head: true }).eq('user_id', selfId)
+      .then(({ count, error }) => { if (active && !error) setHasPosts((count ?? 0) > 0) })
+    return () => { active = false }
+  }, [firstPost, selfId])
 
   function onPickFile(e) {
     const f = e.target.files?.[0]
@@ -232,7 +249,7 @@ export default function PostComposer({ onClose, onPosted, firstPost = false }) {
           initData: getInitData(),
           media_url: pub.publicUrl,
           caption: caption.trim(),
-          items,
+          items: tagItems ? items : [],
           style_id: styleId,
         },
       })
@@ -251,41 +268,62 @@ export default function PostComposer({ onClose, onPosted, firstPost = false }) {
   return (
     <div className="composer">
       <header className="composer__top">
-        <button className="composer__close" onClick={onClose}>✕</button>
-        <span className="composer__title">{firstPost ? t('composer_first') : t('composer_new')}</span>
-        <button className="composer__post" onClick={submit} disabled={busy || !file}>
-          {busy ? '…' : t('post_btn')}
+        <button className="composer__close" onClick={onClose} aria-label={t('close_aria')}>
+          <X size={20} strokeWidth={2.2} />
         </button>
+        <span className="composer__title">{firstPost ? t('composer_first') : t('composer_new')}</span>
+        <span className="composer__spacer" />
       </header>
 
       <div className="composer__body">
-        <label className="photo">
-          {preview ? <img src={preview} alt="" /> : <span>{t('add_photo')}</span>}
+        <label className={`photo ${preview ? 'photo--set' : ''}`}>
+          {preview ? (
+            <>
+              <img src={preview} alt="" />
+              <span className="photo__badge"><GlassBadge>{t('photo_change')}</GlassBadge></span>
+            </>
+          ) : (
+            <span className="photo__empty">
+              <span className="photo__plus"><ImagePlus size={26} strokeWidth={1.8} /></span>
+              <span className="photo__label">{t('add_photo_title')}</span>
+              {firstPost && <span className="photo__hint">{t('first_post_hint')}</span>}
+            </span>
+          )}
           <input type="file" accept="image/*" onChange={onPickFile} hidden />
         </label>
 
-        {firstPost && <p className="composer__hint">{t('first_post_hint')}</p>}
+        <div className="caption-box">
+          <textarea
+            className="caption-box__input"
+            placeholder={t('caption_placeholder')}
+            value={caption}
+            maxLength={CAPTION_MAX}
+            rows={2}
+            onChange={(e) => setCaption(e.target.value)}
+          />
+          <span className="caption-box__count">{caption.length} / {CAPTION_MAX}</span>
+        </div>
 
-        {firstPost && (
-          <button className="details-toggle" type="button" onClick={() => setShowDetails((visible) => !visible)}>
-            {showDetails ? t('details_hide') : detailsCount > 0 ? t('details_count', { n: detailsCount }) : t('details_add')}
-            <span aria-hidden="true">{showDetails ? '⌃' : '⌄'}</span>
+        <StylePicker
+          styles={styles}
+          selectedId={styleId}
+          onSelect={(id) => setStyleId((current) => (current === id ? null : id))}
+        />
+
+        <section className="tagrow">
+          <span className="tagrow__icon"><Tag size={18} strokeWidth={1.9} /></span>
+          <span className="tagrow__text">
+            <span className="tagrow__title">{t('tag_items')}</span>
+            <span className="tagrow__hint">{t('tag_items_hint')}</span>
+          </span>
+          <button className={`toggle ${tagItems ? 'toggle--on' : ''}`} onClick={() => setTagItems((v) => !v)}
+            aria-label={t('tag_items')} aria-pressed={tagItems}>
+            <span className="toggle__knob" />
           </button>
-        )}
+        </section>
 
-        {showDetails && (
+        {tagItems && (
           <>
-            <input
-              className="field"
-              placeholder={t('caption_placeholder')}
-              value={caption}
-              onChange={(e) => setCaption(e.target.value)}
-            />
-            <StylePicker
-              styles={styles}
-              selectedId={styleId}
-              onSelect={(id) => setStyleId((current) => (current === id ? null : id))}
-            />
             <ItemForm
               categories={CATEGORY_VALUES}
               category={cat}
@@ -305,6 +343,15 @@ export default function PostComposer({ onClose, onPosted, firstPost = false }) {
         )}
 
         {error && <div className="composer__err">{error}</div>}
+      </div>
+
+      <div className="composer__footer">
+        <button className="publish" onClick={submit} disabled={busy || !file}>
+          {busy ? '…' : t('publish')}
+          {!busy && reward && (
+            <span className="publish__reward"><DripCoin size={14} /> +{reward}</span>
+          )}
+        </button>
       </div>
     </div>
   )

@@ -150,7 +150,7 @@ export default function App() {
 
       {top?.type === 'composer' && (
         <Overlay onClose={pop}>
-          <PostComposer onClose={pop} onPosted={onPosted} firstPost={top.props.firstPost} />
+          <PostComposer selfId={profile?.id} onClose={pop} onPosted={onPosted} firstPost={top.props.firstPost} />
         </Overlay>
       )}
 
@@ -231,7 +231,7 @@ export default function App() {
 
       {top?.type === 'top' && (
         <Overlay onClose={pop}>
-          <TopUsers selfId={profile?.id} onClose={pop} onOpenProfile={(id) => replace('profile', { userId: id })} />
+          <TopUsers me={profile} onClose={pop} onOpenProfile={(id) => replace('profile', { userId: id })} />
         </Overlay>
       )}
 
