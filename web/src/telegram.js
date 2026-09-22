@@ -45,4 +45,12 @@ export function haptic(style = 'light') {
 }
 
 export function getInitData() { return tg?.initData ?? '' }
-export function getStartParam() { return tg?.initDataUnsafe?.start_param ?? '' }
+// код приглашения: из start_param (ссылка ?startapp=) либо из адреса (?ref= от бота)
+export function getStartParam() {
+  const fromTg = window.Telegram?.WebApp?.initDataUnsafe?.start_param
+  if (fromTg) return fromTg
+  try {
+    const ref = new URLSearchParams(window.location.search).get('ref')
+    return ref ? 'ref_' + ref : ''
+  } catch { return '' }
+}
