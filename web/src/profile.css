@@ -273,3 +273,4 @@ button.pstat:active { opacity: 0.7; }
 /* превью поверх фото: дрип-монета в фото-варианте, как в ленте */
 .grid__item { --drip: var(--photo-drip); --on-drip: var(--photo-on-drip); }
 .profile .grid__item { border-radius: 14px; aspect-ratio: 118 / 156; }
+.grid__multi { position: absolute; top: 6px; right: 6px; display: grid; place-items: center; color: var(--on-photo); filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.6)); }

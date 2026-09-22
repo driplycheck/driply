@@ -31,7 +31,13 @@ const ERROR_KEYS = {
 }
 
 function getItems(post) {
-  return (post.post_items || []).map((postItem) => postItem.items).filter(Boolean)
+  return (post.post_items || [])
+    .filter((postItem) => postItem.items)
+    .map((postItem) => ({ ...postItem.items, price: postItem.price ?? null }))
+}
+
+function formatPrice(n) {
+  return Number(n).toLocaleString('ru-RU') + ' ₽'
 }
 
 function getAuthorName(author) {
@@ -92,6 +98,8 @@ export default function PostCard({ post, alreadyVoted, onOpenProfile, selfId, on
   const author = post.users || {}
   const items = getItems(post)
   const style = post.style || post.styles || null
+  const style2 = post.style2 || null
+  const images = [post.media_url, ...(post.extra_media || [])]
 
   const [score, setScore] = useState(post.score)
   const [votedLocal, setVotedLocal] = useState(false)
@@ -136,8 +144,13 @@ export default function PostCard({ post, alreadyVoted, onOpenProfile, selfId, on
 
   return (
     <OutfitCard
-      imageUrl={post.media_url}
-      badge={style && <GlassBadge>{styleName(style)}</GlassBadge>}
+      images={images}
+      badge={style && (
+        <>
+          <GlassBadge>{styleName(style)}</GlassBadge>
+          {style2 && <GlassBadge>{styleName(style2)}</GlassBadge>}
+        </>
+      )}
       author={{
         name: getAuthorName(author),
         avatarUrl: author.avatar_url,
@@ -151,6 +164,7 @@ export default function PostCard({ post, alreadyVoted, onOpenProfile, selfId, on
           {items.map((item, index) => (
             <span className="ocard__tag" key={index}>
               {CATEGORY_ICON[item.category] || '✨'} {item.brand} {item.name}
+              {item.price != null && <b className="ocard__price">{formatPrice(item.price)}</b>}
             </span>
           ))}
         </div>

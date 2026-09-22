@@ -84,6 +84,8 @@ Deno.serve(async (req) => {
         p_tid: tgUser.id, p_username: uname, p_avatar: tgUser.photo_url ?? null,
         p_media_url: body.media_url, p_caption: body.caption ?? '', p_items: body.items ?? [],
         p_style_id: body.style_id ?? null,
+        p_style2_id: body.style2_id ?? null,
+        p_extra_media: Array.isArray(body.extra_media) ? body.extra_media.slice(0, 2) : [],
       })
       if (error) return jsonResponse({ error: error.message }, 400)
       if (data?.ref_bonus > 0) {

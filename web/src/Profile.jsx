@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from './supabase.js'
 import { getInitData, tg } from './telegram.js'
-import { ChevronLeft, Settings as SettingsIcon, Share, Grid3x3, Crown, Ban, Undo2, Flag, MessageCircle } from 'lucide-react'
+import { ChevronLeft, Settings as SettingsIcon, Share, Grid3x3, Crown, Ban, Undo2, Flag, MessageCircle, Layers } from 'lucide-react'
 import { avatarTier, tierProgress } from './tiers.js'
 import { shareRankCard } from './storyCard.js'
 import Button from './components/ui/Button.jsx'
@@ -27,7 +27,7 @@ async function fetchProfileData(userId, selfId) {
 
   const requests = [
     supabase.from('users').select('id', { count: 'exact', head: true }).gt('style_score', user.style_score),
-    supabase.from('posts').select('id, media_url, score')
+    supabase.from('posts').select('id, media_url, extra_media, score')
       .eq('user_id', userId).eq('hidden', false).order('created_at', { ascending: false }),
     fetchRelations(userId, selfId),
   ]
@@ -250,6 +250,7 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onEdi
                   style={{ backgroundImage: `url(${p.media_url})` }}
                   onClick={() => onOpenPost(p.id)}>
                   <span className="grid__score"><DripCoin size={11} /> {p.score}</span>
+                  {p.extra_media?.length > 0 && <span className="grid__multi"><Layers size={14} strokeWidth={2.2} /></span>}
                 </button>
               ))}
             </div>

@@ -263,3 +263,4 @@ input, textarea, select, .field { font-size: 16px; }
   overflow-y: auto;
   padding: calc(env(safe-area-inset-top) + 64px) var(--gutter) calc(24px + var(--safe-bottom, 0px));
 }
+.ocard__price { margin-left: 6px; font-weight: 700; }

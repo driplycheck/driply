@@ -2,13 +2,15 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 import { supabase } from './supabase.js'
 import { getInitData } from './telegram.js'
 import { matchBrands } from './brands.js'
-import { X, Check, Tag, ImagePlus } from 'lucide-react'
+import { X, Check, Tag, ImagePlus, Plus } from 'lucide-react'
 import { t, styleName } from './i18n.js'
 import DripCoin from './components/ui/DripCoin.jsx'
 import Chip from './components/ui/Chip.jsx'
 import GlassBadge from './components/ui/GlassBadge.jsx'
 
 const CAPTION_MAX = 300
+const MAX_PHOTOS = 3
+const MAX_STYLES = 2
 // экономика: первый образ +300, следующие +100 (create_post)
 const REWARD_FIRST = 300
 const REWARD_NEXT = 100
@@ -64,17 +66,18 @@ function useItemSuggestions(column, term, brandFilter = '') {
   return remote
 }
 
-function StylePicker({ styles, selectedId, onSelect }) {
+function StylePicker({ styles, selectedIds, onToggle }) {
   if (styles.length === 0) return null
+  const full = selectedIds.length >= MAX_STYLES
 
   return (
     <section className="csec">
-      <h2 className="csec__title">{t('style_title')}</h2>
-      <div className="stylepick">
+      <h2 className="csec__title">{t('style_title')} <span className="csec__hint">{t('style_max', { n: MAX_STYLES })}</span></h2>
+      <div className={`stylepick ${full ? 'stylepick--full' : ''}`}>
         {styles.map((style) => {
-          const on = selectedId === style.id
+          const on = selectedIds.includes(style.id)
           return (
-            <Chip key={style.id} active={on} onClick={() => onSelect(style.id)}>
+            <Chip key={style.id} active={on} onClick={() => onToggle(style.id)}>
               {on && <Check size={14} strokeWidth={3} className="stylepick__check" />}
               {styleName(style)}
             </Chip>
@@ -99,7 +102,7 @@ function SuggestionList({ suggestions, onSelect }) {
   )
 }
 
-function ItemForm({ categories, category, brand, name, brandSuggestions, nameSuggestions, onCategory, onBrand, onName, onBrandSelect, onNameSelect, onAdd }) {
+function ItemForm({ categories, category, brand, name, price, brandSuggestions, nameSuggestions, onCategory, onBrand, onName, onPrice, onBrandSelect, onNameSelect, onAdd }) {
   const [focused, setFocused] = useState(null)
   const nameRef = useRef(null)
 
@@ -143,6 +146,13 @@ function ItemForm({ categories, category, brand, name, brandSuggestions, nameSug
           />
         )}
       </div>
+      <input
+        className="field itemadd__price"
+        placeholder={t('price_placeholder')}
+        inputMode="numeric"
+        value={price}
+        onChange={(e) => onPrice(e.target.value.replace(/\D/g, '').slice(0, 8))}
+      />
       <button className="itemadd__btn" onClick={onAdd} disabled={!name.trim()}>+</button>
     </div>
   )
@@ -155,7 +165,8 @@ function AddedItems({ items, onRemove }) {
     <div className="chips">
       {items.map((item, index) => (
         <span className="chip" key={index} onClick={() => onRemove(index)}>
-          {[item.brand, item.name].filter(Boolean).join(' ')} ✕
+          {[item.brand, item.name].filter(Boolean).join(' ')}
+          {item.price != null && <b> · {Number(item.price).toLocaleString('ru-RU')} ₽</b>} ✕
         </span>
       ))}
     </div>
@@ -163,17 +174,19 @@ function AddedItems({ items, onRemove }) {
 }
 
 export default function PostComposer({ selfId, onClose, onPosted, firstPost = false }) {
-  const [file, setFile] = useState(null)
-  const [preview, setPreview] = useState(null)
+  const [photos, setPhotos] = useState([]) // [{ file, url }], первое — обложка
+  const photosRef = useRef(photos)
+  photosRef.current = photos
   const [caption, setCaption] = useState('')
   const [items, setItems] = useState([])
   const [cat, setCat] = useState('top')
   const [brand, setBrand] = useState('')
   const [name, setName] = useState('')
+  const [price, setPrice] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
   const [styles, setStyles] = useState([])
-  const [styleId, setStyleId] = useState(null)
+  const [styleIds, setStyleIds] = useState([])
   const [tagItems, setTagItems] = useState(false)
   const [hasPosts, setHasPosts] = useState(firstPost ? false : null)
   const reward = hasPosts === false ? REWARD_FIRST : hasPosts ? REWARD_NEXT : null
@@ -198,9 +211,8 @@ export default function PostComposer({ selfId, onClose, onPosted, firstPost = fa
     return () => { active = false }
   }, [])
 
-  useEffect(() => () => {
-    if (preview) URL.revokeObjectURL(preview)
-  }, [preview])
+  // превью — object URL: освобождаем при уходе с экрана
+  useEffect(() => () => photosRef.current.forEach((p) => URL.revokeObjectURL(p.url)), [])
 
   // награда на кнопке: первый образ даёт больше
   useEffect(() => {
@@ -211,46 +223,69 @@ export default function PostComposer({ selfId, onClose, onPosted, firstPost = fa
     return () => { active = false }
   }, [firstPost, selfId])
 
-  function onPickFile(e) {
+  // slot < длины — замена фото, иначе добавление
+  function pickPhoto(slot, e) {
     const f = e.target.files?.[0]
+    e.target.value = ''
     if (!f) return
-    if (preview) URL.revokeObjectURL(preview)
-    setFile(f)
-    setPreview(URL.createObjectURL(f))
+    setPhotos((arr) => {
+      const next = [...arr]
+      if (next[slot]) URL.revokeObjectURL(next[slot].url)
+      next[Math.min(slot, next.length)] = { file: f, url: URL.createObjectURL(f) }
+      return next.slice(0, MAX_PHOTOS)
+    })
+  }
+
+  function removePhoto(i) {
+    setPhotos((arr) => {
+      URL.revokeObjectURL(arr[i].url)
+      return arr.filter((_, j) => j !== i)
+    })
+  }
+
+  function toggleStyle(id) {
+    setStyleIds((ids) => ids.includes(id) ? ids.filter((x) => x !== id)
+      : ids.length >= MAX_STYLES ? ids : [...ids, id])
   }
 
   function addItem() {
     if (!name.trim()) return
-    setItems((arr) => [...arr, { category: cat, brand: brand.trim(), name: name.trim() }])
+    setItems((arr) => [...arr, { category: cat, brand: brand.trim(), name: name.trim(), price: price ? Number(price) : null }])
     setBrand('')
     setName('')
+    setPrice('')
   }
 
   function removeItem(idx) {
     setItems((arr) => arr.filter((_, i) => i !== idx))
   }
 
+  async function uploadPhoto(file) {
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase()
+    const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+    const { error } = await supabase.storage
+      .from('outfits')
+      .upload(path, file, { contentType: file.type || 'image/jpeg' })
+    if (error) throw new Error('upload')
+    return supabase.storage.from('outfits').getPublicUrl(path).data.publicUrl
+  }
+
   async function submit() {
-    if (!file) { setError(t('photo_required')); return }
+    if (photos.length === 0) { setError(t('photo_required')); return }
     setBusy(true)
     setError(null)
     try {
-      const ext = (file.name.split('.').pop() || 'jpg').toLowerCase()
-      const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-      const { error: upErr } = await supabase.storage
-        .from('outfits')
-        .upload(path, file, { contentType: file.type || 'image/jpeg' })
-      if (upErr) throw new Error('upload')
-      const { data: pub } = supabase.storage.from('outfits').getPublicUrl(path)
-
+      const urls = await Promise.all(photos.map((p) => uploadPhoto(p.file)))
       const { data: result, error } = await supabase.functions.invoke('quick-handler', {
         body: {
           action: 'create_post',
           initData: getInitData(),
-          media_url: pub.publicUrl,
+          media_url: urls[0],
+          extra_media: urls.slice(1),
           caption: caption.trim(),
           items: tagItems ? items : [],
-          style_id: styleId,
+          style_id: styleIds[0] ?? null,
+          style2_id: styleIds[1] ?? null,
         },
       })
       if (error) {
@@ -276,21 +311,40 @@ export default function PostComposer({ selfId, onClose, onPosted, firstPost = fa
       </header>
 
       <div className="composer__body">
-        <label className={`photo ${preview ? 'photo--set' : ''}`}>
-          {preview ? (
-            <>
-              <img src={preview} alt="" />
-              <span className="photo__badge"><GlassBadge>{t('photo_change')}</GlassBadge></span>
-            </>
-          ) : (
+        {photos.length === 0 ? (
+          <label className="photo">
             <span className="photo__empty">
               <span className="photo__plus"><ImagePlus size={26} strokeWidth={1.8} /></span>
               <span className="photo__label">{t('add_photo_title')}</span>
-              {firstPost && <span className="photo__hint">{t('first_post_hint')}</span>}
+              <span className="photo__hint">{firstPost ? t('first_post_hint') : t('photos_hint', { n: MAX_PHOTOS })}</span>
             </span>
-          )}
-          <input type="file" accept="image/*" onChange={onPickFile} hidden />
-        </label>
+            <input type="file" accept="image/*" onChange={(e) => pickPhoto(0, e)} hidden />
+          </label>
+        ) : (
+          <div className="photos">
+            <label className="photos__cover">
+              <img src={photos[0].url} alt="" />
+              <span className="photo__badge"><GlassBadge>{t('photo_cover')}</GlassBadge></span>
+              <input type="file" accept="image/*" onChange={(e) => pickPhoto(0, e)} hidden />
+            </label>
+            <div className="photos__side">
+              {[1, 2].map((i) => photos[i] ? (
+                <div className="photos__thumb" key={i}>
+                  <img src={photos[i].url} alt="" />
+                  <button className="photos__remove" onClick={() => removePhoto(i)} aria-label={t('photo_remove')}>
+                    <X size={14} strokeWidth={2.6} />
+                  </button>
+                </div>
+              ) : i === photos.length ? (
+                <label className="photos__add" key={i}>
+                  <span className="photos__add-plus"><Plus size={18} strokeWidth={2.4} /></span>
+                  <span>{t('photo_more')}</span>
+                  <input type="file" accept="image/*" onChange={(e) => pickPhoto(i, e)} hidden />
+                </label>
+              ) : <span className="photos__slot" key={i} />)}
+            </div>
+          </div>
+        )}
 
         <div className="caption-box">
           <textarea
@@ -304,11 +358,7 @@ export default function PostComposer({ selfId, onClose, onPosted, firstPost = fa
           <span className="caption-box__count">{caption.length} / {CAPTION_MAX}</span>
         </div>
 
-        <StylePicker
-          styles={styles}
-          selectedId={styleId}
-          onSelect={(id) => setStyleId((current) => (current === id ? null : id))}
-        />
+        <StylePicker styles={styles} selectedIds={styleIds} onToggle={toggleStyle} />
 
         <section className="tagrow">
           <span className="tagrow__icon"><Tag size={18} strokeWidth={1.9} /></span>
@@ -329,11 +379,13 @@ export default function PostComposer({ selfId, onClose, onPosted, firstPost = fa
               category={cat}
               brand={brand}
               name={name}
+              price={price}
               brandSuggestions={brandSuggestions}
               nameSuggestions={nameSuggestions}
               onCategory={setCat}
               onBrand={setBrand}
               onName={setName}
+              onPrice={setPrice}
               onBrandSelect={setBrand}
               onNameSelect={setName}
               onAdd={addItem}
@@ -346,7 +398,7 @@ export default function PostComposer({ selfId, onClose, onPosted, firstPost = fa
       </div>
 
       <div className="composer__footer">
-        <button className="publish" onClick={submit} disabled={busy || !file}>
+        <button className="publish" onClick={submit} disabled={busy || photos.length === 0}>
           {busy ? '…' : t('publish')}
           {!busy && reward && (
             <span className="publish__reward"><DripCoin size={14} /> +{reward}</span>

@@ -57,10 +57,12 @@ export default function Feed({ selfId, balance, scrollTopKey, onOpenProfile }) {
   // чипы — только стили, которые реально есть в ленте: пустой фильтр хуже, чем никакого
   const styles = useMemo(() => {
     const seen = new Map()
-    for (const p of posts || []) if (p.style && !seen.has(p.style.id)) seen.set(p.style.id, p.style)
+    for (const p of posts || []) {
+      for (const st of [p.style, p.style2]) if (st && !seen.has(st.id)) seen.set(st.id, st)
+    }
     return [...seen.values()]
   }, [posts])
-  const visible = styleId ? (posts || []).filter((p) => p.style?.id === styleId) : posts
+  const visible = styleId ? (posts || []).filter((p) => p.style?.id === styleId || p.style2?.id === styleId) : posts
 
   return (
     <div className="feed" ref={scroller}>
