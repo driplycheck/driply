@@ -112,10 +112,15 @@ const DICT = {
     tier_to_bronze: 'Бронзы', tier_to_silver: 'Серебра', tier_to_gold: 'Золота',
     profile_edit: 'Редактировать', profile_share: 'Поделиться', profile_looks_tab: 'Образы',
     badge_founder_short: 'Founder', you: 'Ты',
+    period_week: 'Неделя', period_month: 'Месяц', period_all: 'Всё время',
+    reset_in: 'сброс через {t}', left_dh: '{d} д {h} ч', left_hm: '{h} ч {m} мин',
+    leaderboard_sub_all: 'очки стиля за всё время', period_empty: 'В этом периоде дрипов ещё не было — выложи образ первым',
+    no_points_period: 'Пока без очков в этом периоде', today_plus: '+{n} сегодня',
+    places_up: '+{n} {w} за день', places_down: '−{n} {w} за день', rank_steady: 'Место держится',
     your_drips: 'Твои дрипы', how_to_earn: 'Как заработать', earn_title: 'Как заработать дрипы',
     earn_start: 'Старт в Driply', earn_first: 'Первый образ', earn_next: 'Каждый следующий образ',
     earn_ref: 'Друг по твоей ссылке выложил образ', earn_story: 'История в Stories, раз в сутки',
-    earn_vote_note: 'Дрипы за голос уходят автору образа и растят его очки стиля. Купить дрипы нельзя — только заработать.', leaderboard: 'Рейтинг', leaderboard_sub: 'Очки стиля — сколько дрипов собрали образы',
+    earn_vote_note: 'Дрипы за голос уходят автору образа и растят его очки стиля. Купить дрипы нельзя — только заработать.', leaderboard: 'Рейтинг',
     no_looks: 'Пока нет образов',
 
     // история публикаций
@@ -288,10 +293,15 @@ const DICT = {
     tier_to_bronze: 'Bronze', tier_to_silver: 'Silver', tier_to_gold: 'Gold',
     profile_edit: 'Edit', profile_share: 'Share', profile_looks_tab: 'Looks',
     badge_founder_short: 'Founder', you: 'You',
+    period_week: 'Week', period_month: 'Month', period_all: 'All time',
+    reset_in: 'resets in {t}', left_dh: '{d}d {h}h', left_hm: '{h}h {m}m',
+    leaderboard_sub_all: 'style points, all time', period_empty: 'No drips in this period yet — post a look first',
+    no_points_period: 'No points in this period yet', today_plus: '+{n} today',
+    places_up: '+{n} {w} today', places_down: '−{n} {w} today', rank_steady: 'Holding your spot',
     your_drips: 'Your drips', how_to_earn: 'How to earn', earn_title: 'How to earn drips',
     earn_start: 'Joining Driply', earn_first: 'Your first look', earn_next: 'Every next look',
     earn_ref: 'A friend you invited posts a look', earn_story: 'Story on Telegram, once a day',
-    earn_vote_note: 'Drips you give go to the look’s author and grow their style points. Drips can’t be bought — only earned.', leaderboard: 'Leaderboard', leaderboard_sub: 'Style points — drips collected by looks',
+    earn_vote_note: 'Drips you give go to the look’s author and grow their style points. Drips can’t be bought — only earned.', leaderboard: 'Leaderboard',
     no_looks: 'No looks yet',
 
     // post history
@@ -403,4 +413,21 @@ export function timeAgo(iso) {
   const d = Math.floor(h / 24)
   if (d < 7) return t('ago_d', { n: d })
   return new Date(iso).toLocaleDateString(active === 'en' ? 'en-US' : 'ru-RU', { day: 'numeric', month: 'short' })
+}
+
+// plural(5, 'place') → «мест»: русские формы 1 / 2–4 / 5+
+const FORMS = {
+  ru: { place: ['место', 'места', 'мест'] },
+  en: { place: ['place', 'places', 'places'] },
+}
+export function plural(n, word) {
+  const forms = (FORMS[active] || FORMS.ru)[word]
+  if (!forms) return word
+  if (active === 'en') return n === 1 ? forms[0] : forms[2]
+  const a = Math.abs(n) % 100
+  const b = a % 10
+  if (a > 10 && a < 20) return forms[2]
+  if (b === 1) return forms[0]
+  if (b >= 2 && b <= 4) return forms[1]
+  return forms[2]
 }

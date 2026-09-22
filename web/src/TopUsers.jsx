@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { ChevronLeft, Crown, ArrowRight, X } from 'lucide-react'
+import { ChevronLeft, Crown, ArrowRight, X, ArrowUp, ArrowDown } from 'lucide-react'
 import { supabase } from './supabase.js'
 import { avatarTier } from './tiers.js'
-import { t } from './i18n.js'
+import { t, plural, styleName } from './i18n.js'
+import { tg } from './telegram.js'
 import DripCoin from './components/ui/DripCoin.jsx'
 import './leaderboard.css'
 
@@ -69,34 +70,53 @@ function EarnSheet({ onClose }) {
   )
 }
 
+const PERIODS = ['week', 'month', 'all']
+
+// «2 д 14 ч» / «5 ч 20 мин» до сброса периода
+function resetIn(iso) {
+  const ms = new Date(iso).getTime() - Date.now()
+  if (!Number.isFinite(ms) || ms <= 0) return null
+  const min = Math.floor(ms / 60000)
+  const d = Math.floor(min / 1440)
+  const h = Math.floor((min % 1440) / 60)
+  return d > 0 ? t('left_dh', { d, h }) : t('left_hm', { h, m: min % 60 })
+}
+
+function Delta({ value }) {
+  if (!value) return null
+  const up = value > 0
+  return (
+    <span className={`lb-delta ${up ? 'lb-delta--up' : 'lb-delta--down'}`}>
+      {up ? <ArrowUp size={11} strokeWidth={3} /> : <ArrowDown size={11} strokeWidth={3} />}
+      {Math.abs(value)}
+    </span>
+  )
+}
+
 export default function TopUsers({ me, onClose, onOpenProfile }) {
   const selfId = me?.id
+  const [period, setPeriod] = useState('week')
+  const [board, setBoard] = useState(null)
   const [earnOpen, setEarnOpen] = useState(false)
-  const [myRank, setMyRank] = useState(null)
-  const [users, setUsers] = useState(null)
 
   useEffect(() => {
     let active = true
-    supabase.rpc('top_users', { p_limit: 50, p_offset: 0 })
+    setBoard(null)
+    const tid = tg?.initDataUnsafe?.user?.id ?? 0
+    supabase.rpc('leaderboard', { p_period: period, p_tid: tid, p_limit: 50 })
       .then(({ data, error }) => {
         if (!active) return
-        if (error) { console.error('top_users', error); setUsers([]); return }
-        setUsers(data || [])
+        if (error) { console.error('leaderboard', error); setBoard({ items: [], me: null }); return }
+        setBoard(data || { items: [], me: null })
       })
     return () => { active = false }
-  }, [])
+  }, [period])
 
-  // своё место, даже если ты не в топ-50: сколько людей с очками выше
-  useEffect(() => {
-    if (me?.style_score == null) return
-    let active = true
-    supabase.from('users').select('id', { count: 'exact', head: true }).gt('style_score', me.style_score)
-      .then(({ count, error }) => { if (active && !error) setMyRank((count ?? 0) + 1) })
-    return () => { active = false }
-  }, [me?.style_score])
-
+  const users = board?.items ?? null
+  const mine = board?.me ?? null
   const podium = users && users.length >= 3 ? users.slice(0, 3) : []
   const rest = users ? users.slice(podium.length) : []
+  const left = board?.reset_at ? resetIn(board.reset_at) : null
 
   return (
     <div className="lb">
@@ -105,12 +125,21 @@ export default function TopUsers({ me, onClose, onOpenProfile }) {
       </header>
       <div className="lb__body">
         <h1 className="lb__title">{t('leaderboard')}</h1>
-        <p className="lb__sub">{t('leaderboard_sub')}</p>
+        <p className="lb__sub">
+          {t('period_' + period)}{left ? ' · ' + t('reset_in', { t: left }) : ' · ' + t('leaderboard_sub_all')}
+        </p>
+
+        <div className="lb-seg" role="tablist">
+          {PERIODS.map((id) => (
+            <button key={id} role="tab" aria-selected={period === id}
+              className={`lb-seg__opt ${period === id ? 'lb-seg__opt--on' : ''}`} onClick={() => setPeriod(id)}>
+              {t('period_' + id)}
+            </button>
+          ))}
+        </div>
 
         {!users ? (
           <div className="lb__state">{t('loading')}</div>
-        ) : users.length === 0 ? (
-          <div className="lb__state">{t('rating_empty')}</div>
         ) : (
           <>
             {podium.length > 0 && <Podium users={podium} selfId={selfId} onOpen={onOpenProfile} />}
@@ -125,25 +154,43 @@ export default function TopUsers({ me, onClose, onOpenProfile }) {
                 </span>
               </div>
             )}
-            <div className="lb__list">
-              {rest.map((u) => (
-                <button key={u.id} className={`lrow ${u.id === selfId ? 'lrow--self' : ''}`} onClick={() => onOpenProfile(u.id)}>
-                  <span className="lrow__rank">{u.rank}</span>
-                  <Avatar user={u} size={44} />
-                  <span className="lrow__name">{nameOf(u)}</span>
-                  <Score value={u.style_score} />
-                </button>
-              ))}
-            </div>
+            {users.length === 0 ? (
+              <div className="lb__state">{t('period_empty')}</div>
+            ) : (
+              <div className="lb__list">
+                {rest.map((u) => (
+                  <button key={u.id} className={`lrow ${u.id === selfId ? 'lrow--self' : ''}`} onClick={() => onOpenProfile(u.id)}>
+                    <span className="lrow__rank">{u.rank}</span>
+                    <Avatar user={u} size={44} />
+                    <span className="lrow__who">
+                      <span className="lrow__name">{nameOf(u)}</span>
+                      {u.style && <span className="lrow__style">{styleName(u.style)}</span>}
+                    </span>
+                    <Delta value={u.rank_delta} />
+                    <Score value={u.style_score} />
+                  </button>
+                ))}
+              </div>
+            )}
           </>
         )}
       </div>
-      {me && myRank && (
+      {me && mine && (
         <button className="lrow lrow--pinned" onClick={() => onOpenProfile(me.id)}>
-          <span className="lrow__rank">{myRank}</span>
+          <span className="lrow__rank">{mine.rank ?? '—'}</span>
           <Avatar user={me} size={40} />
-          <span className="lrow__name">{t('you')} · {nameOf(me)}</span>
-          <Score value={me.style_score} />
+          <span className="lrow__who">
+            <span className="lrow__name">{t('you')} · {nameOf(me)}</span>
+            <span className="lrow__style lrow__style--me">
+              {!mine.rank ? t('no_points_period')
+                : [
+                    mine.today > 0 && t('today_plus', { n: mine.today }),
+                    mine.rank_delta > 0 && t('places_up', { n: mine.rank_delta, w: plural(mine.rank_delta, 'place') }),
+                    mine.rank_delta < 0 && t('places_down', { n: -mine.rank_delta, w: plural(-mine.rank_delta, 'place') }),
+                  ].filter(Boolean).join(' · ') || t('rank_steady')}
+            </span>
+          </span>
+          <Score value={mine.score} />
         </button>
       )}
       {earnOpen && <EarnSheet onClose={() => setEarnOpen(false)} />}
