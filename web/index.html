@@ -9,8 +9,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Onest:wght@400..700&family=Unbounded:wght@600..900&display=swap" rel="stylesheet" />
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script>
-      // Выключатель тем для всех. false — все видят dark, кроме тех, у кого включён предпросмотр.
-      window.__DRIPLY_THEMES__ = false;
+      // Выбор темы доступен всем (2.0). false вернёт всех на тёмную.
+      window.__DRIPLY_THEMES__ = true;
       // Ставим тему до монтирования React, иначе первый кадр мигнёт чужим фоном.
       (function () {
         var choice = 'auto', preview = false;

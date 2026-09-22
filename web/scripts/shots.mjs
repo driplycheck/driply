@@ -70,6 +70,8 @@ const SCREENS = {
   },
   earn: async (p) => { await p.locator('.ui-tab').nth(2).click(); await pause(p, 1500); await p.locator('.mydrips__how').click(); await pause(p, 400) },
   me: async (p) => { await p.locator('.ui-tab').nth(3).click(); await pause(p, 1500) },
+  settings: async (p) => { await p.locator('.ui-tab').nth(3).click(); await pause(p, 1500); await p.locator('.profile__icon').last().click(); await pause(p, 600) },
+  appearance: async (p) => { await p.locator('.ui-tab').nth(3).click(); await pause(p, 1500); await p.locator('.profile__icon').last().click(); await pause(p, 600); await p.locator('.srow--tap').nth(1).click(); await pause(p, 600) },
   edit: async (p) => { await p.locator('.ui-tab').nth(3).click(); await pause(p, 1500); await p.locator('.profile__actions .ui-btn--secondary').click(); await pause(p, 600) },
 }
 
