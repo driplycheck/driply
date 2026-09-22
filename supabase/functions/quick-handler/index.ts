@@ -29,14 +29,36 @@ async function validateInitData(initData, botToken) {
   return userRaw ? JSON.parse(userRaw) : null
 }
 
-async function sendTg(botToken, chatId, text) {
+// Telegram отвечает 429 с retry_after и иногда 5xx — повторяем, ошибки пишем в логи функции
+async function sendTg(botToken, chatId, text, attempt = 1) {
   try {
-    await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+    const res = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ chat_id: chatId, text }),
     })
-  } catch (_) { /* игнор */ }
+    if (res.ok) return true
+    const body = await res.json().catch(() => ({}))
+    // 403 — человек не запускал бота или заблокировал его, повторять бессмысленно
+    if (res.status === 403 || res.status === 400) {
+      console.error('sendTg refused', chatId, res.status, body?.description ?? '')
+      return false
+    }
+    if (attempt <= 3) {
+      const wait = (body?.parameters?.retry_after ?? attempt) * 1000
+      await new Promise((r) => setTimeout(r, Math.min(wait, 5000)))
+      return sendTg(botToken, chatId, text, attempt + 1)
+    }
+    console.error('sendTg failed', chatId, res.status, body?.description ?? '')
+    return false
+  } catch (e) {
+    if (attempt <= 3) {
+      await new Promise((r) => setTimeout(r, attempt * 500))
+      return sendTg(botToken, chatId, text, attempt + 1)
+    }
+    console.error('sendTg error', chatId, String(e))
+    return false
+  }
 }
 
 function runInBackground(task) {
@@ -71,6 +93,19 @@ Deno.serve(async (req) => {
       return jsonResponse(data, 200)
     }
 
+    // аналитика воронки: не задерживаем ответ, ошибки видны в логах функции
+    if (body.action === 'track') {
+      const kind = String(body.kind ?? '').slice(0, 40)
+      const meta = body.meta && typeof body.meta === 'object' ? body.meta : {}
+      if (kind) {
+        runInBackground(
+          supabase.rpc('track_event', { p_tid: tgUser.id, p_kind: kind, p_meta: meta })
+            .then(({ error }) => { if (error) console.error('track_event', kind, error.message) }),
+        )
+      }
+      return jsonResponse({ ok: true }, 200)
+    }
+
     if (body.action === 'set_notify_prefs') {
       const { data, error } = await supabase.rpc('set_notify_prefs', {
         p_tid: tgUser.id, p_prefs: body.prefs ?? {},
@@ -90,10 +125,10 @@ Deno.serve(async (req) => {
       if (error) return jsonResponse({ error: error.message }, 400)
       if (data?.ref_bonus > 0) {
         if (data.ref_tid && data.ref_notify !== false) {
-          await sendTg(botToken, data.ref_tid, `🎉 Твой реферал засчитан! +500 💧 за приглашённого друга`)
+          runInBackground(sendTg(botToken, data.ref_tid, `🎉 Твой реферал засчитан! +500 💧 за приглашённого друга`))
         }
         if (data.newbie_notify !== false) {
-          await sendTg(botToken, tgUser.id, `🎉 Бонус за реферала! +200 💧 начислено на баланс`)
+          runInBackground(sendTg(botToken, tgUser.id, `🎉 Бонус за реферала! +200 💧 начислено на баланс`))
         }
       }
       return jsonResponse(data, 200)
@@ -170,7 +205,7 @@ Deno.serve(async (req) => {
     })
     if (error) return jsonResponse({ error: error.message }, 400)
     if (data?.author_tid && data?.author_notify !== false) {
-      await sendTg(botToken, data.author_tid, `💧 ${data.voter_name || 'Кто-то'} оценил твой образ на +${data.amount}`)
+      runInBackground(sendTg(botToken, data.author_tid, `💧 ${data.voter_name || 'Кто-то'} оценил твой образ на +${data.amount}`))
     }
     return jsonResponse(data, 200)
   } catch (e) {

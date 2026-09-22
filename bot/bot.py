@@ -2,6 +2,8 @@ import asyncio
 import logging
 import os
 
+import aiohttp
+
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
@@ -21,6 +23,9 @@ load_dotenv()
 
 BOT_TOKEN = os.environ["BOT_TOKEN"]
 WEBAPP_URL = os.environ["WEBAPP_URL"]  # Vercel URL of the Mini App
+# Необязательно: с этими двумя переменными бот пишет событие /start в аналитику
+SUPABASE_URL = os.getenv("SUPABASE_URL", "").rstrip("/")
+SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger("driply-bot")
@@ -61,6 +66,26 @@ COPY = {
 }
 
 
+async def track(tid: int, kind: str, meta: dict | None = None) -> None:
+    """Событие воронки. Без ключей Supabase молча пропускаем — бот должен работать и так."""
+    if not (SUPABASE_URL and SUPABASE_SERVICE_KEY):
+        return
+    payload = {"p_tid": tid, "p_kind": kind, "p_meta": meta or {}}
+    headers = {
+        "apikey": SUPABASE_SERVICE_KEY,
+        "Authorization": f"Bearer {SUPABASE_SERVICE_KEY}",
+        "Content-Type": "application/json",
+    }
+    try:
+        timeout = aiohttp.ClientTimeout(total=5)
+        async with aiohttp.ClientSession(timeout=timeout) as session:
+            async with session.post(f"{SUPABASE_URL}/rest/v1/rpc/track_event", json=payload, headers=headers) as res:
+                if res.status >= 300:
+                    log.warning("track %s failed: %s %s", kind, res.status, await res.text())
+    except Exception as e:  # аналитика не должна ронять ответ юзеру
+        log.warning("track %s error: %s", kind, e)
+
+
 def pick_lang(message: Message) -> str:
     code = (message.from_user.language_code if message.from_user else "") or ""
     return "ru" if code.lower().startswith("ru") else "en"
@@ -89,6 +114,8 @@ async def start(message: Message, command: CommandObject | None = None) -> None:
     ref = parse_ref(command.args if command else None)
     text = COPY[lang]["welcome_ref"] if ref else COPY[lang]["welcome"]
     await message.answer(text, reply_markup=open_button(lang, ref))
+    if message.from_user:
+        asyncio.create_task(track(message.from_user.id, "bot_start", {"ref": bool(ref), "lang": lang}))
 
 
 @dp.message(Command("app"))
@@ -125,6 +152,8 @@ async def main() -> None:
     bot = Bot(BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
     me = await bot.get_me()
     log.info("bot @%s started, webapp=%s", me.username, WEBAPP_URL)
+    if not (SUPABASE_URL and SUPABASE_SERVICE_KEY):
+        log.warning("analytics off: set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY to log /start")
     await setup(bot)
     try:
         # старые апдейты за время простоя не нужны, слушаем только сообщения

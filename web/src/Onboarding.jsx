@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from './supabase.js'
 import { getInitData, getStartParam } from './telegram.js'
+import { track } from './analytics.js'
 import { t } from './i18n.js'
 
 export default function Onboarding({ tgUser, onDone }) {
@@ -64,6 +65,7 @@ export default function Onboarding({ tgUser, onDone }) {
           }).catch(() => {})
         }
       }
+      track('onboarding_done', { ref: Boolean(sp) })
       onDone({ display_name: nick, avatar_url: avatarUrl })
     } catch (e) {
       setError(t('save_failed'))

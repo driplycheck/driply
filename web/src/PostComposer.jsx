@@ -4,6 +4,7 @@ import { getInitData } from './telegram.js'
 import { matchBrands } from './brands.js'
 import { X, Check, Tag, ImagePlus, Plus } from 'lucide-react'
 import { t, styleName } from './i18n.js'
+import { track } from './analytics.js'
 import DripCoin from './components/ui/DripCoin.jsx'
 import Chip from './components/ui/Chip.jsx'
 import GlassBadge from './components/ui/GlassBadge.jsx'
@@ -293,6 +294,7 @@ export default function PostComposer({ selfId, onClose, onPosted, firstPost = fa
         try { code = (await error.context.json()).error } catch {}
         throw new Error(code)
       }
+      track('post_created', { photos: urls.length, styles: styleIds.length, items: tagItems ? items.length : 0 })
       onPosted(result)
     } catch (e) {
       setError(t('post_failed'))

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { initTelegram } from './telegram.js'
 import { supabase } from './supabase.js'
 import { t, loadLang, saveLang, setActiveLang } from './i18n.js'
+import { track } from './analytics.js'
 import { loadSide, saveSide, setActiveSide } from './side.js'
 import { useOverlayStack } from './useOverlayStack.js'
 import Overlay from './ui/Overlay.jsx'
@@ -55,12 +56,14 @@ export default function App() {
     const u = initTelegram()
     setTgUser(u)
     if (!u?.id) { setProfile(null); return }
-    loadProfile(u.id)
+    loadProfile(u.id).then((known) => track('app_open', { known }))
   }, [])
 
   async function loadProfile(telegramId) {
     const { data } = await supabase.rpc('my_profile', { p_tid: telegramId })
-    setProfile(data?.display_name ? data : null)
+    const known = !!data?.display_name
+    setProfile(known ? data : null)
+    return known
   }
 
   // темы в предпросмотре: пока экраны не перекрашены, их видят только фаундеры
