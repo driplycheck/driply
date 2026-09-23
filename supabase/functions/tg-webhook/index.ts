@@ -204,7 +204,35 @@ Deno.serve(async (req) => {
         }
 
         const { data: route } = await supabase.from('support_routing').select('*').maybeSingle()
-        if (route?.chat_id === chatId && payload !== 'force') {
+        const arg = (payload ?? '').trim().toLowerCase()
+        const picked = SUPPORT_TOPICS.find((t) => t.kind === arg)
+
+        // темы уже созданы руками: /setup_support <тип> внутри нужной темы привязывает её
+        if (picked) {
+          const threadId = message.message_thread_id
+          if (!threadId) {
+            await tg('sendMessage', { chat_id: chatId, text: 'Отправь эту команду внутри самой темы, а не в общем чате.' })
+            return new Response('ok')
+          }
+          await supabase.from('support_routing')
+            .upsert({ id: 1, chat_id: chatId, [picked.col]: threadId, updated_at: new Date().toISOString() })
+          const { data: now } = await supabase.from('support_routing').select('*').maybeSingle()
+          const left = SUPPORT_TOPICS.filter((t) => !now?.[t.col]).map((t) => '/setup_support ' + t.kind)
+          await tg('sendMessage', {
+            chat_id: chatId, message_thread_id: threadId,
+            text: left.length
+              ? `✅ Тема «${picked.name}» привязана.\n\nОсталось: ${left.join(', ')} — каждую команду внутри своей темы.`
+              : `✅ Тема «${picked.name}» привязана. Все три темы на месте, поддержка настроена.`,
+          })
+          return new Response('ok')
+        }
+
+        if (arg && arg !== 'force') {
+          await tg('sendMessage', { chat_id: chatId, text: 'Типы: bug, idea, partner. Пиши /setup_support <тип> внутри нужной темы, либо /setup_support без аргумента — бот создаст темы сам.' })
+          return new Response('ok')
+        }
+
+        if (route?.chat_id === chatId && arg !== 'force') {
           await tg('sendMessage', { chat_id: chatId, text: 'Группа уже настроена. Пересоздать темы: /setup_support force' })
           return new Response('ok')
         }
