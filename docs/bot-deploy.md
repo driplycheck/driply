@@ -1,55 +1,59 @@
-# Запуск бота
+# Бот: где живёт и как обновляется
 
-Мини-апп живёт на Vercel и работает сам по себе. Бот — отдельный процесс: пока он не запущен,
-`/start` в Telegram остаётся без ответа, а уведомления о голосах шлёт edge function (они не зависят от бота).
+Бот работает **вебхуком на Supabase Edge Function** `tg-webhook` — отдельный сервер и постоянный
+процесс не нужны. Telegram сам присылает апдейты, функция отвечает. Файл `bot/bot.py` остаётся
+для локальных экспериментов (режим polling) и в проде не используется.
 
-## 0. Переменные окружения
+Адрес вебхука: `https://chnvpnbnqvugsbwelmoq.supabase.co/functions/v1/tg-webhook`
 
-`bot/.env` (в git не попадает):
+## Секреты функции (Supabase → Project Settings → Edge Functions → Secrets)
 
+| Переменная | Зачем |
+|---|---|
+| `BOT_TOKEN` | уже стоит, общий с quick-handler |
+| `WEBAPP_URL` | прод-адрес мини-аппа, обязательно `https://` — иначе кнопка «Открыть» не работает |
+| `TG_WEBHOOK_SECRET` | секрет, которым Telegram подписывает запросы к функции |
+| `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | уже стоят, нужны для события `bot_start` в аналитике |
+
+## Подключение (делается один раз)
+
+```bash
+# 1. адрес мини-аппа
+supabase secrets set WEBAPP_URL=https://<прод-адрес> --project-ref chnvpnbnqvugsbwelmoq
+supabase functions deploy tg-webhook --no-verify-jwt --project-ref chnvpnbnqvugsbwelmoq
+
+# 2. сказать Telegram, куда слать апдейты (TOKEN — из BotFather, SECRET — TG_WEBHOOK_SECRET)
+curl "https://api.telegram.org/bot<TOKEN>/setWebhook" \
+  -d "url=https://chnvpnbnqvugsbwelmoq.supabase.co/functions/v1/tg-webhook" \
+  -d "secret_token=<SECRET>" \
+  -d "drop_pending_updates=true"
+
+# 3. меню команд и синяя кнопка мини-аппа
+curl "https://chnvpnbnqvugsbwelmoq.supabase.co/functions/v1/tg-webhook?setup=<SECRET>"
 ```
-BOT_TOKEN=токен из BotFather
-WEBAPP_URL=https://<прод-адрес мини-аппа>     # обязательно https, иначе кнопка «Открыть» не работает
-# необязательно — включает запись событий /start в аналитику:
-SUPABASE_URL=https://chnvpnbnqvugsbwelmoq.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=<service role key из Supabase → Project Settings → API>
+
+Проверка: `curl "https://api.telegram.org/bot<TOKEN>/getWebhookInfo"` — в ответе должен быть наш
+url и `pending_update_count: 0`. Логи: Supabase → Edge Functions → tg-webhook → Logs.
+
+## Обновление текстов и команд
+
+Правишь `supabase/functions/tg-webhook/index.ts`, потом:
+
+```bash
+supabase functions deploy tg-webhook --no-verify-jwt --project-ref chnvpnbnqvugsbwelmoq
 ```
 
-## 1. Проверка и запуск на своей машине (для теста)
+`driply_push.sh` деплоит только фронт на Vercel, функции — отдельной командой.
+
+## Локальный запуск bot.py (необязательно)
+
+Нужен для отладки без вебхука. Важно: polling и вебхук одновременно не работают —
+сначала `deleteWebhook`, потом запускать бота.
 
 ```bash
 cd bot
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
-.venv/bin/python bot.py --check     # токен, адрес, webhook, команды
-.venv/bin/python bot.py             # запуск; работает, пока открыт терминал
+printf 'BOT_TOKEN=...\nWEBAPP_URL=https://...\n' > .env
+.venv/bin/python bot.py --check
+.venv/bin/python bot.py
 ```
-
-`--check` пишет «ВНИМАНИЕ: висит webhook», если у бота настроен webhook: тогда polling не получает
-апдейты и `/start` молчит. Снять: `curl "https://api.telegram.org/bot<TOKEN>/deleteWebhook"`.
-
-## 2. Постоянный запуск
-
-**Хостинг (Railway, Render, Amvera).** Создать сервис типа worker из этого репозитория,
-корень `bot/`, Dockerfile уже лежит рядом. Переменные окружения задать в панели.
-
-**Свой VPS.** Скопировать репозиторий в `/opt/driply`, создать venv, положить `.env`,
-затем взять `bot/systemd-driply-bot.service`:
-
-```bash
-sudo cp bot/systemd-driply-bot.service /etc/systemd/system/driply-bot.service
-sudo systemctl daemon-reload && sudo systemctl enable --now driply-bot
-journalctl -u driply-bot -f
-```
-
-**Docker.**
-
-```bash
-docker build -t driply-bot bot
-docker run -d --restart=always --env-file bot/.env --name driply-bot driply-bot
-```
-
-## 3. После обновления кода
-
-Бот не деплоится вместе с фронтом: `driply_push.sh` выкатывает только `web/` на Vercel.
-После изменений в `bot/bot.py` процесс нужно перезапустить руками
-(`systemctl restart driply-bot`, кнопка Redeploy на хостинге или перезапуск контейнера).
