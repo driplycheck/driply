@@ -1,11 +1,13 @@
 // Создаёт кастомный эмодзи-пак Driply через Bot API. Владельцем становится указанный аккаунт.
 //
-//   BOT_TOKEN=... node marketing/upload-emoji-pack.mjs --user 957954261
-//   node marketing/upload-emoji-pack.mjs --user 957954261 --dry     # только показать план
+//   BOT_TOKEN=... node marketing/upload-emoji-pack.mjs --user 957954261          # создать или дополнить
+//   BOT_TOKEN=... node marketing/upload-emoji-pack.mjs --info                     # что сейчас в паке
+//   BOT_TOKEN=... node marketing/upload-emoji-pack.mjs --user ... --only digit-   # залить только часть
+//   node marketing/upload-emoji-pack.mjs --user 957954261 --dry                   # показать план
 //
 // Токен берётся из переменной окружения BOT_TOKEN или из bot/.env. Никуда не сохраняется.
 // Условия Telegram: аккаунт-владелец должен был хотя бы раз написать боту.
-import { readdir, readFile } from 'node:fs/promises'
+import { readdir, readFile, writeFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 
 const DIR = fileURLToPath(new URL('./tg-pack/emoji/', import.meta.url))
@@ -15,6 +17,9 @@ const flag = (name, fallback = null) => {
   return i >= 0 && args[i + 1] && !args[i + 1].startsWith('--') ? args[i + 1] : fallback
 }
 const DRY = args.includes('--dry')
+const INFO = args.includes('--info')
+const ONLY = flag('only')            // подстрока в имени файла: digit-, style-, item-
+const MANIFEST = fileURLToPath(new URL('./tg-pack/.uploaded.json', import.meta.url))
 const USER_ID = Number(flag('user') || process.env.TG_USER_ID || 0)
 const TITLE = flag('title', 'Driply')
 
@@ -59,10 +64,20 @@ async function api(token, method, body, isForm = false) {
   return json.result
 }
 
-const files = (await readdir(DIR))
+const all = (await readdir(DIR))
   .filter((f) => f.endsWith('.png'))
   .map((f) => f.replace('.png', ''))
   .sort((a, b) => ORDER(a) - ORDER(b) || a.localeCompare(b))
+
+// что уже заливали: манифест пишется после успешной загрузки
+let uploadedBefore = []
+try { uploadedBefore = JSON.parse(await readFile(MANIFEST, 'utf8')).ids ?? [] } catch {}
+
+const files = ONLY
+  ? all.filter((id) => id.includes(ONLY))
+  : uploadedBefore.length
+    ? all.filter((id) => !uploadedBefore.includes(id))
+    : all
 
 const missing = files.filter((id) => !EMOJI[id])
 if (missing.length) {
@@ -70,7 +85,10 @@ if (missing.length) {
   process.exit(1)
 }
 
-console.log(`Файлов: ${files.length}`)
+if (uploadedBefore.length && !ONLY) {
+  console.log(`Уже в паке по манифесту: ${uploadedBefore.length}, новых: ${files.length}`)
+}
+console.log(`К загрузке: ${files.length}`)
 console.log(files.map((id) => `  ${EMOJI[id]}  ${id}`).join('\n'))
 
 if (!USER_ID) {
@@ -93,6 +111,23 @@ const me = await api(token, 'getMe', {})
 const name = flag('name', `driply_by_${me.username}`) // Telegram требует суффикс _by_<бот>
 console.log(`\nБот @${me.username}, короткое имя пака: ${name}`)
 
+// что реально лежит в паке сейчас
+let existing = null
+try {
+  existing = await api(token, 'getStickerSet', { name })
+  const byEmoji = {}
+  for (const st of existing.stickers) byEmoji[st.emoji] = (byEmoji[st.emoji] ?? 0) + 1
+  console.log(`В паке сейчас: ${existing.stickers.length} шт. — ${Object.entries(byEmoji).map(([e, n]) => e + (n > 1 ? '×' + n : '')).join(' ')}`)
+} catch {
+  console.log('Пака с таким именем ещё нет — создам новый')
+}
+
+if (INFO) process.exit(0)
+if (files.length === 0) {
+  console.log('Нечего добавлять. Нужно залить конкретное — используй --only digit-')
+  process.exit(0)
+}
+
 // 1. заливаем файлы, получаем file_id
 const uploaded = []
 for (const id of files) {
@@ -111,8 +146,14 @@ const stickers = uploaded.map((u) => ({
   emoji_list: [EMOJI[u.id]],
 }))
 
-// 2. создаём пак; если он уже есть — дозаливаем в него недостающее
-try {
+// 2. пак есть — дозаливаем, нет — создаём
+if (existing) {
+  for (const sticker of stickers) {
+    await api(token, 'addStickerToSet', { user_id: USER_ID, name, sticker })
+    console.log('добавлено в пак', sticker.emoji_list[0])
+  }
+  console.log('\nПак дополнен')
+} else {
   await api(token, 'createNewStickerSet', {
     user_id: USER_ID,
     name,
@@ -122,12 +163,10 @@ try {
     stickers,
   })
   console.log('\nПак создан')
-} catch (e) {
-  if (!String(e.message).includes('STICKERSET_INVALID') && !String(e.message).includes('occupied')) throw e
-  console.log('\nПак уже существует, добавляю в него:', e.message)
-  for (const sticker of stickers) {
-    await api(token, 'addStickerToSet', { user_id: USER_ID, name, sticker })
-  }
 }
+
+// манифест: в следующий раз зальём только новое
+const done = [...new Set([...uploadedBefore, ...files])]
+await writeFile(MANIFEST, JSON.stringify({ name, ids: done }, null, 2))
 
 console.log(`Ссылка: https://t.me/addemoji/${name}`)
