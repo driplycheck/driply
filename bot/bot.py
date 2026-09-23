@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import os
+import sys
 
 import aiohttp
 
@@ -91,13 +92,21 @@ def pick_lang(message: Message) -> str:
     return "ru" if code.lower().startswith("ru") else "en"
 
 
+# Telegram принимает web_app-кнопку только с https. Иначе /start падал бы целиком,
+# поэтому подстраховываемся обычной ссылкой.
+WEBAPP_HTTPS = WEBAPP_URL.startswith("https://")
+
+
 def open_button(lang: str, ref: str | None = None) -> InlineKeyboardMarkup:
     # реф-код кладём в адрес мини-аппа: так он доезжает даже если ссылка была вида ?start=
     sep = "&" if "?" in WEBAPP_URL else "?"
     url = f"{WEBAPP_URL}{sep}ref={ref}" if ref else WEBAPP_URL
-    return InlineKeyboardMarkup(inline_keyboard=[[
+    button = (
         InlineKeyboardButton(text=COPY[lang]["open"], web_app=WebAppInfo(url=url))
-    ]])
+        if WEBAPP_HTTPS
+        else InlineKeyboardButton(text=COPY[lang]["open"], url=url)
+    )
+    return InlineKeyboardMarkup(inline_keyboard=[[button]])
 
 
 def parse_ref(payload: str | None) -> str | None:
@@ -112,6 +121,7 @@ def parse_ref(payload: str | None) -> str | None:
 async def start(message: Message, command: CommandObject | None = None) -> None:
     lang = pick_lang(message)
     ref = parse_ref(command.args if command else None)
+    log.info("/start from %s lang=%s ref=%s", message.from_user.id if message.from_user else "?", lang, ref)
     text = COPY[lang]["welcome_ref"] if ref else COPY[lang]["welcome"]
     await message.answer(text, reply_markup=open_button(lang, ref))
     if message.from_user:
@@ -131,21 +141,56 @@ async def help_cmd(message: Message) -> None:
 
 
 async def setup(bot: Bot) -> None:
-    """Меню команд и синяя кнопка мини-аппа — ставятся при каждом запуске."""
+    """Меню команд и синяя кнопка мини-аппа. Ошибки только логируем: бот должен отвечать на /start в любом случае."""
     # en — список по умолчанию, ru — локализованный поверх него
     for lang, code in (("en", None), ("ru", "ru")):
-        await bot.set_my_commands(
-            [
-                BotCommand(command="start", description=COPY[lang]["cmd_start"]),
-                BotCommand(command="app", description=COPY[lang]["cmd_app"]),
-                BotCommand(command="help", description=COPY[lang]["cmd_help"]),
-            ],
-            scope=BotCommandScopeDefault(),
-            language_code=code,
+        try:
+            await bot.set_my_commands(
+                [
+                    BotCommand(command="start", description=COPY[lang]["cmd_start"]),
+                    BotCommand(command="app", description=COPY[lang]["cmd_app"]),
+                    BotCommand(command="help", description=COPY[lang]["cmd_help"]),
+                ],
+                scope=BotCommandScopeDefault(),
+                language_code=code,
+            )
+        except Exception as e:
+            log.warning("set_my_commands(%s) failed: %s", code or "default", e)
+
+    if not WEBAPP_HTTPS:
+        log.error("WEBAPP_URL=%s не начинается с https:// — кнопка меню отключена, в сообщениях будет обычная ссылка", WEBAPP_URL)
+        return
+    try:
+        await bot.set_chat_menu_button(
+            menu_button=MenuButtonWebApp(text=COPY["ru"]["menu"], web_app=WebAppInfo(url=WEBAPP_URL))
         )
-    await bot.set_chat_menu_button(
-        menu_button=MenuButtonWebApp(text=COPY["ru"]["menu"], web_app=WebAppInfo(url=WEBAPP_URL))
-    )
+    except Exception as e:
+        log.warning("set_chat_menu_button failed: %s", e)
+
+
+@dp.errors()
+async def on_error(event, exception) -> bool:
+    log.exception("handler failed: %s", exception)
+    return True
+
+
+async def check() -> None:
+    """python bot.py --check — быстрая диагностика окружения на сервере."""
+    print(f"WEBAPP_URL = {WEBAPP_URL}  (https: {WEBAPP_HTTPS})")
+    print(f"аналитика: {'вкл' if SUPABASE_URL and SUPABASE_SERVICE_KEY else 'выкл (нет SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY)'}")
+    bot = Bot(BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+    try:
+        me = await bot.get_me()
+        print(f"токен ок: @{me.username}")
+        info = await bot.get_webhook_info()
+        if info.url:
+            print(f"ВНИМАНИЕ: висит webhook {info.url} — polling не получит апдейты, сними его")
+        else:
+            print("webhook не стоит, polling получит апдейты")
+        await setup(bot)
+        print("команды и кнопка меню поставлены")
+    finally:
+        await bot.session.close()
 
 
 async def main() -> None:
@@ -165,6 +210,6 @@ async def main() -> None:
 
 if __name__ == "__main__":
     try:
-        asyncio.run(main())
+        asyncio.run(check() if "--check" in sys.argv else main())
     except (KeyboardInterrupt, SystemExit):
         log.info("shutdown")

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from './supabase.js'
+import { readPrivate } from './api.js'
 import { tg } from './telegram.js'
 import { t } from './i18n.js'
 import DripCoin from './components/ui/DripCoin.jsx'
@@ -12,17 +13,15 @@ export default function Referral({ me, onClose }) {
   const [busyShare, setBusyShare] = useState(false)
   const [toast, setToast] = useState(null)
 
-  function tgId() { return window.Telegram?.WebApp?.initDataUnsafe?.user?.id ?? 0 }
-
   useEffect(() => {
     let active = true
     Promise.all([
-      supabase.rpc('ref_stats', { p_tid: tgId() }),
-      supabase.rpc('ref_invited_list', { p_tid: tgId() }),
+      readPrivate('ref_stats'),
+      readPrivate('ref_invited_list'),
     ]).then(([statsResult, invitedResult]) => {
       if (!active) return
-      setStats(statsResult.data || {})
-      setInvited(invitedResult.data || [])
+      setStats(statsResult || {})
+      setInvited(Array.isArray(invitedResult) ? invitedResult : [])
     })
     return () => { active = false }
   }, [])

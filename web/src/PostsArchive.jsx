@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from './supabase.js'
+import { readPrivate } from './api.js'
 import { getInitData } from './telegram.js'
 import { t } from './i18n.js'
 import DripCoin from './components/ui/DripCoin.jsx'
@@ -9,11 +10,8 @@ export default function PostsArchive({ onClose, onChanged }) {
   const [busyId, setBusyId] = useState(null)
   const [confirmId, setConfirmId] = useState(null)
 
-  function tgId() {
-    return window.Telegram?.WebApp?.initDataUnsafe?.user?.id ?? 0
-  }
   const load = useCallback(async () => {
-    const { data } = await supabase.rpc('my_posts', { p_tid: tgId() })
+    const data = await readPrivate('my_posts')
     setPosts(Array.isArray(data) ? data : [])
   }, [])
   useEffect(() => { load() }, [load])

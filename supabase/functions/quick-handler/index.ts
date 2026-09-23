@@ -93,6 +93,16 @@ Deno.serve(async (req) => {
       return jsonResponse(data, 200)
     }
 
+    // приватные чтения «про себя»: только по подписи initData, p_tid берём из неё, а не из тела
+    const PRIVATE_READS = ['my_profile', 'my_posts', 'my_votes', 'my_blocks', 'ref_stats', 'ref_invited_list']
+    if (body.action === 'read') {
+      const fn = String(body.fn ?? '')
+      if (!PRIVATE_READS.includes(fn)) return jsonResponse({ error: 'UNKNOWN_READ' }, 400)
+      const { data, error } = await supabase.rpc(fn, { p_tid: tgUser.id })
+      if (error) return jsonResponse({ error: error.message }, 400)
+      return jsonResponse(data ?? null, 200)
+    }
+
     // аналитика воронки: не задерживаем ответ, ошибки видны в логах функции
     if (body.action === 'track') {
       const kind = String(body.kind ?? '').slice(0, 40)

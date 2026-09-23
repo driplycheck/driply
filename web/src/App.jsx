@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { initTelegram } from './telegram.js'
-import { supabase } from './supabase.js'
+import { readPrivate } from './api.js'
 import { t, loadLang, saveLang, setActiveLang } from './i18n.js'
 import { track } from './analytics.js'
 import { loadSide, saveSide } from './side.js'
@@ -53,11 +53,12 @@ export default function App() {
     const u = initTelegram()
     setTgUser(u)
     if (!u?.id) { setProfile(null); return }
-    loadProfile(u.id).then((known) => track('app_open', { known }))
+    loadProfile().then((known) => track('app_open', { known }))
   }, [])
 
-  async function loadProfile(telegramId) {
-    const { data } = await supabase.rpc('my_profile', { p_tid: telegramId })
+  // telegram_id больше не нужен: quick-handler берёт его из подписанной initData
+  async function loadProfile() {
+    const data = await readPrivate('my_profile')
     const known = !!data?.display_name
     setProfile(known ? data : null)
     return known
@@ -109,7 +110,7 @@ export default function App() {
         tgUser={tgUser}
         onDone={() => {
           setOpenFirstComposer(true)
-          loadProfile(tgUser.id)
+          loadProfile()
         }}
       />
     )

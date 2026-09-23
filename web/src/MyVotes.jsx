@@ -1,12 +1,8 @@
 import { useEffect, useState } from 'react'
-import { supabase } from './supabase.js'
+import { readPrivate } from './api.js'
 import './MyVotes.css'
 import { t } from './i18n.js'
 import DripCoin from './components/ui/DripCoin.jsx'
-
-function tgId() {
-  return window.Telegram?.WebApp?.initDataUnsafe?.user?.id ?? 0
-}
 
 export default function MyVotes({ onClose, onOpenPost }) {
   const [votes, setVotes] = useState([])
@@ -15,10 +11,10 @@ export default function MyVotes({ onClose, onOpenPost }) {
   useEffect(() => {
     let active = true
     ;(async () => {
-      const { data, error } = await supabase.rpc('my_votes', { p_tid: tgId() })
+      const data = await readPrivate('my_votes')
       if (!active) return
-      if (error) console.error('my_votes', error)
-      setVotes(data || [])
+      if (data === null) console.error('my_votes: не удалось загрузить')
+      setVotes(Array.isArray(data) ? data : [])
       setLoading(false)
     })()
     return () => { active = false }
