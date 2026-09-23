@@ -18,6 +18,7 @@ const flag = (name, fallback = null) => {
 }
 const DRY = args.includes('--dry')
 const INFO = args.includes('--info')
+const TEST = args.includes('--test')   // бот пришлёт сообщение, набранное кастомными эмодзи
 const ONLY = flag('only')            // подстрока в имени файла: digit-, style-, item-
 const MANIFEST = fileURLToPath(new URL('./tg-pack/.uploaded.json', import.meta.url))
 const USER_ID = Number(flag('user') || process.env.TG_USER_ID || 0)
@@ -104,6 +105,27 @@ if (token) {
   } else {
     console.log('Пака с таким именем нет — будет создан новый')
   }
+}
+
+// Проверка «пак реально работает»: собираем сообщение с сущностями custom_emoji.
+// Так видно и то, что эмодзи на месте, и то, как они выглядят в ленте сообщений.
+if (TEST) {
+  if (!existing) { console.error('Пака нет — сначала залей'); process.exit(1) }
+  if (!USER_ID) { console.error('Нужен --user <telegram_id>, кому слать'); process.exit(1) }
+  const byEmoji = {}
+  for (const st of existing.stickers) byEmoji[st.emoji] ??= st.custom_emoji_id
+  const parts = ['2️⃣', '0️⃣', '0️⃣', ' ', '💧', ' — ', '👑', ' ', '🛹', ' ', '👕']
+  let text = ''
+  const entities = []
+  for (const part of parts) {
+    const id = byEmoji[part]
+    if (id) entities.push({ type: 'custom_emoji', offset: text.length, length: part.length, custom_emoji_id: id })
+    text += part
+  }
+  await api(token, 'sendMessage', { chat_id: USER_ID, text, entities })
+  console.log(`Отправил тестовое сообщение: ${text}`)
+  console.log(`Кастомных эмодзи в нём: ${entities.length} из ${parts.filter((x) => x.trim()).length}`)
+  process.exit(0)
 }
 
 if (INFO) {
