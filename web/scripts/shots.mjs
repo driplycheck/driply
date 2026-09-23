@@ -11,7 +11,16 @@ const outDir = root + '.shots'
 const distDir = outDir + '/dist'
 const THEMES = (process.argv[2] || 'dark,light,neon').split(',')
 // SHOTS_TG_ID в .env.local — снимать «как юзер»: my_profile читается, записи без подписи Telegram не пройдут
-const TG_ID = Number(loadEnv('', root, 'SHOTS_').SHOTS_TG_ID) || null
+const SHOTS_ENV = loadEnv('', root, 'SHOTS_')
+const TG_ID = Number(SHOTS_ENV.SHOTS_TG_ID) || null
+const USER_ID = Number(SHOTS_ENV.SHOTS_USER_ID) || null
+// приватные данные ходят через quick-handler с подписью Telegram, которой у скриншотов нет —
+// подменяем ответ, чтобы снимать экраны «как юзер»
+const FAKE_READS = {
+  my_profile: { id: USER_ID, display_name: 'rifer', avatar_url: null, bio: 'saint', style_score: 250,
+    hide_username: false, daily_credits: 1460, is_founder: true, gender: 'male', allow_dm: true, notify_prefs: {} },
+  my_posts: [], my_votes: [], my_blocks: [], ref_stats: { invited: 1, earned: 500, my_id: USER_ID, ref_code: 'demo' }, ref_invited_list: [],
+}
 
 await rm(outDir, { recursive: true, force: true })
 await mkdir(outDir, { recursive: true })
@@ -85,6 +94,13 @@ for (const theme of THEMES) {
     localStorage.setItem('driply_lang', 'ru')
   }, theme)
   if (TG_ID) {
+    await ctx.route('**/functions/v1/quick-handler', async (route) => {
+      const body = route.request().postDataJSON?.() ?? {}
+      if (body.action === 'read' && body.fn in FAKE_READS) {
+        return route.fulfill({ json: FAKE_READS[body.fn] })
+      }
+      return route.fulfill({ json: { ok: true } })
+    })
     await ctx.route('https://telegram.org/**', (r) => r.fulfill({ contentType: 'text/javascript', body: '' }))
     await ctx.addInitScript((id) => {
       window.Telegram = { WebApp: {
