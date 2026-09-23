@@ -73,59 +73,70 @@ const all = (await readdir(DIR))
 let uploadedBefore = []
 try { uploadedBefore = JSON.parse(await readFile(MANIFEST, 'utf8')).ids ?? [] } catch {}
 
-const files = ONLY
-  ? all.filter((id) => id.includes(ONLY))
-  : uploadedBefore.length
-    ? all.filter((id) => !uploadedBefore.includes(id))
-    : all
-
-const missing = files.filter((id) => !EMOJI[id])
+const missing = all.filter((id) => !EMOJI[id])
 if (missing.length) {
   console.error('Нет базового эмодзи для:', missing.join(', '), '— допиши в EMOJI и запусти снова')
   process.exit(1)
 }
 
-if (uploadedBefore.length && !ONLY) {
-  console.log(`Уже в паке по манифесту: ${uploadedBefore.length}, новых: ${files.length}`)
-}
-console.log(`К загрузке: ${files.length}`)
-console.log(files.map((id) => `  ${EMOJI[id]}  ${id}`).join('\n'))
-
-if (!USER_ID) {
-  console.error('\nНужен --user <telegram_id> владельца пака')
-  process.exit(1)
-}
-
 const token = await readToken()
 if (!token && !DRY) {
-  console.error('\nНет BOT_TOKEN: передай переменной окружения или положи в bot/.env')
+  console.error('Нет BOT_TOKEN: передай переменной окружения или положи в bot/.env')
   process.exit(1)
 }
+
+// --- что уже лежит в паке ---
+let existing = null
+let name = flag('name')
+if (token) {
+  const me = await api(token, 'getMe', {})
+  name = name || `driply_by_${me.username}` // Telegram требует суффикс _by_<бот>
+  try {
+    existing = await api(token, 'getStickerSet', { name })
+  } catch {
+    existing = null
+  }
+  console.log(`Бот @${me.username}, пак: ${name}`)
+  if (existing) {
+    const counts = {}
+    for (const st of existing.stickers) counts[st.emoji] = (counts[st.emoji] ?? 0) + 1
+    console.log(`В паке сейчас: ${existing.stickers.length} шт. — ${Object.entries(counts).map(([e, n]) => e + (n > 1 ? '×' + n : '')).join(' ')}`)
+  } else {
+    console.log('Пака с таким именем нет — будет создан новый')
+  }
+}
+
+if (INFO) {
+  if (existing) {
+    const inPack = new Set(existing.stickers.map((st) => st.emoji))
+    const absent = all.filter((id) => !inPack.has(EMOJI[id]))
+    console.log(absent.length ? `Не хватает: ${absent.join(', ')}` : 'Всё на месте')
+  }
+  process.exit(0)
+}
+
+// --- что заливать ---
+const inPack = existing ? new Set(existing.stickers.map((st) => st.emoji)) : new Set()
+const files = ONLY
+  ? all.filter((id) => id.includes(ONLY))
+  : existing
+    ? all.filter((id) => !uploadedBefore.includes(id) && !inPack.has(EMOJI[id]))
+    : all
+
+console.log(`\nК загрузке: ${files.length}`)
+console.log(files.map((id) => `  ${EMOJI[id]}  ${id}`).join('\n'))
 
 if (DRY) {
   console.log('\n--dry: запросы не отправлялись')
   process.exit(0)
 }
-
-const me = await api(token, 'getMe', {})
-const name = flag('name', `driply_by_${me.username}`) // Telegram требует суффикс _by_<бот>
-console.log(`\nБот @${me.username}, короткое имя пака: ${name}`)
-
-// что реально лежит в паке сейчас
-let existing = null
-try {
-  existing = await api(token, 'getStickerSet', { name })
-  const byEmoji = {}
-  for (const st of existing.stickers) byEmoji[st.emoji] = (byEmoji[st.emoji] ?? 0) + 1
-  console.log(`В паке сейчас: ${existing.stickers.length} шт. — ${Object.entries(byEmoji).map(([e, n]) => e + (n > 1 ? '×' + n : '')).join(' ')}`)
-} catch {
-  console.log('Пака с таким именем ещё нет — создам новый')
-}
-
-if (INFO) process.exit(0)
 if (files.length === 0) {
-  console.log('Нечего добавлять. Нужно залить конкретное — используй --only digit-')
+  console.log('Нечего добавлять. Чтобы залить что-то конкретное: --only digit-')
   process.exit(0)
+}
+if (!USER_ID) {
+  console.error('\nНужен --user <telegram_id> владельца пака')
+  process.exit(1)
 }
 
 // 1. заливаем файлы, получаем file_id
