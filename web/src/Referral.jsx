@@ -60,9 +60,12 @@ export default function Referral({ me, onClose }) {
     ])
     const res = await shareRankCard({
       user: u || me, rank: (higherCount ?? 0) + 1, postsCount: postsCount ?? 0,
+      link: link || undefined,   // в историю уходит личная реферальная ссылка
     })
     setBusyShare(false)
-    if (!res.ok) flash(res.reason === 'unsupported' ? t('share_unsupported') : t('share_failed'))
+    flash(!res.ok
+      ? (res.reason === 'unsupported' ? t('share_unsupported') : t('share_failed'))
+      : res.reward ? t('story_rewarded', { n: res.reward }) : t('story_shared'))
   }
 
   return (
@@ -97,9 +100,10 @@ export default function Referral({ me, onClose }) {
         </div>
 
         <button className="ref-action ref-action--primary" onClick={shareLink}>{t('invite_friend')}</button>
-        <button className="ref-action" onClick={shareStory} disabled={busyShare}>
+        <button className="ref-action" onClick={shareStory} disabled={busyShare || !link}>
           {busyShare ? '…' : t('share_story')}
         </button>
+        <p className="ref-hint">{t('story_hint')}</p>
 
         {invited && invited.length > 0 && (
           <div className="reflist">

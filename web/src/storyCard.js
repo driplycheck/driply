@@ -14,6 +14,7 @@ function loadImg(src) {
 }
 
 const INK = '#09090B', LIME = '#C6FF3D', WHITE = '#F5F5F7', MUTED = '#8A8A96'
+const BOT_LINK = 'https://t.me/Driplycheckbot'
 const BADGE_LABEL = { founder: 'FOUNDER', cofounder: 'FOUNDER', first_drip: 'FIRST DRIP' }
 
 // мягкое пятно света, как в приложении
@@ -38,7 +39,7 @@ function coin(ctx, x, y, r) {
   ctx.textBaseline = 'alphabetic'
 }
 
-export function renderStoryCard({ user, rank, postsCount, avatarImg }) {
+export function renderStoryCard({ user, rank, postsCount, avatarImg, link = BOT_LINK }) {
   const W = 1080, H = 1920
   const c = document.createElement('canvas')
   c.width = W; c.height = H
@@ -112,9 +113,15 @@ export function renderStoryCard({ user, rank, postsCount, avatarImg }) {
   ctx.font = '400 50px Onest, sans-serif'
   ctx.fillText(t('story_looks', { n: postsCount }), W / 2, 1690)
 
+  // ссылка снизу: у каждого своя реферальная, поэтому подгоняем размер под ширину
+  const shown = link.replace(/^https?:\/\//, '')
   ctx.fillStyle = MUTED
-  ctx.font = '500 46px Onest, sans-serif'
-  ctx.fillText('t.me/Driplycheckbot', W / 2, 1830)
+  let size = 46
+  do {
+    ctx.font = `500 ${size}px Onest, sans-serif`
+    size -= 2
+  } while (ctx.measureText(shown).width > W - 120 && size > 26)
+  ctx.fillText(shown, W / 2, 1830)
   return c
 }
 
@@ -123,7 +130,7 @@ function toBlob(canvas) {
     canvas.toBlob((b) => (b ? res(b) : rej(new Error('blob'))), 'image/png', 0.92))
 }
 
-export async function shareRankCard({ user, rank, postsCount }) {
+export async function shareRankCard({ user, rank, postsCount, link = BOT_LINK }) {
   if (!tg || !tg.shareToStory) return { ok: false, reason: 'unsupported' }
   let blob
   try {
@@ -131,9 +138,9 @@ export async function shareRankCard({ user, rank, postsCount }) {
     try { await document.fonts.ready } catch { /* не критично */ }
     const avatarImg = user.avatar_url ? await loadImg(user.avatar_url) : null
     try {
-      blob = await toBlob(renderStoryCard({ user, rank, postsCount, avatarImg }))
+      blob = await toBlob(renderStoryCard({ user, rank, postsCount, avatarImg, link }))
     } catch {
-      blob = await toBlob(renderStoryCard({ user, rank, postsCount, avatarImg: null }))
+      blob = await toBlob(renderStoryCard({ user, rank, postsCount, avatarImg: null, link }))
     }
   } catch {
     return { ok: false, reason: 'render' }
@@ -145,7 +152,7 @@ export async function shareRankCard({ user, rank, postsCount }) {
   try {
     tg.shareToStory(pub.publicUrl, {
       text: t('story_share_text'),
-      widget_link: { url: 'https://t.me/Driplycheckbot', name: 'Driply' },
+      widget_link: { url: link, name: 'Driply' },
     })
   } catch {
     return { ok: false, reason: 'share' }

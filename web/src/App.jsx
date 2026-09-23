@@ -164,6 +164,7 @@ export default function App() {
             onOpenProfile={(id) => replace('profile', { userId: id })}
             onOpenSettings={() => push('settings')}
             onEditProfile={() => push('editProfile')}
+            onOpenReferral={() => push('referral')}
             onOpenArchive={() => push('archive')}
             onOpenVotes={() => push('votes')}
             onOpenTop={() => push('top')}

@@ -3,7 +3,6 @@ import { supabase } from './supabase.js'
 import { getInitData, tg, haptic } from './telegram.js'
 import { ChevronLeft, Settings as SettingsIcon, Share, Grid3x3, Crown, Ban, Undo2, Flag, MessageCircle, Layers } from 'lucide-react'
 import { avatarTier, tierProgress } from './tiers.js'
-import { shareRankCard } from './storyCard.js'
 import Button from './components/ui/Button.jsx'
 import { t, activeLang } from './i18n.js'
 import DripCoin from './components/ui/DripCoin.jsx'
@@ -46,7 +45,7 @@ async function fetchProfileData(userId, selfId) {
   }
 }
 
-export default function Profile({ userId, selfId, onClose, onOpenSettings, onEditProfile, onOpenPost, onOpenProfile, onOpenArchive, onOpenVotes, onOpenTop, onFollowChanged }) {
+export default function Profile({ userId, selfId, onClose, onOpenSettings, onEditProfile, onOpenReferral, onOpenPost, onOpenProfile, onOpenArchive, onOpenVotes, onOpenTop, onFollowChanged }) {
   const [user, setUser] = useState(null)
   const [rank, setRank] = useState(null)
   const [posts, setPosts] = useState([])
@@ -59,8 +58,6 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onEdi
   const [listMode, setListMode] = useState(null)
   const [blocked, setBlocked] = useState(false)
   const [busyBlock, setBusyBlock] = useState(false)
-  const [busyShare, setBusyShare] = useState(false)
-  const [toast, setToast] = useState(null)
 
   useEffect(() => {
     let active = true
@@ -116,17 +113,6 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onEdi
     }
   }
 
-  async function share() {
-    if (busyShare || !user) return
-    setBusyShare(true)
-    const res = await shareRankCard({ user, rank, postsCount: posts.length })
-    setBusyShare(false)
-    const msg = !res.ok
-      ? (res.reason === 'unsupported' ? t('share_unsupported') : t('share_failed'))
-      : res.reward ? t('story_rewarded', { n: res.reward }) : t('story_shared')
-    setToast(msg)
-    setTimeout(() => setToast(null), 2600)
-  }
 
   function openPerson(id) {
     setListMode(null)
@@ -221,8 +207,8 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onEdi
             {isSelf ? (
               <>
                 <Button variant="secondary" onClick={onEditProfile}>{t('profile_edit')}</Button>
-                <Button variant="primary" onClick={share} disabled={busyShare}>
-                  <Share size={18} strokeWidth={2} /> {busyShare ? '…' : t('share_story_btn')}
+                <Button variant="primary" onClick={onOpenReferral}>
+                  <Share size={18} strokeWidth={2} /> {t('profile_invite')}
                 </Button>
               </>
             ) : (
@@ -261,7 +247,6 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onEdi
           )}
         </div>
       )}
-      {toast && <div className="app-toast">{toast}</div>}
 
       {listMode && (
         <FollowList
