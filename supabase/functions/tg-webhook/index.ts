@@ -2,6 +2,10 @@
 // Секреты: BOT_TOKEN, WEBAPP_URL, TG_WEBHOOK_SECRET (+ SUPABASE_* для аналитики, они уже есть).
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
+function db() {
+  return createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
+}
+
 const BOT_TOKEN = Deno.env.get('BOT_TOKEN') ?? ''
 const WEBAPP_URL = Deno.env.get('WEBAPP_URL') ?? ''
 const WEBHOOK_SECRET = Deno.env.get('TG_WEBHOOK_SECRET') ?? ''
@@ -113,6 +117,55 @@ Deno.serve(async (req) => {
     const update = await req.json()
     const message = update.message
     const text: string = message?.text ?? ''
+
+    // Обычное сообщение (не команда) — это поддержка
+    if (message?.chat?.id && text && !text.startsWith('/')) {
+      const supabase = db()
+      const fromTid = message.from?.id
+      const { data: modTid } = await supabase.rpc('support_moderator_tid')
+      const replyTo = message.reply_to_message?.message_id
+
+      // модератор отвечает реплаем на пересланное сообщение → отправляем ответ человеку
+      if (fromTid && modTid && fromTid === modTid && replyTo) {
+        const { data: src } = await supabase.from('support_messages')
+          .select('tid, user_id').eq('tg_message_id', replyTo).maybeSingle()
+        if (src?.tid) {
+          await tg('sendMessage', { chat_id: src.tid, text: `<b>Поддержка Driply</b>\n\n${text}`, parse_mode: 'HTML' })
+          await supabase.from('support_messages').insert({
+            user_id: src.user_id, tid: src.tid, direction: 'out', body: text.slice(0, 1000),
+          })
+          await tg('sendMessage', { chat_id: modTid, text: '✅ Отправлено', reply_to_message_id: message.message_id })
+        } else {
+          await tg('sendMessage', { chat_id: modTid, text: 'Не нашёл, кому это адресовано. Отвечай реплаем на сообщение с пометкой «Поддержка».' })
+        }
+        return new Response('ok')
+      }
+
+      // обычный человек написал боту — принимаем как обращение
+      if (fromTid) {
+        const { data: user } = await supabase.from('users').select('id, display_name')
+          .eq('telegram_id', fromTid).maybeSingle()
+        const { data: row } = await supabase.from('support_messages')
+          .insert({ user_id: user?.id ?? null, tid: fromTid, direction: 'in', body: text.slice(0, 1000) })
+          .select('id').single()
+
+        if (modTid) {
+          const who = user?.display_name || message.from?.username || message.from?.first_name || 'user'
+          const head = `✉️ <b>Поддержка</b> · ${who}${message.from?.username ? ' @' + message.from.username : ''} · id ${fromTid}`
+          const sent = await tg('sendMessage', {
+            chat_id: modTid, parse_mode: 'HTML',
+            text: `${head}\n\n${text}\n\n<i>Ответь реплаем на это сообщение</i>`,
+          })
+          if (sent?.result?.message_id && row?.id) {
+            await supabase.from('support_messages')
+              .update({ tg_message_id: sent.result.message_id }).eq('id', row.id)
+          }
+        }
+        await tg('sendMessage', { chat_id: message.chat.id, text: 'Принял, отвечу здесь же 👌' })
+      }
+      return new Response('ok')
+    }
+
     if (message?.chat?.id && text.startsWith('/')) {
       const [cmd, payload] = text.split(/\s+/, 2)
       const command = cmd.split('@')[0]

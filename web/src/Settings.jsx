@@ -8,7 +8,6 @@ import pkg from '../package.json'
 
 // версия — в package.json: заметный деплой +0.1, конец редизайна — 2.0
 const APP_VERSION = pkg.version.split('.').slice(0, 2).join('.')
-const SUPPORT_URL = 'https://t.me/Driplycheckbot'
 
 function SettingsLink({ label, onClick }) {
   return (
@@ -27,7 +26,7 @@ function Toggle({ active, onClick, disabled, label }) {
   )
 }
 
-export default function Settings({ me, lang, onLang, side, onSide, onClose, onEditProfile, onChanged, onOpenBlocked, onOpenReferral, onOpenAppearance, onOpenModeration }) {
+export default function Settings({ me, lang, onLang, side, onSide, onClose, onEditProfile, onChanged, onOpenBlocked, onOpenReferral, onOpenAppearance, onOpenModeration, onOpenSupport }) {
   const { enabled: themesEnabled } = useTheme()
   const [prefs, setPrefs] = useState({
     all: me.notify_prefs?.all !== false,
@@ -108,10 +107,7 @@ export default function Settings({ me, lang, onLang, side, onSide, onClose, onEd
         <SettingsLink label={t('referral')} onClick={onOpenReferral} />
 
         <div className="ssection">{t('sec_about')}</div>
-        <a className="srow srow--tap" href={SUPPORT_URL} target="_blank" rel="noreferrer">
-          <span className="srow__label">{t('support')}</span>
-          <span className="srow__chev">›</span>
-        </a>
+        <SettingsLink label={t('support')} onClick={onOpenSupport} />
         <SettingsLink label={t('about_app')} onClick={() => setAboutOpen(true)} />
         <div className="srow">
           <span className="srow__label">{t('version')}</span>

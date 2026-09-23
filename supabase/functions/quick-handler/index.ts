@@ -45,6 +45,7 @@ const LIMITS = {
   set_follow: [60, 3600],
   set_block: [30, 3600],
   report: [10, 3600],
+  support: [5, 3600],
   mod_act: [200, 3600],
   reward_story: [5, 3600],
   upload_url: [30, 3600],
@@ -118,6 +119,39 @@ Deno.serve(async (req) => {
 
     if (!(await rateOk(supabase, tgUser.id, body.action))) {
       return jsonResponse({ error: 'RATE_LIMIT' }, 429)
+    }
+
+    // Поддержка: сообщение уходит модератору в Telegram, ответ придёт реплаем (см. tg-webhook)
+    if (body.action === 'support') {
+      const text = String(body.text ?? '').trim().slice(0, 1000)
+      if (text.length < 3) return jsonResponse({ error: 'TOO_SHORT' }, 400)
+
+      const { data: uid } = await supabase.from('users').select('id, display_name')
+        .eq('telegram_id', tgUser.id).maybeSingle()
+      const { data: row, error } = await supabase.from('support_messages')
+        .insert({ user_id: uid?.id ?? null, tid: tgUser.id, direction: 'in', body: text })
+        .select('id').single()
+      if (error) return jsonResponse({ error: error.message }, 400)
+
+      const { data: modTid } = await supabase.rpc('support_moderator_tid')
+      if (modTid) {
+        const who = uid?.display_name || tgUser.username || tgUser.first_name || 'user'
+        const head = `✉️ <b>Поддержка</b> · ${who}${tgUser.username ? ' @' + tgUser.username : ''} · id ${tgUser.id}`
+        const res = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chat_id: modTid, text: `${head}\n\n${text}\n\n<i>Ответь реплаем на это сообщение</i>`, parse_mode: 'HTML' }),
+        })
+        const sent = await res.json().catch(() => ({}))
+        if (sent?.result?.message_id) {
+          // по этому id находим адресата, когда модератор ответит реплаем
+          await supabase.from('support_messages')
+            .update({ tg_message_id: sent.result.message_id }).eq('id', row.id)
+        } else {
+          console.error('support forward failed', sent?.description ?? '')
+        }
+      }
+      return jsonResponse({ ok: true }, 200)
     }
 
     // Модерация: право проверяет сама база (is_founder), тут только передаём telegram_id из подписи

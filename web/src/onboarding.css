@@ -250,3 +250,15 @@
 .pswitch__text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .pswitch__title { font: 600 15px/1.2 var(--font-body); }
 .pswitch__hint { font-size: 12px; line-height: 1.35; color: var(--text-muted); }
+
+/* ===== поддержка ===== */
+.support__lead { font-size: 15px; line-height: 1.45; color: var(--text-2); }
+.support__note { font-size: 12px; line-height: 1.45; color: var(--text-muted); }
+.support__done { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 48px 16px; text-align: center; }
+.support__check {
+  width: 56px; height: 56px; display: grid; place-items: center; border-radius: 50%;
+  background: var(--drip); color: var(--on-drip); margin-bottom: 4px;
+}
+.support__done h2 { font: 700 18px/1.2 var(--font-display); }
+.support__done p { font-size: 14px; line-height: 1.45; color: var(--text-muted); max-width: 30ch; }
+.support__done .ui-btn { margin-top: 10px; }
