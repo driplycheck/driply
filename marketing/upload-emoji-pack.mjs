@@ -21,6 +21,9 @@ const TITLE = flag('title', 'Driply')
 // базовый эмодзи обязателен для каждого кастомного: по нему работает поиск и фолбэк без Premium
 const EMOJI = {
   'coin-tile': '💧', crown: '👑', check: '✅', up: '⬆️', arrow: '➡️', fire: '🔥', star: '⭐',
+  // монеты и метки под темы оформления
+  'coin-dark': '💧', 'coin-light': '💧', 'coin-neon': '💧',
+  'theme-dark': '⬛', 'theme-light': '⬜', 'theme-neon': '🟣',
   'item-top': '👕', 'item-bottoms': '👖', 'item-shoes': '👟', 'item-accessory': '🧢',
   'item-dress': '👗', 'item-skirt': '👚', 'item-bag': '👜', 'item-other': '✨',
   'style-streetwear': '🛹', 'style-casual': '👕', 'style-y2k': '💿', 'style-alt': '🖤',
@@ -30,7 +33,7 @@ const EMOJI = {
 }
 
 // порядок в паке: монета, стили, вещи, остальное
-const ORDER = (id) => (id === 'coin-tile' ? 0 : id.startsWith('style-') ? 1 : id.startsWith('item-') ? 2 : 3)
+const ORDER = (id) => (id.startsWith('coin-') ? 0 : id.startsWith('theme-') ? 1 : id.startsWith('style-') ? 2 : id.startsWith('item-') ? 3 : 4)
 
 async function readToken() {
   if (process.env.BOT_TOKEN) return process.env.BOT_TOKEN.trim()
