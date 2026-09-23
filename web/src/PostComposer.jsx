@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 import { supabase } from './supabase.js'
 import { getInitData, haptic } from './telegram.js'
 import { matchBrands } from './brands.js'
-import { X, Check, Tag, ImagePlus, Plus } from 'lucide-react'
+import { X, Check, Tag, ImagePlus, Plus, Camera } from 'lucide-react'
 import { t, styleName } from './i18n.js'
 import { track } from './analytics.js'
 import { uploadImage } from './upload.js'
@@ -361,14 +361,23 @@ export default function PostComposer({ selfId, onClose, onPosted, firstPost = fa
 
       <div className="composer__body">
         {photos.length === 0 ? (
-          <label className="photo">
+          <div className="photo photo--empty">
             <span className="photo__empty">
-              <span className="photo__plus"><ImagePlus size={26} strokeWidth={1.8} /></span>
               <span className="photo__label">{t('add_photo_title')}</span>
               <span className="photo__hint">{firstPost ? t('first_post_hint') : t('photos_hint', { n: MAX_PHOTOS })}</span>
+              <span className="photo__ways">
+                {/* capture открывает камеру сразу, без системного меню выбора */}
+                <label className="photoway photoway--primary">
+                  <Camera size={20} strokeWidth={2} /> {t('photo_camera')}
+                  <input type="file" accept="image/*" capture="environment" onChange={(e) => pickPhoto(0, e)} hidden />
+                </label>
+                <label className="photoway">
+                  <ImagePlus size={20} strokeWidth={2} /> {t('photo_gallery')}
+                  <input type="file" accept="image/*" onChange={(e) => pickPhoto(0, e)} hidden />
+                </label>
+              </span>
             </span>
-            <input type="file" accept="image/*" onChange={(e) => pickPhoto(0, e)} hidden />
-          </label>
+          </div>
         ) : (
           <div className="photos">
             <label className="photos__cover">
