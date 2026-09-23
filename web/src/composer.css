@@ -277,3 +277,25 @@
 .itemadd > .field-wrap:nth-child(3) { grid-column: 2 / 4; }
 .itemadd > .itemadd__price { grid-column: 1 / 3; }
 .itemadd > .itemadd__btn { grid-column: 3; }
+
+.draftbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: var(--r-md);
+  border: 1px dashed var(--border);
+  background: var(--surface);
+  color: var(--text-2);
+  font-size: 13px;
+}
+.draftbar button {
+  flex: none;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--primary);
+  font: 600 13px/1 var(--font-body);
+  cursor: pointer;
+}

@@ -10,6 +10,8 @@ import Chip from './components/ui/Chip.jsx'
 import GlassBadge from './components/ui/GlassBadge.jsx'
 
 const CAPTION_MAX = 300
+// Черновик — всё кроме фото: файл в localStorage не положишь, а перезаливать его молча нельзя.
+const DRAFT_KEY = 'driply_draft'
 const MAX_PHOTOS = 3
 const MAX_STYLES = 2
 // экономика: первый образ +300, следующие +100 (create_post)
@@ -189,6 +191,7 @@ export default function PostComposer({ selfId, onClose, onPosted, firstPost = fa
   const [styles, setStyles] = useState([])
   const [styleIds, setStyleIds] = useState([])
   const [tagItems, setTagItems] = useState(false)
+  const [draftRestored, setDraftRestored] = useState(false)
   const [hasPosts, setHasPosts] = useState(firstPost ? false : null)
   const reward = hasPosts === false ? REWARD_FIRST : hasPosts ? REWARD_NEXT : null
 
@@ -215,6 +218,36 @@ export default function PostComposer({ selfId, onClose, onPosted, firstPost = fa
   // превью — object URL: освобождаем при уходе с экрана
   useEffect(() => () => photosRef.current.forEach((p) => URL.revokeObjectURL(p.url)), [])
 
+  // вернуть незаконченный образ: подпись, стили и вещи переживают закрытие экрана
+  useEffect(() => {
+    let draft = null
+    try { draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null') } catch { draft = null }
+    const hasContent = draft && (draft.caption || draft.styleIds?.length || draft.items?.length)
+    if (hasContent) {
+      setCaption(draft.caption || '')
+      setStyleIds(Array.isArray(draft.styleIds) ? draft.styleIds.slice(0, MAX_STYLES) : [])
+      setItems(Array.isArray(draft.items) ? draft.items : [])
+      setTagItems(Boolean(draft.items?.length))
+      setDraftRestored(true)
+    }
+    track('composer_opened', { draft: Boolean(hasContent), first: firstPost })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    const draft = { caption, styleIds, items }
+    const empty = !caption && styleIds.length === 0 && items.length === 0
+    try {
+      if (empty) localStorage.removeItem(DRAFT_KEY)
+      else localStorage.setItem(DRAFT_KEY, JSON.stringify(draft))
+    } catch {}
+  }, [caption, styleIds, items])
+
+  function clearDraft() {
+    try { localStorage.removeItem(DRAFT_KEY) } catch {}
+    setCaption(''); setStyleIds([]); setItems([]); setTagItems(false); setDraftRestored(false)
+  }
+
   // награда на кнопке: первый образ даёт больше
   useEffect(() => {
     if (firstPost || !selfId) return
@@ -229,6 +262,7 @@ export default function PostComposer({ selfId, onClose, onPosted, firstPost = fa
     const f = e.target.files?.[0]
     e.target.value = ''
     if (!f) return
+    if (photos.length === 0) track('photo_added', { n: 1 })
     setPhotos((arr) => {
       const next = [...arr]
       if (next[slot]) URL.revokeObjectURL(next[slot].url)
@@ -295,9 +329,11 @@ export default function PostComposer({ selfId, onClose, onPosted, firstPost = fa
         throw new Error(code)
       }
       haptic('heavy')
+      clearDraft()
       track('post_created', { photos: urls.length, styles: styleIds.length, items: tagItems ? items.length : 0 })
       onPosted(result)
     } catch (e) {
+      track('publish_failed', { code: String(e?.message || 'UNKNOWN').slice(0, 40) })
       setError(t('post_failed'))
       setBusy(false)
     }
@@ -346,6 +382,13 @@ export default function PostComposer({ selfId, onClose, onPosted, firstPost = fa
                 </label>
               ) : <span className="photos__slot" key={i} />)}
             </div>
+          </div>
+        )}
+
+        {draftRestored && (
+          <div className="draftbar">
+            <span>{t('draft_restored')}</span>
+            <button onClick={clearDraft}>{t('draft_clear')}</button>
           </div>
         )}
 
