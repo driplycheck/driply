@@ -121,10 +121,11 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onEdi
     setBusyShare(true)
     const res = await shareRankCard({ user, rank, postsCount: posts.length })
     setBusyShare(false)
-    if (!res.ok) {
-      setToast(res.reason === 'unsupported' ? t('share_unsupported') : t('share_failed'))
-      setTimeout(() => setToast(null), 2200)
-    }
+    const msg = !res.ok
+      ? (res.reason === 'unsupported' ? t('share_unsupported') : t('share_failed'))
+      : res.reward ? t('story_rewarded', { n: res.reward }) : t('story_shared')
+    setToast(msg)
+    setTimeout(() => setToast(null), 2600)
   }
 
   function openPerson(id) {
@@ -221,7 +222,7 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onEdi
               <>
                 <Button variant="secondary" onClick={onEditProfile}>{t('profile_edit')}</Button>
                 <Button variant="primary" onClick={share} disabled={busyShare}>
-                  <Share size={18} strokeWidth={2} /> {busyShare ? '…' : t('profile_share')}
+                  <Share size={18} strokeWidth={2} /> {busyShare ? '…' : t('share_story_btn')}
                 </Button>
               </>
             ) : (
