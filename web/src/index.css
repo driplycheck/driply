@@ -45,7 +45,7 @@ body {
 }
 
 /* ===== полноэкранный пост (из профиля) ===== */
-.postview { animation: screenIn 0.22s ease-out;
+.postview {
   position: fixed;
   inset: 0;
   background: var(--bg);
@@ -113,3 +113,19 @@ body {
 }
 .overlay-sheet { animation: slideUp 0.25s ease-out; }
 @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+/* ===== движение между экранами ===== */
+.overlay-backdrop { animation: overlayIn var(--dur-in) var(--ease) both; }
+.overlay-backdrop.is-leaving { animation: overlayOut var(--dur-out) var(--ease) forwards; pointer-events: none; }
+@keyframes overlayIn {
+  from { opacity: 0; transform: translate3d(0, 16px, 0) scale(0.99); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes overlayOut {
+  from { opacity: 1; transform: none; }
+  to { opacity: 0; transform: translate3d(0, 10px, 0) scale(0.99); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .overlay-backdrop, .overlay-backdrop.is-leaving { animation-duration: 1ms; }
+  .screen-anim, .confirm, .earn { animation: none; }
+}

@@ -13,6 +13,8 @@ export default function Feed({ selfId, balance, scrollTopKey, onOpenProfile }) {
   const [error, setError] = useState(null)
   const [styleId, setStyleId] = useState(null)
   const scroller = useRef(null)
+  // лента уже загруженной вкладки показывается сразу, обновление идёт фоном
+  const cache = useRef({})
   usePager(scroller, '.feed-list > .ocard', [])
 
   // повторный тап по «Ленте» в таб-баре — наверх
@@ -34,22 +36,23 @@ export default function Feed({ selfId, balance, scrollTopKey, onOpenProfile }) {
 
   useEffect(() => {
     let active = true
-    setPosts(null)
     setError(null)
     setStyleId(null)
+    setPosts(cache.current[tab] ?? null)
     ;(async () => {
-      if (tab === 'following') {
-        if (!selfId) { if (active) setPosts([]); return }
-        const { data, error } = await supabase.rpc('following_feed', { p_uid: selfId })
-        if (!active) return
-        if (error) { setError(error.message); setPosts([]) }
-        else setPosts(Array.isArray(data) ? data : [])
+      if (tab === 'following' && !selfId) { if (active) setPosts([]); return }
+      const { data, error } = tab === 'following'
+        ? await supabase.rpc('following_feed', { p_uid: selfId })
+        : await supabase.rpc('main_feed', { p_uid: selfId ?? 0 })
+      if (!active) return
+      if (error) {
+        // молча оставляем показанный кэш: моргать ошибкой поверх готовой ленты незачем
+        if (!cache.current[tab]) { setError(error.message); setPosts([]) }
         return
       }
-      const { data, error } = await supabase.rpc('main_feed', { p_uid: selfId ?? 0 })
-      if (!active) return
-      if (error) { setError(error.message); setPosts([]) }
-      else setPosts(Array.isArray(data) ? data : [])
+      const list = Array.isArray(data) ? data : []
+      cache.current[tab] = list
+      setPosts(list)
     })()
     return () => { active = false }
   }, [tab, selfId])
@@ -105,9 +108,10 @@ export default function Feed({ selfId, balance, scrollTopKey, onOpenProfile }) {
         </div>
       ) : (
         <div className="feed-list">
-          {visible.map((post) => (
+          {visible.map((post, i) => (
             <PostCard
               key={post.id}
+              priority={i === 0}
               post={post}
               alreadyVoted={votedIds.has(post.id)}
               selfId={selfId}

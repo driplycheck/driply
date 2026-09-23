@@ -20,6 +20,10 @@
   --font-display: 'Unbounded', system-ui, sans-serif;
   --font-body: 'Onest', system-ui, sans-serif;
   --theme-transition: background-color 0.25s, color 0.25s, border-color 0.25s;
+  /* движение: одна кривая и две длительности на всё приложение */
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --dur-in: 260ms;
+  --dur-out: 190ms;
 }
 
 [data-theme="dark"] {

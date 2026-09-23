@@ -139,7 +139,7 @@ export default function App() {
       {toast && <div className="app-toast">{toast}</div>}
 
       {top?.type === 'search' && (
-        <Overlay onClose={pop}>
+        <Overlay onClose={pop} leaving={top.leaving}>
           <Search
             onClose={pop}
             onOpenProfile={(id) => replace('profile', { userId: id })}
@@ -150,13 +150,13 @@ export default function App() {
       )}
 
       {top?.type === 'composer' && (
-        <Overlay onClose={pop}>
+        <Overlay onClose={pop} leaving={top.leaving}>
           <PostComposer selfId={profile?.id} onClose={pop} onPosted={onPosted} firstPost={top.props.firstPost} />
         </Overlay>
       )}
 
       {top?.type === 'profile' && (
-        <Overlay key={top.key} onClose={pop}>
+        <Overlay key={top.key} onClose={pop} leaving={top.leaving}>
           <Profile
             userId={top.props.userId}
             selfId={profile?.id}
@@ -174,7 +174,7 @@ export default function App() {
       )}
 
       {top?.type === 'settings' && profile && (
-        <Overlay onClose={pop}>
+        <Overlay onClose={pop} leaving={top.leaving}>
           <Settings
             me={profile}
             lang={lang}
@@ -192,7 +192,7 @@ export default function App() {
       )}
 
       {top?.type === 'postView' && (
-        <Overlay key={top.key} onClose={pop}>
+        <Overlay key={top.key} onClose={pop} leaving={top.leaving}>
           <PostView
             postId={top.props.postId}
             selfId={profile?.id}
@@ -204,25 +204,25 @@ export default function App() {
       )}
 
       {top?.type === 'appearance' && (
-        <Overlay onClose={pop}>
+        <Overlay onClose={pop} leaving={top.leaving}>
           <Appearance onClose={pop} />
         </Overlay>
       )}
 
       {top?.type === 'referral' && profile && (
-        <Overlay onClose={pop}>
+        <Overlay onClose={pop} leaving={top.leaving}>
           <Referral me={profile} onClose={pop} />
         </Overlay>
       )}
 
       {top?.type === 'blocked' && (
-        <Overlay onClose={pop}>
+        <Overlay onClose={pop} leaving={top.leaving}>
           <BlockedList onClose={pop} />
         </Overlay>
       )}
 
       {top?.type === 'archive' && (
-        <Overlay onClose={pop}>
+        <Overlay onClose={pop} leaving={top.leaving}>
           <PostsArchive
             onClose={pop}
             onChanged={() => { setFeedKey((k) => k + 1); touch('profile') }}
@@ -231,19 +231,19 @@ export default function App() {
       )}
 
       {top?.type === 'top' && (
-        <Overlay onClose={pop}>
+        <Overlay onClose={pop} leaving={top.leaving}>
           <TopUsers me={profile} onClose={pop} onOpenProfile={(id) => replace('profile', { userId: id })} />
         </Overlay>
       )}
 
       {top?.type === 'votes' && (
-        <Overlay onClose={pop}>
+        <Overlay onClose={pop} leaving={top.leaving}>
           <MyVotes onClose={pop} onOpenPost={(id) => replace('postView', { postId: id })} />
         </Overlay>
       )}
 
       {top?.type === 'editProfile' && profile && (
-        <Overlay onClose={pop}>
+        <Overlay onClose={pop} leaving={top.leaving}>
           <EditProfile me={profile} onClose={pop} onSaved={onSaved} />
         </Overlay>
       )}

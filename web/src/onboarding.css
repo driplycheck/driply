@@ -130,7 +130,6 @@
 
 /* ===== редактирование профиля ===== */
 .pedit {
-  animation: screenIn 0.22s ease-out;
   position: fixed;
   inset: 0;
   z-index: 110;

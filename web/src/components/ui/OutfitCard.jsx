@@ -3,7 +3,7 @@ import './ui.css'
 
 // Карточка образа: фото (одно или карусель до трёх) + тёмный скрим, всё поверх фото — on-photo токены.
 // Логика (голос, жалоба, тосты) живёт снаружи и приходит слотами.
-export default function OutfitCard({ images, imageUrl, badge, author, caption, tags, actions, children }) {
+export default function OutfitCard({ images, imageUrl, badge, author, caption, tags, actions, children, priority = false }) {
   const photos = (images && images.length ? images : [imageUrl]).filter(Boolean)
   const [index, setIndex] = useState(0)
 
@@ -18,11 +18,15 @@ export default function OutfitCard({ images, imageUrl, badge, author, caption, t
       {photos.length > 1 ? (
         <div className="ocard__slides" onScroll={onSlide}>
           {photos.map((src, i) => (
-            <img key={src + i} className="ocard__slide" src={src} alt="" loading={i ? 'lazy' : 'eager'} decoding="async" />
+            <img key={src + i} className="ocard__slide" src={src} alt=""
+              loading={i === 0 && priority ? 'eager' : 'lazy'}
+              fetchPriority={i === 0 && priority ? 'high' : 'auto'} decoding="async" />
           ))}
         </div>
       ) : (
-        <img className="ocard__img" src={photos[0]} alt="" loading="lazy" decoding="async" />
+        <img className="ocard__img" src={photos[0]} alt=""
+          loading={priority ? 'eager' : 'lazy'}
+          fetchPriority={priority ? 'high' : 'auto'} decoding="async" />
       )}
       <div className="ocard__scrim" />
       {(badge || photos.length > 1) && (

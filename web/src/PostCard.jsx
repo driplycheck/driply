@@ -83,7 +83,7 @@ function IconAction({ label, active = false, onClick, children }) {
   )
 }
 
-export default function PostCard({ post, alreadyVoted, onOpenProfile, selfId, onReported }) {
+export default function PostCard({ post, alreadyVoted, onOpenProfile, selfId, onReported, priority = false }) {
   const [reportOpen, setReportOpen] = useState(false)
   const author = post.users || {}
   const items = getItems(post)
@@ -136,6 +136,7 @@ export default function PostCard({ post, alreadyVoted, onOpenProfile, selfId, on
   return (
     <OutfitCard
       images={images}
+      priority={priority}
       badge={style && (
         <>
           <GlassBadge><StyleIcon slug={style.slug} size={13} /> {styleName(style)}</GlassBadge>

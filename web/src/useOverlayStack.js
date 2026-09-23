@@ -1,5 +1,8 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { setBackHandler } from './telegram.js'
+
+// столько живёт экран после pop — ровно длительность анимации закрытия
+const EXIT_MS = 190
 
 function makeEntry(type, props) {
   return { type, props, key: Date.now() + Math.random() }
@@ -7,9 +10,12 @@ function makeEntry(type, props) {
 
 export function useOverlayStack() {
   const [stack, setStack] = useState([])
+  const exitTimer = useRef(null)
 
   const push = useCallback((type, props = {}) => {
-    setStack((s) => [...s, makeEntry(type, props)])
+    clearTimeout(exitTimer.current)
+    // экран, который сейчас закрывается, убираем сразу — иначе он мигнёт под новым
+    setStack((s) => [...s.filter((e) => !e.leaving), makeEntry(type, props)])
   }, [])
 
   // заменяет верхний экран новым, без истории (поиск -> профиль и т.п.)
@@ -18,7 +24,13 @@ export function useOverlayStack() {
   }, [])
 
   const pop = useCallback(() => {
-    setStack((s) => s.slice(0, -1))
+    setStack((s) => {
+      const last = s[s.length - 1]
+      if (!last || last.leaving) return s
+      return [...s.slice(0, -1), { ...last, leaving: true }]
+    })
+    clearTimeout(exitTimer.current)
+    exitTimer.current = setTimeout(() => setStack((s) => s.filter((e) => !e.leaving)), EXIT_MS)
   }, [])
 
   const closeAll = useCallback(() => setStack([]), [])
@@ -31,8 +43,10 @@ export function useOverlayStack() {
 
   const top = stack[stack.length - 1]
 
+  useEffect(() => () => clearTimeout(exitTimer.current), [])
+
   useEffect(() => {
-    return setBackHandler(top ? pop : null)
+    return setBackHandler(top && !top.leaving ? pop : null)
   }, [top, pop])
 
   return { stack, top, push, replace, pop, closeAll, touch }

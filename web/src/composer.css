@@ -1,4 +1,4 @@
-.composer { animation: screenIn 0.22s ease-out;
+.composer {
   position: fixed;
   inset: 0;
   background: var(--bg);

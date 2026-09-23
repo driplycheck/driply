@@ -1,4 +1,4 @@
-.settings { animation: screenIn 0.22s ease-out;
+.settings {
   position: fixed;
   inset: 0;
   background: var(--bg);
@@ -97,7 +97,8 @@ a.srow { text-decoration: none; }
   white-space: nowrap;
 }
 
-.referral { animation: screenIn 0.22s ease-out; position: fixed; inset: 0; z-index: 99; background: var(--bg); display: flex; flex-direction: column; overflow: hidden; }
+.referral {
+  position: fixed; inset: 0; z-index: 99; background: var(--bg); display: flex; flex-direction: column; overflow: hidden; }
 .referral__top { display: flex; align-items: center; justify-content: space-between; padding: calc(env(safe-area-inset-top) + 12px) 16px 12px; border-bottom: 1px solid var(--border); }
 .referral__close { background: none; border: none; color: var(--text); font-size: 17px; cursor: pointer; width: 70px; text-align: left; }
 .referral__title { font-weight: 600; font-size: 16px; }

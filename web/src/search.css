@@ -1,6 +1,6 @@
 
 
-.search { animation: screenIn 0.22s ease-out;
+.search {
   position: fixed;
   inset: 0;
   background: var(--bg);

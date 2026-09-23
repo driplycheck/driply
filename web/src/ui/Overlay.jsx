@@ -1,6 +1,7 @@
-export default function Overlay({ children, onClose, variant = 'sheet' }) {
+export default function Overlay({ children, onClose, variant = 'sheet', leaving = false }) {
   return (
-    <div className="overlay-backdrop" onClick={onClose}>
+    // анимация живёт на обёртке: экраны внутри position:fixed, но подхватывают её как потомки
+    <div className={`overlay-backdrop ${leaving ? 'is-leaving' : ''}`} onClick={leaving ? undefined : onClose}>
       <div
         className={`overlay-panel overlay-${variant}`}
         onClick={(e) => e.stopPropagation()}
