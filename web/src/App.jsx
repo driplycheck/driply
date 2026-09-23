@@ -3,7 +3,6 @@ import { initTelegram } from './telegram.js'
 import { readPrivate } from './api.js'
 import { t, loadLang, saveLang, setActiveLang } from './i18n.js'
 import { track } from './analytics.js'
-import { loadSide, saveSide } from './side.js'
 import { useOverlayStack } from './useOverlayStack.js'
 import Overlay from './ui/Overlay.jsx'
 import Feed from './Feed.jsx'
@@ -36,7 +35,6 @@ export default function App() {
   const [tgUser, setTgUser] = useState(null)
   const [profile, setProfile] = useState(undefined)
   const [lang, setLang] = useState(loadLang())
-  const [side, setSide] = useState(loadSide())
   const [feedKey, setFeedKey] = useState(0)
   const [scrollTopKey, setScrollTopKey] = useState(0)
   const [openFirstComposer, setOpenFirstComposer] = useState(false)
@@ -80,8 +78,6 @@ export default function App() {
 
   // setActiveLang до setLang: иначе перерисовка успевает пройти на старом языке
   function changeLang(code) { saveLang(code); setActiveLang(code); setLang(code) }
-  function changeSide(nextSide) { saveSide(nextSide); setSide(nextSide) }
-
   function flash(text) {
     setToast(text)
     clearTimeout(toastTimer.current)
@@ -119,7 +115,7 @@ export default function App() {
   }
 
   return (
-    <div className={`app side-${side}`}>
+    <div className="app">
       <Feed
         key={feedKey}
         selfId={profile?.id ?? null}
@@ -182,8 +178,6 @@ export default function App() {
             me={profile}
             lang={lang}
             onLang={changeLang}
-            side={side}
-            onSide={changeSide}
             onClose={pop}
             onEditProfile={() => push('editProfile')}
             onChanged={onSettingsChanged}

@@ -202,7 +202,6 @@ input, textarea, select, .field { font-size: 16px; }
   animation: screenIn 0.2s ease-out;
 }
 /* «кнопки слева» из настроек — зеркалим ряд действий */
-.app.side-left .ocard__actions { flex-direction: row-reverse; }
 
 .dripctl { position: relative; flex: none; }
 .dripctl__done {
@@ -222,7 +221,6 @@ input, textarea, select, .field { font-size: 16px; }
   align-items: flex-end;
   gap: 8px;
 }
-.app.side-left .dripctl__picker { right: auto; left: 0; align-items: flex-start; }
 .dripctl__opt {
   display: inline-flex;
   align-items: center;

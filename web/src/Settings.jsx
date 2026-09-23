@@ -26,7 +26,7 @@ function Toggle({ active, onClick, disabled, label }) {
   )
 }
 
-export default function Settings({ me, lang, onLang, side, onSide, onClose, onEditProfile, onChanged, onOpenBlocked, onOpenReferral, onOpenAppearance, onOpenModeration, onOpenSupport }) {
+export default function Settings({ me, lang, onLang, onClose, onEditProfile, onChanged, onOpenBlocked, onOpenReferral, onOpenAppearance, onOpenModeration, onOpenSupport }) {
   const { enabled: themesEnabled } = useTheme()
   const [prefs, setPrefs] = useState({
     all: me.notify_prefs?.all !== false,
@@ -63,13 +63,6 @@ export default function Settings({ me, lang, onLang, side, onSide, onClose, onEd
         <SettingsLink label={t('edit_profile')} onClick={onEditProfile} />
         {themesEnabled && <SettingsLink label={t('appearance')} onClick={onOpenAppearance} />}
         {me.is_founder && <SettingsLink label={t('moderation')} onClick={onOpenModeration} />}
-        <div className="srow srow--col">
-          <div className="srow__label">{t('interface_side')}</div>
-          <div className="langrow">
-            <button className={`langopt ${side === 'left' ? 'langopt--on' : ''}`} onClick={() => onSide('left')}>{t('side_left')}</button>
-            <button className={`langopt ${side === 'right' ? 'langopt--on' : ''}`} onClick={() => onSide('right')}>{t('side_right')}</button>
-          </div>
-        </div>
         <div className="srow srow--col">
           <div className="srow__label">{t('language')}</div>
           <div className="langrow">
