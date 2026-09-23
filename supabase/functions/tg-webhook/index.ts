@@ -9,6 +9,16 @@ function db() {
 const BOT_TOKEN = Deno.env.get('BOT_TOKEN') ?? ''
 const WEBAPP_URL = Deno.env.get('WEBAPP_URL') ?? ''
 const WEBHOOK_SECRET = Deno.env.get('TG_WEBHOOK_SECRET') ?? ''
+
+// Темы в группе поддержки: имя топика ↔ колонка в support_routing
+const SUPPORT_TOPICS = [
+  { kind: 'bug', col: 'thread_bug', name: '🛠 Не работает', icon: 0x6FB9F0 },
+  { kind: 'idea', col: 'thread_idea', name: '💡 Идеи', icon: 0xFFD67E },
+  { kind: 'partner', col: 'thread_partner', name: '🤝 Сотрудничество', icon: 0xCB86DB },
+]
+const SUPPORT_LABEL: Record<string, string> = {
+  bug: '🛠 <b>Не работает</b>', idea: '💡 <b>Идея</b>', partner: '🤝 <b>Сотрудничество</b>',
+}
 const WEBAPP_HTTPS = WEBAPP_URL.startsWith('https://')
 
 const COPY = {
@@ -123,37 +133,46 @@ Deno.serve(async (req) => {
       const supabase = db()
       const fromTid = message.from?.id
       const { data: modTid } = await supabase.rpc('support_moderator_tid')
+      const { data: route } = await supabase.from('support_routing').select('*').maybeSingle()
       const replyTo = message.reply_to_message?.message_id
+      const inSupportChat = route?.chat_id && message.chat.id === Number(route.chat_id)
 
-      // модератор отвечает реплаем на пересланное сообщение → отправляем ответ человеку
-      if (fromTid && modTid && fromTid === modTid && replyTo) {
+      // ответ реплаем на пересланное обращение → отправляем человеку
+      // (в группе поддержки или в личке основателя — бот в группе видит только реплаи на свои сообщения)
+      if (replyTo && (inSupportChat || (fromTid && modTid && fromTid === modTid))) {
         const { data: src } = await supabase.from('support_messages')
           .select('tid, user_id').eq('tg_message_id', replyTo).maybeSingle()
+        const back = { chat_id: message.chat.id, reply_to_message_id: message.message_id }
         if (src?.tid) {
           await tg('sendMessage', { chat_id: src.tid, text: `<b>Поддержка Driply</b>\n\n${text}`, parse_mode: 'HTML' })
           await supabase.from('support_messages').insert({
             user_id: src.user_id, tid: src.tid, direction: 'out', body: text.slice(0, 1000),
           })
-          await tg('sendMessage', { chat_id: modTid, text: '✅ Отправлено', reply_to_message_id: message.message_id })
+          await tg('sendMessage', { ...back, text: '✅ Отправлено' })
         } else {
-          await tg('sendMessage', { chat_id: modTid, text: 'Не нашёл, кому это адресовано. Отвечай реплаем на сообщение с пометкой «Поддержка».' })
+          await tg('sendMessage', { ...back, text: 'Не нашёл, кому это адресовано. Отвечай реплаем на само обращение.' })
         }
         return new Response('ok')
       }
+
+      // свои заметки в группе поддержки пересылать некуда
+      if (inSupportChat || message.chat.type !== 'private') return new Response('ok')
 
       // обычный человек написал боту — принимаем как обращение
       if (fromTid) {
         const { data: user } = await supabase.from('users').select('id, display_name')
           .eq('telegram_id', fromTid).maybeSingle()
         const { data: row } = await supabase.from('support_messages')
-          .insert({ user_id: user?.id ?? null, tid: fromTid, direction: 'in', body: text.slice(0, 1000) })
+          .insert({ user_id: user?.id ?? null, tid: fromTid, direction: 'in', body: text.slice(0, 1000), kind: 'bug' })
           .select('id').single()
 
-        if (modTid) {
+        const chatId = route?.chat_id ?? modTid
+        if (chatId) {
           const who = user?.display_name || message.from?.username || message.from?.first_name || 'user'
-          const head = `✉️ <b>Поддержка</b> · ${who}${message.from?.username ? ' @' + message.from.username : ''} · id ${fromTid}`
+          const head = `${SUPPORT_LABEL.bug} · ${who}${message.from?.username ? ' @' + message.from.username : ''} · id ${fromTid}`
           const sent = await tg('sendMessage', {
-            chat_id: modTid, parse_mode: 'HTML',
+            chat_id: chatId, parse_mode: 'HTML',
+            ...(route?.thread_bug ? { message_thread_id: route.thread_bug } : {}),
             text: `${head}\n\n${text}\n\n<i>Ответь реплаем на это сообщение</i>`,
           })
           if (sent?.result?.message_id && row?.id) {
@@ -171,6 +190,39 @@ Deno.serve(async (req) => {
       const command = cmd.split('@')[0]
       const lang = pickLang(message.from?.language_code) as 'ru' | 'en'
       const chatId = message.chat.id
+
+      // Настройка группы поддержки: основатель пишет /setup_support в супергруппе с темами.
+      // Бот сам создаёт три топика и запоминает их — руками id копировать не нужно.
+      if (command === '/setup_support') {
+        const supabase = db()
+        const { data: modTid } = await supabase.rpc('support_moderator_tid')
+        if (!modTid || message.from?.id !== modTid) return new Response('ok')
+
+        if (message.chat.type !== 'supergroup' || !message.chat.is_forum) {
+          await tg('sendMessage', { chat_id: chatId, text: 'Нужна супергруппа с включёнными темами: настройки группы → Темы.' })
+          return new Response('ok')
+        }
+
+        const { data: route } = await supabase.from('support_routing').select('*').maybeSingle()
+        if (route?.chat_id === chatId && payload !== 'force') {
+          await tg('sendMessage', { chat_id: chatId, text: 'Группа уже настроена. Пересоздать темы: /setup_support force' })
+          return new Response('ok')
+        }
+
+        const threads: Record<string, number> = {}
+        for (const topic of SUPPORT_TOPICS) {
+          const res = await tg('createForumTopic', { chat_id: chatId, name: topic.name, icon_color: topic.icon })
+          if (!res?.ok) {
+            await tg('sendMessage', { chat_id: chatId, text: `Не смог создать тему «${topic.name}»: ${res?.description ?? 'нет прав'}. Дай боту права администратора с управлением темами.` })
+            return new Response('ok')
+          }
+          threads[topic.col] = res.result.message_thread_id
+        }
+
+        await supabase.from('support_routing').upsert({ id: 1, chat_id: chatId, ...threads, updated_at: new Date().toISOString() })
+        await tg('sendMessage', { chat_id: chatId, text: '✅ Готово. Обращения будут падать в темы выше, отвечай реплаем на сообщение.' })
+        return new Response('ok')
+      }
 
       if (command === '/start') {
         const ref = parseRef(payload)

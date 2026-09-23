@@ -54,6 +54,15 @@ const LIMITS = {
   delete_post: [20, 3600],
 }
 
+// Типы обращений в поддержку: под каждый свой топик в группе
+const SUPPORT_KINDS = ['bug', 'idea', 'partner']
+const SUPPORT_LABEL: Record<string, string> = {
+  bug: '🛠 <b>Не работает</b>', idea: '💡 <b>Идея</b>', partner: '🤝 <b>Сотрудничество</b>',
+}
+const SUPPORT_THREAD: Record<string, string> = {
+  bug: 'thread_bug', idea: 'thread_idea', partner: 'thread_partner',
+}
+
 async function rateOk(supabase, tid, action) {
   const limit = LIMITS[action]
   if (!limit) return true
@@ -121,26 +130,38 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: 'RATE_LIMIT' }, 429)
     }
 
-    // Поддержка: сообщение уходит модератору в Telegram, ответ придёт реплаем (см. tg-webhook)
+    // Поддержка: обращение уходит в группу поддержки, в топик по типу обращения.
+    // Ответ модератора возвращается человеку реплаем (см. tg-webhook).
     if (body.action === 'support') {
       const text = String(body.text ?? '').trim().slice(0, 1000)
       if (text.length < 3) return jsonResponse({ error: 'TOO_SHORT' }, 400)
+      const kind = SUPPORT_KINDS.includes(String(body.kind)) ? String(body.kind) : 'bug'
 
       const { data: uid } = await supabase.from('users').select('id, display_name')
         .eq('telegram_id', tgUser.id).maybeSingle()
       const { data: row, error } = await supabase.from('support_messages')
-        .insert({ user_id: uid?.id ?? null, tid: tgUser.id, direction: 'in', body: text })
+        .insert({ user_id: uid?.id ?? null, tid: tgUser.id, direction: 'in', body: text, kind })
         .select('id').single()
       if (error) return jsonResponse({ error: error.message }, 400)
 
+      // группа с темами, если настроена; иначе личка основателя
+      const { data: route } = await supabase.from('support_routing').select('*').maybeSingle()
       const { data: modTid } = await supabase.rpc('support_moderator_tid')
-      if (modTid) {
+      const chatId = route?.chat_id ?? modTid
+      const threadId = route?.[SUPPORT_THREAD[kind]] ?? null
+
+      if (chatId) {
         const who = uid?.display_name || tgUser.username || tgUser.first_name || 'user'
-        const head = `✉️ <b>Поддержка</b> · ${who}${tgUser.username ? ' @' + tgUser.username : ''} · id ${tgUser.id}`
+        const head = `${SUPPORT_LABEL[kind]} · ${who}${tgUser.username ? ' @' + tgUser.username : ''} · id ${tgUser.id}`
         const res = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ chat_id: modTid, text: `${head}\n\n${text}\n\n<i>Ответь реплаем на это сообщение</i>`, parse_mode: 'HTML' }),
+          body: JSON.stringify({
+            chat_id: chatId,
+            ...(threadId ? { message_thread_id: threadId } : {}),
+            text: `${head}\n\n${text}\n\n<i>Ответь реплаем на это сообщение</i>`,
+            parse_mode: 'HTML',
+          }),
         })
         const sent = await res.json().catch(() => ({}))
         if (sent?.result?.message_id) {

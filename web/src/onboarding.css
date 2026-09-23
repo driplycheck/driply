@@ -262,3 +262,4 @@
 .support__done h2 { font: 700 18px/1.2 var(--font-display); }
 .support__done p { font-size: 14px; line-height: 1.45; color: var(--text-muted); max-width: 30ch; }
 .support__done .ui-btn { margin-top: 10px; }
+.support__kinds { display: flex; flex-wrap: wrap; gap: 8px; }

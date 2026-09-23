@@ -4,10 +4,13 @@ import { supabase } from './supabase.js'
 import { getInitData } from './telegram.js'
 import { t } from './i18n.js'
 import Button from './components/ui/Button.jsx'
+import Chip from './components/ui/Chip.jsx'
 
 const MAX = 1000
+const KINDS = ['bug', 'idea', 'partner']
 
 export default function Support({ onClose }) {
+  const [kind, setKind] = useState('bug')
   const [text, setText] = useState('')
   const [busy, setBusy] = useState(false)
   const [sent, setSent] = useState(false)
@@ -19,7 +22,7 @@ export default function Support({ onClose }) {
     setBusy(true)
     setError(null)
     const { error } = await supabase.functions.invoke('quick-handler', {
-      body: { action: 'support', initData: getInitData(), text: body },
+      body: { action: 'support', initData: getInitData(), text: body, kind },
     })
     setBusy(false)
     if (error) { setError(t('support_failed')); return }
@@ -48,11 +51,16 @@ export default function Support({ onClose }) {
         ) : (
           <>
             <p className="support__lead">{t('support_lead')}</p>
+            <div className="support__kinds">
+              {KINDS.map((k) => (
+                <Chip key={k} active={kind === k} onClick={() => setKind(k)}>{t('support_kind_' + k)}</Chip>
+              ))}
+            </div>
             <label className="pfield">
               <span className="pfield__label">{t('support_label')}</span>
               <textarea
                 className="pfield__input"
-                placeholder={t('support_placeholder')}
+                placeholder={t('support_ph_' + kind)}
                 rows={6}
                 maxLength={MAX}
                 value={text}
