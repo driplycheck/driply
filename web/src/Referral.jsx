@@ -3,6 +3,7 @@ import { supabase } from './supabase.js'
 import { readPrivate } from './api.js'
 import { tg } from './telegram.js'
 import { t } from './i18n.js'
+import { Check } from 'lucide-react'
 import DripCoin from './components/ui/DripCoin.jsx'
 import { shareRankCard } from './storyCard.js'
 
@@ -54,13 +55,17 @@ export default function Referral({ me, onClose }) {
     setBusyShare(true)
     const { data: u } = await supabase
       .from('users').select('id, display_name, avatar_url, style_score').eq('id', me.id).maybeSingle()
-    const [{ count: higherCount }, { count: postsCount }] = await Promise.all([
+    const [{ count: higherCount }, { count: postsCount }, { data: best }] = await Promise.all([
       supabase.from('users').select('id', { count: 'exact', head: true }).gt('style_score', u?.style_score ?? 0),
       supabase.from('posts').select('id', { count: 'exact', head: true }).eq('user_id', me.id).eq('hidden', false),
+      // в сторис уходит лучший образ автора: приложение про образы, а не про таблицы
+      supabase.from('posts').select('media_url').eq('user_id', me.id).eq('hidden', false)
+        .order('score', { ascending: false }).limit(1).maybeSingle(),
     ])
     const res = await shareRankCard({
       user: u || me, rank: (higherCount ?? 0) + 1, postsCount: postsCount ?? 0,
       link: link || undefined,   // в историю уходит личная реферальная ссылка
+      photoUrl: best?.media_url ?? null,
     })
     setBusyShare(false)
     flash(!res.ok
@@ -94,7 +99,7 @@ export default function Referral({ me, onClose }) {
           <div className="reflink__box">
             <span className="reflink__url">{link || '…'}</span>
             <button className="reflink__copy" onClick={copyLink}>
-              {copied ? '✓' : t('copy')}
+              {copied ? <Check size={14} strokeWidth={3} /> : t('copy')}
             </button>
           </div>
         </div>
@@ -115,7 +120,7 @@ export default function Referral({ me, onClose }) {
                   <div className="refrow__name">{r.display_name || '@' + (r.username || 'user')}</div>
                 </div>
                 <div className={`refrow__status ${r.rewarded ? 'refrow__status--on' : ''}`}>
-                  {r.rewarded ? '✓ +500' : t('ref_waiting')}
+                  {r.rewarded ? <><Check size={12} strokeWidth={3} /> +500</> : t('ref_waiting')}
                 </div>
               </div>
             ))}

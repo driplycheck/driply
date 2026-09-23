@@ -39,89 +39,103 @@ function coin(ctx, x, y, r) {
   ctx.textBaseline = 'alphabetic'
 }
 
-export function renderStoryCard({ user, rank, postsCount, avatarImg, link = BOT_LINK }) {
+// Фото образа во весь экран + статистика поверх. Если фото нет — тёмный фон со свечением.
+export function renderStoryCard({ user, rank, postsCount, avatarImg, photoImg = null, link = BOT_LINK }) {
   const W = 1080, H = 1920
   const c = document.createElement('canvas')
   c.width = W; c.height = H
   const ctx = c.getContext('2d')
 
   ctx.fillStyle = INK; ctx.fillRect(0, 0, W, H)
-  glow(ctx, W * 0.85, 240, 620, 'rgba(198,255,61,0.30)', 1)
-  glow(ctx, W * 0.1, H - 260, 560, 'rgba(124,92,255,0.34)', 1)
 
-  ctx.textAlign = 'center'
-
-  // логотип
-  ctx.fillStyle = WHITE
-  ctx.font = '900 84px Unbounded, sans-serif'
-  const logo = 'driply'
-  ctx.fillText(logo, W / 2 - 14, 250)
-  const logoW = ctx.measureText(logo).width
-  ctx.fillStyle = LIME
-  ctx.beginPath(); ctx.arc(W / 2 - 14 + logoW / 2 + 26, 240, 14, 0, Math.PI * 2); ctx.fill()
-
-  // аватар в лаймовом кольце
-  const cx = W / 2, cy = 700, r = 210
-  if (avatarImg) {
-    ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.clip()
-    ctx.drawImage(avatarImg, cx - r, cy - r, r * 2, r * 2); ctx.restore()
+  if (photoImg) {
+    // вписываем по короткой стороне, лишнее обрезаем — как object-fit: cover
+    const scale = Math.max(W / photoImg.width, H / photoImg.height)
+    const w = photoImg.width * scale, h = photoImg.height * scale
+    ctx.drawImage(photoImg, (W - w) / 2, (H - h) / 2, w, h)
+    // затемнение сверху и снизу: текст должен читаться на любом снимке
+    const top = ctx.createLinearGradient(0, 0, 0, 420)
+    top.addColorStop(0, 'rgba(9,9,11,0.75)'); top.addColorStop(1, 'rgba(9,9,11,0)')
+    ctx.fillStyle = top; ctx.fillRect(0, 0, W, 420)
+    const bottom = ctx.createLinearGradient(0, 820, 0, H)
+    bottom.addColorStop(0, 'rgba(9,9,11,0)')
+    bottom.addColorStop(0.55, 'rgba(9,9,11,0.88)')
+    bottom.addColorStop(1, 'rgba(9,9,11,0.98)')
+    ctx.fillStyle = bottom; ctx.fillRect(0, 820, W, H - 820)
   } else {
-    ctx.fillStyle = '#1C1C22'
-    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill()
-    ctx.fillStyle = LIME
-    ctx.font = '900 180px Unbounded, sans-serif'
-    ctx.fillText((user.display_name || 'D').slice(0, 1).toUpperCase(), cx, cy + 62)
+    glow(ctx, W * 0.85, 300, 620, 'rgba(198,255,61,0.30)', 1)
+    glow(ctx, W * 0.1, H - 300, 560, 'rgba(124,92,255,0.34)', 1)
   }
-  ctx.strokeStyle = LIME; ctx.lineWidth = 10
-  ctx.beginPath(); ctx.arc(cx, cy, r + 14, 0, Math.PI * 2); ctx.stroke()
 
-  // имя и статус
+  // логотип слева сверху
+  ctx.textAlign = 'left'
   ctx.fillStyle = WHITE
-  ctx.font = '600 76px Onest, sans-serif'
-  ctx.fillText(user.display_name || 'user', W / 2, 1060)
+  ctx.font = '900 64px Unbounded, sans-serif'
+  ctx.fillText('driply', 72, 168)
+  const logoW = ctx.measureText('driply').width
+  ctx.fillStyle = LIME
+  ctx.beginPath(); ctx.arc(72 + logoW + 22, 158, 11, 0, Math.PI * 2); ctx.fill()
 
+  // статус справа сверху
   const badge = BADGE_LABEL[user.badge]
   if (badge) {
-    ctx.font = '700 38px Onest, sans-serif'
-    const bw = ctx.measureText(badge).width + 64
+    ctx.font = '700 34px Onest, sans-serif'
+    const bw = ctx.measureText(badge).width + 56
     ctx.strokeStyle = LIME; ctx.lineWidth = 3
-    ctx.beginPath(); ctx.roundRect(W / 2 - bw / 2, 1100, bw, 66, 33); ctx.stroke()
+    ctx.beginPath(); ctx.roundRect(W - 72 - bw, 118, bw, 62, 31); ctx.stroke()
     ctx.fillStyle = LIME
-    ctx.fillText(badge, W / 2, 1144)
+    ctx.textAlign = 'center'
+    ctx.fillText(badge, W - 72 - bw / 2, 158)
+    ctx.textAlign = 'left'
   }
 
-  // очки стиля с монетой
-  const score = String(user.style_score ?? 0)
-  ctx.font = '900 150px Unbounded, sans-serif'
-  const sw = ctx.measureText(score).width
-  const R = 62, GAP = 36
-  const groupLeft = W / 2 - (R * 2 + GAP + sw) / 2   // монета и число центрируются как одна группа
-  coin(ctx, groupLeft + R, 1330, R)
-  ctx.textAlign = 'center'
-  ctx.fillStyle = LIME
-  ctx.fillText(score, groupLeft + R * 2 + GAP + sw / 2, 1380)
+  // низ: аватар, имя, место
+  const avaR = 56, avaX = 72 + avaR, avaY = H - 470
+  if (avatarImg) {
+    ctx.save(); ctx.beginPath(); ctx.arc(avaX, avaY, avaR, 0, Math.PI * 2); ctx.clip()
+    ctx.drawImage(avatarImg, avaX - avaR, avaY - avaR, avaR * 2, avaR * 2); ctx.restore()
+  } else {
+    ctx.fillStyle = '#1C1C22'
+    ctx.beginPath(); ctx.arc(avaX, avaY, avaR, 0, Math.PI * 2); ctx.fill()
+    ctx.fillStyle = LIME
+    ctx.font = '900 56px Unbounded, sans-serif'
+    ctx.textAlign = 'center'
+    ctx.fillText((user.display_name || 'D').slice(0, 1).toUpperCase(), avaX, avaY + 20)
+    ctx.textAlign = 'left'
+  }
+  ctx.strokeStyle = LIME; ctx.lineWidth = 6
+  ctx.beginPath(); ctx.arc(avaX, avaY, avaR + 8, 0, Math.PI * 2); ctx.stroke()
 
-  ctx.fillStyle = MUTED
-  ctx.font = '400 46px Onest, sans-serif'
-  ctx.fillText(t('stat_style_score'), W / 2, 1460)
-
-  // место и образы
   ctx.fillStyle = WHITE
-  ctx.font = '700 92px Unbounded, sans-serif'
-  ctx.fillText(t('story_rank', { n: rank }), W / 2, 1610)
+  ctx.font = '600 56px Onest, sans-serif'
+  ctx.fillText(user.display_name || 'user', avaX + avaR + 36, avaY - 6)
   ctx.fillStyle = MUTED
-  ctx.font = '400 50px Onest, sans-serif'
-  ctx.fillText(t('story_looks', { n: postsCount }), W / 2, 1690)
+  ctx.font = '400 40px Onest, sans-serif'
+  ctx.fillText(`${t('story_rank', { n: rank })} · ${t('story_looks', { n: postsCount })}`, avaX + avaR + 36, avaY + 48)
 
-  // ссылка снизу: у каждого своя реферальная, поэтому подгоняем размер под ширину
-  const shown = link.replace(/^https?:\/\//, '')
+  // главное число: очки стиля с монетой
+  const score = String(user.style_score ?? 0)
+  ctx.font = '900 132px Unbounded, sans-serif'
+  const R = 54, GAP = 30
+  coin(ctx, 72 + R, H - 268, R)
+  ctx.fillStyle = LIME
+  ctx.textAlign = 'left'
+  ctx.fillText(score, 72 + R * 2 + GAP, H - 224)
+  const sw = ctx.measureText(score).width
   ctx.fillStyle = MUTED
-  let size = 46
+  ctx.font = '400 40px Onest, sans-serif'
+  ctx.fillText(t('stat_style_score'), 72 + R * 2 + GAP + sw + 28, H - 224)
+
+  // ссылка снизу: у каждого своя реферальная
+  const shown = link.replace(/^https?:\/\//, '')
+  ctx.textAlign = 'center'
+  ctx.fillStyle = MUTED
+  let size = 42
   do {
     ctx.font = `500 ${size}px Onest, sans-serif`
     size -= 2
-  } while (ctx.measureText(shown).width > W - 120 && size > 26)
-  ctx.fillText(shown, W / 2, 1830)
+  } while (ctx.measureText(shown).width > W - 144 && size > 24)
+  ctx.fillText(shown, W / 2, H - 110)
   return c
 }
 
@@ -130,17 +144,20 @@ function toBlob(canvas) {
     canvas.toBlob((b) => (b ? res(b) : rej(new Error('blob'))), 'image/png', 0.92))
 }
 
-export async function shareRankCard({ user, rank, postsCount, link = BOT_LINK }) {
+export async function shareRankCard({ user, rank, postsCount, link = BOT_LINK, photoUrl = null }) {
   if (!tg || !tg.shareToStory) return { ok: false, reason: 'unsupported' }
   let blob
   try {
     // без этого canvas нарисует системным шрифтом вместо Unbounded
     try { await document.fonts.ready } catch { /* не критично */ }
-    const avatarImg = user.avatar_url ? await loadImg(user.avatar_url) : null
+    const [avatarImg, photoImg] = await Promise.all([
+      user.avatar_url ? loadImg(user.avatar_url) : null,
+      photoUrl ? loadImg(photoUrl) : null,
+    ])
     try {
-      blob = await toBlob(renderStoryCard({ user, rank, postsCount, avatarImg, link }))
+      blob = await toBlob(renderStoryCard({ user, rank, postsCount, avatarImg, photoImg, link }))
     } catch {
-      blob = await toBlob(renderStoryCard({ user, rank, postsCount, avatarImg: null, link }))
+      blob = await toBlob(renderStoryCard({ user, rank, postsCount, avatarImg: null, photoImg, link }))
     }
   } catch {
     return { ok: false, reason: 'render' }

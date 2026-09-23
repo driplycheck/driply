@@ -42,6 +42,7 @@ const COVERS = [
   { id: 'u4-icons', accent: LIME, kicker: 'обновление', title: 'свои иконки стилей<br>и плавные переходы', big: null },
   { id: 'u5-firstdrip', accent: LIME, kicker: 'статус', title: 'first drip —<br>первой сотне', big: null },
   { id: 'u6-story', accent: VIOLET, kicker: 'истории', title: 'карточка в сторис<br>с твоей ссылкой', big: '+200' },
+  { id: 'u7-storycard', accent: LIME, kicker: 'истории', title: 'в сторис уходит<br>твой образ', big: null },
 ]
 
 function coverHtml(c) {

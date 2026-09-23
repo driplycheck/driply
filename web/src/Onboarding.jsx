@@ -95,9 +95,9 @@ export default function Onboarding({ tgUser, onDone }) {
 
         <div className="gender-pick">
           <button type="button" className={`gender-opt ${gender === 'male' ? 'gender-opt--on' : ''}`}
-            onClick={() => setGender('male')}>👨 {t('gender_male')}</button>
+            onClick={() => setGender('male')}>{t('gender_male')}</button>
           <button type="button" className={`gender-opt ${gender === 'female' ? 'gender-opt--on' : ''}`}
-            onClick={() => setGender('female')}>👩 {t('gender_female')}</button>
+            onClick={() => setGender('female')}>{t('gender_female')}</button>
         </div>
         <button type="button" className="gender-skip" onClick={() => setGender(null)}>
           {t('skip')}
