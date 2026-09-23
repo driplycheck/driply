@@ -1,0 +1,18 @@
+# Для VPS: скопировать в /etc/systemd/system/driply-bot.service, поправить пути и User.
+#   sudo systemctl daemon-reload && sudo systemctl enable --now driply-bot
+#   journalctl -u driply-bot -f     # логи
+[Unit]
+Description=Driply Telegram bot
+After=network-online.target
+
+[Service]
+Type=simple
+User=driply
+WorkingDirectory=/opt/driply/bot
+EnvironmentFile=/opt/driply/bot/.env
+ExecStart=/opt/driply/bot/.venv/bin/python -u bot.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
