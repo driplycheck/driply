@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from './supabase.js'
-import { getInitData, tg } from './telegram.js'
+import { getInitData, tg, haptic } from './telegram.js'
 import { ChevronLeft, Settings as SettingsIcon, Share, Grid3x3, Crown, Ban, Undo2, Flag, MessageCircle, Layers } from 'lucide-react'
 import { avatarTier, tierProgress } from './tiers.js'
 import { shareRankCard } from './storyCard.js'
@@ -84,6 +84,7 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onEdi
   async function setFollowState(want) {
     if (busyFollow) return
     setBusyFollow(true)
+    haptic('light')
     setFollowing(want)
     setFollowers((n) => Math.max(0, n + (want ? 1 : -1)))
     const { data, error } = await supabase.functions.invoke('quick-handler', {

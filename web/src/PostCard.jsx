@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { supabase } from './supabase.js'
-import { getInitData } from './telegram.js'
+import { getInitData, haptic } from './telegram.js'
 import { avatarTier } from './tiers.js'
 import ReportModal from './ReportModal.jsx'
 import { Flag, Shirt, Check } from 'lucide-react'
@@ -122,6 +122,7 @@ export default function PostCard({ post, alreadyVoted, onOpenProfile, selfId, on
     const res = await castVote(post.id, amount)
     setBusy(false)
     if (res.ok) {
+      haptic('medium')
       setScore(res.new_score)
       setVotedLocal(true)
       const id = Date.now()

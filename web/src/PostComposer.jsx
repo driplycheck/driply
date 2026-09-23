@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { supabase } from './supabase.js'
-import { getInitData } from './telegram.js'
+import { getInitData, haptic } from './telegram.js'
 import { matchBrands } from './brands.js'
 import { X, Check, Tag, ImagePlus, Plus } from 'lucide-react'
 import { t, styleName } from './i18n.js'
@@ -294,6 +294,7 @@ export default function PostComposer({ selfId, onClose, onPosted, firstPost = fa
         try { code = (await error.context.json()).error } catch {}
         throw new Error(code)
       }
+      haptic('heavy')
       track('post_created', { photos: urls.length, styles: styleIds.length, items: tagItems ? items.length : 0 })
       onPosted(result)
     } catch (e) {

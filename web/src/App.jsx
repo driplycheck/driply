@@ -3,7 +3,7 @@ import { initTelegram } from './telegram.js'
 import { supabase } from './supabase.js'
 import { t, loadLang, saveLang, setActiveLang } from './i18n.js'
 import { track } from './analytics.js'
-import { loadSide, saveSide, setActiveSide } from './side.js'
+import { loadSide, saveSide } from './side.js'
 import { useOverlayStack } from './useOverlayStack.js'
 import Overlay from './ui/Overlay.jsx'
 import Feed from './Feed.jsx'
@@ -48,9 +48,6 @@ export default function App() {
     setActiveLang(lang)
   }, [lang])
 
-  useEffect(() => {
-    setActiveSide(side)
-  }, [side])
 
   useEffect(() => {
     const u = initTelegram()
