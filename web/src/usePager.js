@@ -4,10 +4,10 @@ import { useEffect } from 'react'
 // CSS scroll-snap во вьюхах Telegram (особенно Desktop с тачпадом) пролетает
 // несколько карточек по инерции, поэтому листаем сами.
 const WHEEL_THRESHOLD = 24 // px накопленной дельты, чтобы считать жест
-const WHEEL_QUIET_MS = 220 // пауза, после которой начинается новый жест (гасит инерцию тачпада)
+const WHEEL_QUIET_MS = 120 // пауза, после которой жест точно новый
 const SWIPE_DISTANCE = 48
 const SWIPE_VELOCITY = 0.35 // px/ms
-const DURATION = 380
+const DURATION = 320
 
 function ease(t) { return 1 - Math.pow(1 - t, 3) }
 
@@ -17,7 +17,8 @@ export function usePager(ref, itemSelector, deps) {
     if (!el) return
 
     let anim = null
-    let wheel = { last: 0, acc: 0, used: false }
+    // инерция тачпада только затухает: новый жест = дельта снова выросла ПОСЛЕ затухания
+    let wheel = { last: 0, acc: 0, peak: 0, prev: 0, decayed: false, used: false }
     let touch = null
 
     function stops() {
@@ -42,7 +43,7 @@ export function usePager(ref, itemSelector, deps) {
       cancelAnimationFrame(anim?.raf)
       const from = el.scrollTop
       const start = performance.now()
-      anim = { raf: 0 }
+      anim = { raf: 0, target }
       const step = (now) => {
         const p = Math.min(1, (now - start) / DURATION)
         el.scrollTop = from + (target - from) * ease(p)
@@ -52,7 +53,8 @@ export function usePager(ref, itemSelector, deps) {
       anim.raf = requestAnimationFrame(step)
     }
 
-    function go(dir, fromY = el.scrollTop) {
+    // во время анимации считаем от точки назначения: быстрые свайпы подряд листают по одному
+    function go(dir, fromY = anim ? anim.target : el.scrollTop) {
       const list = stops()
       const i = nearest(list, fromY)
       const j = Math.max(0, Math.min(list.length - 1, i + dir))
@@ -63,10 +65,19 @@ export function usePager(ref, itemSelector, deps) {
       if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return // горизонтальный скролл чипов
       e.preventDefault()
       const now = performance.now()
-      if (now - wheel.last > WHEEL_QUIET_MS) wheel = { last: now, acc: 0, used: false }
+      const dy = e.deltaMode === 1 ? e.deltaY * 32 : e.deltaY
+      const abs = Math.abs(dy)
+      const reversed = wheel.acc !== 0 && Math.sign(dy) !== Math.sign(wheel.acc)
+      const restarted = wheel.decayed && abs > wheel.prev * 1.3 + 2
+      if (now - wheel.last > WHEEL_QUIET_MS || reversed || restarted) {
+        wheel = { last: now, acc: 0, peak: 0, prev: 0, decayed: false, used: false }
+      }
       wheel.last = now
+      wheel.peak = Math.max(wheel.peak, abs)
+      if (abs < wheel.peak * 0.5) wheel.decayed = true
+      wheel.prev = abs
       if (wheel.used) return
-      wheel.acc += e.deltaMode === 1 ? e.deltaY * 32 : e.deltaY
+      wheel.acc += dy
       if (Math.abs(wheel.acc) >= WHEEL_THRESHOLD) {
         wheel.used = true
         go(Math.sign(wheel.acc))
