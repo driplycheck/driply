@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import { supabase } from './supabase.js'
-import { getInitData } from './telegram.js'
+import { call, errorText } from './api.js'
 import { t } from './i18n.js'
 
 const REASONS = [
@@ -14,15 +13,16 @@ const REASONS = [
 export default function ReportModal({ postId, targetId, onClose, onReported }) {
   const [busy, setBusy] = useState(false)
   const [done, setDone] = useState(false)
+  const [error, setError] = useState(null)
 
-  function send(reason) {
+  // Ждём ответ: «жалоба отправлена» без подтверждения сервера — это молчаливая потеря жалобы
+  async function send(reason) {
     if (busy) return
     setBusy(true)
-    const body = { action: 'report', initData: getInitData(), reason }
-    if (postId) body.post_id = postId
-    else body.target_id = targetId
-    // fire-and-forget: the user does not need to wait for the server
-    supabase.functions.invoke('quick-handler', { body })
+    setError(null)
+    const res = await call('report', postId ? { reason, post_id: postId } : { reason, target_id: targetId })
+    setBusy(false)
+    if (!res.ok) { setError(errorText(res.code)); return }
     setDone(true)
     onReported?.(postId)
   }
@@ -42,7 +42,7 @@ export default function ReportModal({ postId, targetId, onClose, onReported }) {
     <div className="confirm">
       <div className="confirm__box">
         <div className="confirm__title">{postId ? t('report_look') : t('report_profile')}</div>
-        <div className="confirm__hint">{t('report_reason')}</div>
+        <div className="confirm__hint">{error || t('report_reason')}</div>
         {REASONS.map((r) => (
           <button
             key={r.key}

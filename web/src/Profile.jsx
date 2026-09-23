@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
+import { callOrToast } from './api.js'
 import { supabase } from './supabase.js'
-import { getInitData, tg, haptic } from './telegram.js'
+import { tg, haptic } from './telegram.js'
 import { ChevronLeft, Settings as SettingsIcon, Share, Grid3x3, Crown, Ban, Undo2, Flag, MessageCircle, Layers } from 'lucide-react'
 import { avatarTier, tierProgress } from './tiers.js'
 import Button from './components/ui/Button.jsx'
@@ -84,11 +85,9 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onEdi
     haptic('light')
     setFollowing(want)
     setFollowers((n) => Math.max(0, n + (want ? 1 : -1)))
-    const { data, error } = await supabase.functions.invoke('quick-handler', {
-      body: { action: 'set_follow', initData: getInitData(), target_id: userId, follow: want },
-    })
+    const { data, ok } = await callOrToast('set_follow', { target_id: userId, follow: want })
     setBusyFollow(false)
-    if (error) {
+    if (!ok) {
       setFollowing(!want)
       setFollowers((n) => Math.max(0, n + (want ? -1 : 1)))
       return
@@ -103,11 +102,9 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onEdi
   async function setBlockState(want) {
     if (busyBlock) return
     setBusyBlock(true)
-    const { error } = await supabase.functions.invoke('quick-handler', {
-      body: { action: 'set_block', initData: getInitData(), target_id: userId, block: want },
-    })
+    const { ok } = await callOrToast('set_block', { target_id: userId, block: want })
     setBusyBlock(false)
-    if (!error) {
+    if (ok) {
       setBlocked(want)
       onFollowChanged?.()
     }

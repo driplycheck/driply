@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { supabase } from './supabase.js'
-import { getInitData, getStartParam } from './telegram.js'
+import { call, errorText } from './api.js'
+import { getStartParam } from './telegram.js'
 import { track } from './analytics.js'
 import { uploadImage } from './upload.js'
 import { t } from './i18n.js'
@@ -34,34 +34,20 @@ export default function Onboarding({ tgUser, onDone }) {
       let avatarUrl = tgUser?.photo_url || null
       if (file) avatarUrl = await uploadImage(file, 'avatar')
 
-      const { error } = await supabase.functions.invoke('quick-handler', {
-        body: {
-          action: 'set_profile',
-        gender,
-          initData: getInitData(),
-          display_name: nick,
-          avatar_url: avatarUrl,
-        },
-      })
-      if (error) {
-        let code = 'UNKNOWN'
-        try { code = (await error.context.json()).error } catch {}
-        throw new Error(code)
-      }
+      const res = await call('set_profile', { gender, display_name: nick, avatar_url: avatarUrl })
+      if (!res.ok) throw Object.assign(new Error(res.code), { code: res.code })
       // привязка реферера — ПОСЛЕ создания юзера, ДО первого поста
       const sp = getStartParam()
       if (sp && sp.startsWith('ref_')) {
         const code = sp.slice(4)
         if (code) {
-          await supabase.functions.invoke('quick-handler', {
-            body: { action: 'set_referrer', initData: getInitData(), ref_code: code },
-          }).catch(() => {})
+          await call('set_referrer', { ref_code: code })  // не сработал — окно закроется после первого поста
         }
       }
       track('onboarding_done', { ref: Boolean(sp) })
       onDone({ display_name: nick, avatar_url: avatarUrl })
     } catch (e) {
-      setError(t('save_failed'))
+      setError(e?.code ? errorText(e.code) : t('save_failed'))
       setBusy(false)
     }
   }

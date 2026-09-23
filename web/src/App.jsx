@@ -21,6 +21,7 @@ import Referral from './Referral.jsx'
 import Appearance from './Appearance.jsx'
 import Moderation from './Moderation.jsx'
 import Support from './Support.jsx'
+import { setToastListener } from './toast.js'
 import TabBar from './components/ui/TabBar.jsx'
 import DripCoin from './components/ui/DripCoin.jsx'
 import { useTheme } from './theme/ThemeProvider.jsx'
@@ -78,6 +79,9 @@ export default function App() {
 
   // setActiveLang до setLang: иначе перерисовка успевает пройти на старом языке
   function changeLang(code) { saveLang(code); setActiveLang(code); setLang(code) }
+  // любое действие может показать ошибку, не пробрасывая пропсы через пол-приложения
+  useEffect(() => { setToastListener(flash); return () => setToastListener(null) }, [])
+
   function flash(text) {
     setToast(text)
     clearTimeout(toastTimer.current)

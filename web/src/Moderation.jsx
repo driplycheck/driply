@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
+import { call, errorText } from './api.js'
 import { ChevronLeft, EyeOff, Check, Ban } from 'lucide-react'
-import { supabase } from './supabase.js'
-import { getInitData } from './telegram.js'
 import { t, timeAgo } from './i18n.js'
 import Button from './components/ui/Button.jsx'
 import './moderation.css'
@@ -18,11 +17,9 @@ export default function Moderation({ onClose, onChanged }) {
   const [error, setError] = useState(null)
 
   const load = useCallback(async () => {
-    const { data, error } = await supabase.functions.invoke('quick-handler', {
-      body: { action: 'mod_queue', initData: getInitData() },
-    })
-    if (error) { setError(t('mod_forbidden')); setQueue([]); return }
-    setQueue(Array.isArray(data) ? data : [])
+    const res = await call('mod_queue')
+    if (!res.ok) { setError(res.code === 'FORBIDDEN' ? t('mod_forbidden') : errorText(res.code)); setQueue([]); return }
+    setQueue(Array.isArray(res.data) ? res.data : [])
   }, [])
 
   useEffect(() => { load() }, [load])
@@ -30,11 +27,9 @@ export default function Moderation({ onClose, onChanged }) {
   async function act(reportId, modAction) {
     if (busyId) return
     setBusyId(reportId)
-    const { error } = await supabase.functions.invoke('quick-handler', {
-      body: { action: 'mod_act', initData: getInitData(), report_id: reportId, mod_action: modAction },
-    })
+    const res = await call('mod_act', { report_id: reportId, mod_action: modAction })
     setBusyId(null)
-    if (error) { setError(t('retry_failed')); return }
+    if (!res.ok) { setError(errorText(res.code)); return }
     setQueue((list) => list.filter((r) => r.report_id !== reportId))
     onChanged?.()
   }

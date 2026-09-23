@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { supabase } from './supabase.js'
-import { readPrivate } from './api.js'
-import { getInitData } from './telegram.js'
+import { callOrToast, readPrivate } from './api.js'
 import { avatarTier } from './tiers.js'
 import { t } from './i18n.js'
 
@@ -18,11 +16,9 @@ export default function BlockedList({ onClose }) {
   async function unblock(id) {
     if (busyId) return
     setBusyId(id)
-    const { error } = await supabase.functions.invoke('quick-handler', {
-      body: { action: 'set_block', initData: getInitData(), target_id: id, block: false },
-    })
+    const res = await callOrToast('set_block', { target_id: id, block: false })
     setBusyId(null)
-    if (!error) await load()
+    if (res.ok) await load()
   }
 
   return (

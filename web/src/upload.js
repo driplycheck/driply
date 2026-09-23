@@ -1,5 +1,5 @@
 import { supabase } from './supabase.js'
-import { getInitData } from './telegram.js'
+import { call } from './api.js'
 
 // Фото ужимаем в браузере: телефон снимает 3000+ px и 3–5 МБ, ленте это не нужно.
 const MAX_SIDE = 1440
@@ -29,10 +29,9 @@ export async function uploadImage(file, kind = 'post') {
   const type = prepared.type || file.type || 'image/jpeg'
   const ext = type === 'image/png' ? 'png' : type === 'image/webp' ? 'webp' : 'jpg'
 
-  const { data, error } = await supabase.functions.invoke('quick-handler', {
-    body: { action: 'upload_url', initData: getInitData(), kind, ext },
-  })
-  if (error || !data?.token) throw new Error('upload_url')
+  const res = await call('upload_url', { kind, ext })
+  if (!res.ok || !res.data?.token) throw Object.assign(new Error('upload_url'), { code: res.code })
+  const data = res.data
 
   const { error: upErr } = await supabase.storage
     .from('outfits')

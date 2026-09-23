@@ -1,7 +1,6 @@
 import { useState } from 'react'
+import { call, errorText } from './api.js'
 import { ChevronLeft, Check } from 'lucide-react'
-import { supabase } from './supabase.js'
-import { getInitData } from './telegram.js'
 import { t } from './i18n.js'
 import Button from './components/ui/Button.jsx'
 import Chip from './components/ui/Chip.jsx'
@@ -21,16 +20,9 @@ export default function Support({ onClose }) {
     if (busy || body.length < 3) return
     setBusy(true)
     setError(null)
-    const { error } = await supabase.functions.invoke('quick-handler', {
-      body: { action: 'support', initData: getInitData(), text: body, kind },
-    })
+    const res = await call('support', { text: body, kind })
     setBusy(false)
-    if (error) {
-      // причина лежит в теле ответа, а не в самом error — иначе всё выглядит как «попробуй ещё раз»
-      const code = await error.context?.json?.().then((r) => r?.error).catch(() => null)
-      setError(t(code === 'RATE_LIMIT' ? 'support_too_often' : code === 'TOO_SHORT' ? 'support_too_short' : 'support_failed'))
-      return
-    }
+    if (!res.ok) { setError(errorText(res.code)); return }
     setSent(true)
     setText('')
   }

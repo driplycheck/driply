@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { supabase } from './supabase.js'
-import { readPrivate } from './api.js'
-import { getInitData } from './telegram.js'
+import { callOrToast, readPrivate } from './api.js'
 import { t } from './i18n.js'
 import DripCoin from './components/ui/DripCoin.jsx'
 
@@ -19,22 +17,18 @@ export default function PostsArchive({ onClose, onChanged }) {
   async function toggleHidden(p) {
     if (busyId) return
     setBusyId(p.id)
-    const { error } = await supabase.functions.invoke('quick-handler', {
-      body: { action: 'set_post_hidden', initData: getInitData(), post_id: p.id, hidden: !p.hidden },
-    })
+    const res = await callOrToast('set_post_hidden', { post_id: p.id, hidden: !p.hidden })
     setBusyId(null)
-    if (!error) { await load(); onChanged?.() }
+    if (res.ok) { await load(); onChanged?.() }
   }
 
   async function removeForever(id) {
     if (busyId) return
     setBusyId(id)
-    const { error } = await supabase.functions.invoke('quick-handler', {
-      body: { action: 'delete_post', initData: getInitData(), post_id: id },
-    })
+    const res = await callOrToast('delete_post', { post_id: id })
     setBusyId(null)
     setConfirmId(null)
-    if (!error) { await load(); onChanged?.() }
+    if (res.ok) { await load(); onChanged?.() }
   }
 
   return (

@@ -1,7 +1,6 @@
 import AboutApp from './AboutApp.jsx'
+import { callOrToast } from './api.js'
 import { useState } from 'react'
-import { supabase } from './supabase.js'
-import { getInitData } from './telegram.js'
 import { t, LANGS } from './i18n.js'
 import { useTheme } from './theme/ThemeProvider.jsx'
 import pkg from '../package.json'
@@ -42,11 +41,9 @@ export default function Settings({ me, lang, onLang, onClose, onEditProfile, onC
     const next = !prefs[key]
     const updated = { ...prefs, [key]: next }
     setPrefs(updated); setBusy(true)
-    const { error } = await supabase.functions.invoke('quick-handler', {
-      body: { action: 'set_notify_prefs', initData: getInitData(), prefs: { [key]: next } },
-    })
+    const res = await callOrToast('set_notify_prefs', { prefs: { [key]: next } })
     setBusy(false)
-    if (error) { setPrefs(prefs); return }
+    if (!res.ok) { setPrefs(prefs); return }
     onChanged({ notify_prefs: updated })
   }
 

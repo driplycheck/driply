@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
+import { callOrToast } from './api.js'
 import { supabase } from './supabase.js'
-import { getInitData } from './telegram.js'
 import PostCard from './PostCard.jsx'
 import { t } from './i18n.js'
 
@@ -39,12 +39,10 @@ export default function PostView({ postId, selfId, onClose, onOpenProfile, onCha
   async function hide() {
     if (busy) return
     setBusy(true)
-    const { error } = await supabase.functions.invoke('quick-handler', {
-      body: { action: 'set_post_hidden', initData: getInitData(), post_id: postId, hidden: true },
-    })
+    const res = await callOrToast('set_post_hidden', { post_id: postId, hidden: true })
     setBusy(false)
     setConfirm(false)
-    if (error) return
+    if (!res.ok) return
     onChanged?.(postId)
   }
 

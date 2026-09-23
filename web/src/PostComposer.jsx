@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
+import { call, errorText } from './api.js'
 import { supabase } from './supabase.js'
-import { getInitData, haptic } from './telegram.js'
+import { haptic } from './telegram.js'
 import { matchBrands } from './brands.js'
 import { X, Check, Tag, ImagePlus, Plus, Camera } from 'lucide-react'
 import { t, styleName } from './i18n.js'
@@ -320,23 +321,16 @@ export default function PostComposer({ selfId, onClose, onPosted, firstPost = fa
       }
 
       const urls = await Promise.all(photos.map((p) => uploadImage(p.file, 'post')))
-      const { data: result, error } = await supabase.functions.invoke('quick-handler', {
-        body: {
-          action: 'create_post',
-          initData: getInitData(),
-          media_url: urls[0],
-          extra_media: urls.slice(1),
-          caption: caption.trim(),
-          items: tagItems ? items : [],
-          style_id: styleIds[0] ?? null,
-          style2_id: styleIds[1] ?? null,
-        },
+      const res = await call('create_post', {
+        media_url: urls[0],
+        extra_media: urls.slice(1),
+        caption: caption.trim(),
+        items: tagItems ? items : [],
+        style_id: styleIds[0] ?? null,
+        style2_id: styleIds[1] ?? null,
       })
-      if (error) {
-        let code = 'UNKNOWN'
-        try { code = (await error.context.json()).error } catch {}
-        throw new Error(code)
-      }
+      if (!res.ok) throw Object.assign(new Error(res.code), { code: res.code })
+      const result = res.data
       haptic('heavy')
       clearDraft()
       track('post_created', { photos: urls.length, styles: styleIds.length, items: tagItems ? items.length : 0 })
@@ -344,7 +338,7 @@ export default function PostComposer({ selfId, onClose, onPosted, firstPost = fa
     } catch (e) {
       setChecking(false)
       track('publish_failed', { code: String(e?.message || 'UNKNOWN').slice(0, 40) })
-      setError(t('post_failed'))
+      setError(e?.code ? errorText(e.code) : t('post_failed'))
       setBusy(false)
     }
   }

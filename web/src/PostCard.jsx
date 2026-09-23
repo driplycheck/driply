@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { supabase } from './supabase.js'
-import { getInitData, haptic } from './telegram.js'
+import { call, errorText } from './api.js'
+import { haptic } from './telegram.js'
 import { avatarTier } from './tiers.js'
 import ReportModal from './ReportModal.jsx'
 import { Flag, Shirt, Check } from 'lucide-react'
@@ -12,13 +12,6 @@ import { CategoryIcon, StyleIcon } from './components/ui/Icon.jsx'
 import Button from './components/ui/Button.jsx'
 
 const AMOUNTS = [10, 50, 100]
-
-const ERROR_KEYS = {
-  ALREADY_VOTED: 'already_voted',
-  NOT_ENOUGH_CREDITS: 'not_enough_credits',
-  CANNOT_VOTE_OWN: 'cannot_vote_own',
-  AUTH_FAILED: 'auth_failed',
-}
 
 function getItems(post) {
   return (post.post_items || [])
@@ -35,16 +28,8 @@ function getAuthorName(author) {
 }
 
 async function castVote(postId, amount) {
-  const { data, error } = await supabase.functions.invoke('quick-handler', {
-    body: { action: 'cast_vote', initData: getInitData(), post_id: postId, amount },
-  })
-  if (!error) return { ok: true, ...data }
-  try {
-    const ctx = await error.context.json()
-    return { ok: false, code: ctx.error }
-  } catch {
-    return { ok: false, code: 'UNKNOWN' }
-  }
+  const res = await call('cast_vote', { post_id: postId, amount })
+  return res.ok ? { ok: true, ...res.data } : res
 }
 
 function DripControl({ voted, busy, picking, drips, onVote, onOpen }) {
@@ -121,7 +106,7 @@ export default function PostCard({ post, alreadyVoted, onOpenProfile, selfId, on
       flash(t('credits_left', { n: res.remaining_credits }))
     } else {
       if (res.code === 'ALREADY_VOTED') setVotedLocal(true)
-      flash(ERROR_KEYS[res.code] ? t(ERROR_KEYS[res.code]) : t('retry_failed'))
+      flash(errorText(res.code))
     }
   }
 

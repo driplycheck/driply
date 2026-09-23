@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { supabase } from './supabase.js'
-import { getInitData } from './telegram.js'
+import { call, errorText } from './api.js'
 import { avatarTier } from './tiers.js'
 import { X, Camera } from 'lucide-react'
 import { t } from './i18n.js'
@@ -39,26 +38,18 @@ export default function EditProfile({ me, onClose, onSaved }) {
       let avatarUrl = me?.avatar_url || null
       if (file) avatarUrl = await uploadImage(file, 'avatar')
 
-      const { error } = await supabase.functions.invoke('quick-handler', {
-        body: {
-          action: 'set_profile',
-          initData: getInitData(),
-          display_name: nick,
-          avatar_url: avatarUrl,
-          bio: bio.trim(),
-          gender,
-          hide_username: hideUsername,
-          allow_dm: allowDm,
-        },
+      const res = await call('set_profile', {
+        display_name: nick,
+        avatar_url: avatarUrl,
+        bio: bio.trim(),
+        gender,
+        hide_username: hideUsername,
+        allow_dm: allowDm,
       })
-      if (error) {
-        let code = 'UNKNOWN'
-        try { code = (await error.context.json()).error } catch {}
-        throw new Error(code)
-      }
+      if (!res.ok) throw Object.assign(new Error(res.code), { code: res.code })
       onSaved({ display_name: nick, avatar_url: avatarUrl, bio: bio.trim(), gender, hide_username: hideUsername, allow_dm: allowDm })
     } catch (e) {
-      setError(t('save_failed'))
+      setError(e?.code ? errorText(e.code) : t('save_failed'))
       setBusy(false)
     }
   }
