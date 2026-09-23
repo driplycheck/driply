@@ -1,4 +1,5 @@
 import { supabase } from './supabase.js'
+import { uploadImage } from './upload.js'
 import { tg } from './telegram.js'
 import { getInitData } from './telegram.js'
 import { t } from './i18n.js'
@@ -162,12 +163,14 @@ export async function shareRankCard({ user, rank, postsCount, link = BOT_LINK, p
   } catch {
     return { ok: false, reason: 'render' }
   }
-  const path = `cards/${user.id}-${Date.now()}.png`
-  const { error } = await supabase.storage.from('outfits').upload(path, blob, { contentType: 'image/png' })
-  if (error) return { ok: false, reason: 'upload' }
-  const { data: pub } = supabase.storage.from('outfits').getPublicUrl(path)
+  let publicUrl
   try {
-    tg.shareToStory(pub.publicUrl, {
+    publicUrl = await uploadImage(blob, 'card')
+  } catch {
+    return { ok: false, reason: 'upload' }
+  }
+  try {
+    tg.shareToStory(publicUrl, {
       text: t('story_share_text'),
       widget_link: { url: link, name: 'Driply' },
     })

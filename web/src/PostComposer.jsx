@@ -5,6 +5,7 @@ import { matchBrands } from './brands.js'
 import { X, Check, Tag, ImagePlus, Plus } from 'lucide-react'
 import { t, styleName } from './i18n.js'
 import { track } from './analytics.js'
+import { uploadImage } from './upload.js'
 import DripCoin from './components/ui/DripCoin.jsx'
 import Chip from './components/ui/Chip.jsx'
 import GlassBadge from './components/ui/GlassBadge.jsx'
@@ -298,22 +299,13 @@ export default function PostComposer({ selfId, onClose, onPosted, firstPost = fa
     setItems((arr) => arr.filter((_, i) => i !== idx))
   }
 
-  async function uploadPhoto(file) {
-    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase()
-    const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-    const { error } = await supabase.storage
-      .from('outfits')
-      .upload(path, file, { contentType: file.type || 'image/jpeg' })
-    if (error) throw new Error('upload')
-    return supabase.storage.from('outfits').getPublicUrl(path).data.publicUrl
-  }
 
   async function submit() {
     if (photos.length === 0) { setError(t('photo_required')); return }
     setBusy(true)
     setError(null)
     try {
-      const urls = await Promise.all(photos.map((p) => uploadPhoto(p.file)))
+      const urls = await Promise.all(photos.map((p) => uploadImage(p.file, 'post')))
       const { data: result, error } = await supabase.functions.invoke('quick-handler', {
         body: {
           action: 'create_post',

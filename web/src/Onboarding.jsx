@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from './supabase.js'
 import { getInitData, getStartParam } from './telegram.js'
 import { track } from './analytics.js'
+import { uploadImage } from './upload.js'
 import { t } from './i18n.js'
 
 export default function Onboarding({ tgUser, onDone }) {
@@ -31,15 +32,7 @@ export default function Onboarding({ tgUser, onDone }) {
     setError(null)
     try {
       let avatarUrl = tgUser?.photo_url || null
-      if (file) {
-        const ext = (file.name.split('.').pop() || 'jpg').toLowerCase()
-        const path = `avatars/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-        const { error: upErr } = await supabase.storage
-          .from('outfits')
-          .upload(path, file, { contentType: file.type || 'image/jpeg' })
-        if (upErr) throw new Error('upload')
-        avatarUrl = supabase.storage.from('outfits').getPublicUrl(path).data.publicUrl
-      }
+      if (file) avatarUrl = await uploadImage(file, 'avatar')
 
       const { error } = await supabase.functions.invoke('quick-handler', {
         body: {

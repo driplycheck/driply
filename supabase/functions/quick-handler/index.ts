@@ -12,6 +12,9 @@ function jsonResponse(body, status = 200) {
   })
 }
 
+// initData действует сутки: перехваченная строка не должна работать вечно
+const MAX_AUTH_AGE = 60 * 60 * 24
+
 async function validateInitData(initData, botToken) {
   const params = new URLSearchParams(initData)
   const hash = params.get('hash')
@@ -25,8 +28,41 @@ async function validateInitData(initData, botToken) {
   const sig = await crypto.subtle.sign('HMAC', signKey, enc.encode(dataCheckString))
   const hex = [...new Uint8Array(sig)].map((b) => b.toString(16).padStart(2, '0')).join('')
   if (hex !== hash) return null
+  const authDate = Number(params.get('auth_date') ?? 0)
+  if (!authDate || Math.floor(Date.now() / 1000) - authDate > MAX_AUTH_AGE) {
+    console.error('initData expired', authDate)
+    return null
+  }
   const userRaw = params.get('user')
   return userRaw ? JSON.parse(userRaw) : null
+}
+
+// сколько действий в час разрешаем одному человеку
+const LIMITS = {
+  create_post: [10, 3600],
+  cast_vote: [60, 3600],
+  set_profile: [20, 3600],
+  set_follow: [60, 3600],
+  set_block: [30, 3600],
+  report: [10, 3600],
+  reward_story: [5, 3600],
+  upload_url: [30, 3600],
+  set_referrer: [10, 3600],
+  set_post_hidden: [30, 3600],
+  delete_post: [20, 3600],
+}
+
+async function rateOk(supabase, tid, action) {
+  const limit = LIMITS[action]
+  if (!limit) return true
+  const { data, error } = await supabase.rpc('rate_ok', {
+    p_tid: tid, p_action: action, p_max: limit[0], p_seconds: limit[1],
+  })
+  if (error) {
+    console.error('rate_ok', action, error.message)
+    return true // счётчик не должен ломать приложение
+  }
+  return data !== false
 }
 
 // Telegram отвечает 429 с retry_after и иногда 5xx — повторяем, ошибки пишем в логи функции
@@ -78,6 +114,22 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(Deno.env.get('SUPABASE_URL'), Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'))
     const uname = tgUser.username ?? tgUser.first_name ?? 'user'
+
+    if (!(await rateOk(supabase, tgUser.id, body.action))) {
+      return jsonResponse({ error: 'RATE_LIMIT' }, 429)
+    }
+
+    // Загрузка картинок: клиент получает одноразовую подписанную ссылку.
+    // Прямой доступ к хранилищу с публичным ключом закрыт.
+    if (body.action === 'upload_url') {
+      const kind = ['post', 'avatar', 'card'].includes(body.kind) ? body.kind : 'post'
+      const ext = /^(jpe?g|png|webp|heic|heif)$/i.test(String(body.ext ?? '')) ? String(body.ext).toLowerCase() : 'jpg'
+      const path = `${kind}/${tgUser.id}/${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`
+      const { data, error } = await supabase.storage.from('outfits').createSignedUploadUrl(path)
+      if (error) return jsonResponse({ error: error.message }, 400)
+      const publicUrl = supabase.storage.from('outfits').getPublicUrl(path).data.publicUrl
+      return jsonResponse({ path, token: data.token, publicUrl }, 200)
+    }
 
     if (body.action === 'set_profile') {
       const { data, error } = await supabase.rpc('set_profile', {

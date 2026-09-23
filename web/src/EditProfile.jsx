@@ -4,6 +4,7 @@ import { getInitData } from './telegram.js'
 import { avatarTier } from './tiers.js'
 import { X, Camera } from 'lucide-react'
 import { t } from './i18n.js'
+import { uploadImage } from './upload.js'
 
 export default function EditProfile({ me, onClose, onSaved }) {
   const [name, setName] = useState(me?.display_name || '')
@@ -36,15 +37,7 @@ export default function EditProfile({ me, onClose, onSaved }) {
     setError(null)
     try {
       let avatarUrl = me?.avatar_url || null
-      if (file) {
-        const ext = (file.name.split('.').pop() || 'jpg').toLowerCase()
-        const path = `avatars/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-        const { error: upErr } = await supabase.storage
-          .from('outfits')
-          .upload(path, file, { contentType: file.type || 'image/jpeg' })
-        if (upErr) throw new Error('upload')
-        avatarUrl = supabase.storage.from('outfits').getPublicUrl(path).data.publicUrl
-      }
+      if (file) avatarUrl = await uploadImage(file, 'avatar')
 
       const { error } = await supabase.functions.invoke('quick-handler', {
         body: {
