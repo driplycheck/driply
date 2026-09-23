@@ -25,7 +25,12 @@ export default function Support({ onClose }) {
       body: { action: 'support', initData: getInitData(), text: body, kind },
     })
     setBusy(false)
-    if (error) { setError(t('support_failed')); return }
+    if (error) {
+      // причина лежит в теле ответа, а не в самом error — иначе всё выглядит как «попробуй ещё раз»
+      const code = await error.context?.json?.().then((r) => r?.error).catch(() => null)
+      setError(t(code === 'RATE_LIMIT' ? 'support_too_often' : code === 'TOO_SHORT' ? 'support_too_short' : 'support_failed'))
+      return
+    }
     setSent(true)
     setText('')
   }

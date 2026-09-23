@@ -45,7 +45,7 @@ const LIMITS = {
   set_follow: [60, 3600],
   set_block: [30, 3600],
   report: [10, 3600],
-  support: [5, 3600],
+  support: [15, 3600],
   mod_act: [200, 3600],
   reward_story: [5, 3600],
   upload_url: [30, 3600],
