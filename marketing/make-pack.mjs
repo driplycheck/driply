@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url'
 
 const OUT = fileURLToPath(new URL('./tg-pack/', import.meta.url))
 await mkdir(OUT + 'covers', { recursive: true })
+await mkdir(OUT + 'covers-preview', { recursive: true })
 await mkdir(OUT + 'emoji', { recursive: true })
 
 const INK = '#09090B', LIME = '#C6FF3D', VIOLET = '#7C5CFF', PINK = '#FF4D8D', SURFACE = '#1C1C22'
@@ -105,6 +106,13 @@ const COINS = [
   { id: 'theme-neon', svg: `<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${VIOLET}"/><stop offset="1" stop-color="${PINK}"/></linearGradient></defs><rect x="8" y="8" width="84" height="84" rx="26" fill="url(#g)"/><circle cx="50" cy="50" r="13" fill="${LIME}"/>` },
 ]
 
+// цифры Unbounded 900: ими набираются числа экономики прямо в тексте поста
+const DIGITS = [...'0123456789'].map((d) => ({ id: `digit-${d}`, char: d, color: LIME }))
+  .concat([{ id: 'digit-plus', char: '+', color: LIME }, { id: 'digit-x', char: '×', color: PINK }])
+
+const digitHtml = (d) => `${FONTS}<style>*{margin:0}body{width:100px;height:100px;background:transparent;display:grid;place-items:center}
+  span{font-family:Unbounded,sans-serif;font-weight:900;font-size:${d.char === '+' || d.char === '×' ? 76 : 70}px;line-height:1;color:${d.color};letter-spacing:-.04em}</style><span>${d.char}</span>`
+
 const coinHtml = (c) => `${FONTS}<style>*{margin:0}body{width:100px;height:100px;background:transparent}</style>
 <svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">${c.svg}</svg>`
 
@@ -116,13 +124,20 @@ for (const c of COVERS) {
   await page.setContent(coverHtml(c), { waitUntil: 'networkidle' })
   await page.evaluate(() => document.fonts.ready)
   await page.screenshot({ path: `${OUT}covers/${c.id}.png` })
+  await page.setViewportSize({ width: 640, height: 360 })
+  await page.evaluate(() => { document.body.style.zoom = 0.5 })
+  await page.screenshot({ path: `${OUT}covers-preview/${c.id}.png` })
   await page.close()
   console.log('обложка', c.id)
 }
 await ctxCover.close()
 
 const ctxEmoji = await browser.newContext({ viewport: { width: 100, height: 100 }, deviceScaleFactor: 1 })
-for (const e of [...COINS.map((c) => ({ ...c, html: coinHtml(c) })), ...STROKE.map((e) => ({ ...e, html: strokeHtml(e) }))]) {
+for (const e of [
+  ...COINS.map((c) => ({ ...c, html: coinHtml(c) })),
+  ...DIGITS.map((d) => ({ ...d, html: digitHtml(d) })),
+  ...STROKE.map((e) => ({ ...e, html: strokeHtml(e) })),
+]) {
   const page = await ctxEmoji.newPage()
   await page.setContent(e.html, { waitUntil: 'networkidle' })
   await page.evaluate(() => document.fonts.ready)

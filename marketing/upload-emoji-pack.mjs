@@ -24,6 +24,10 @@ const EMOJI = {
   // монеты и метки под темы оформления
   'coin-dark': '💧', 'coin-light': '💧', 'coin-neon': '💧',
   'theme-dark': '⬛', 'theme-light': '⬜', 'theme-neon': '🟣',
+  // цифры для чисел экономики
+  'digit-0': '0️⃣', 'digit-1': '1️⃣', 'digit-2': '2️⃣', 'digit-3': '3️⃣', 'digit-4': '4️⃣',
+  'digit-5': '5️⃣', 'digit-6': '6️⃣', 'digit-7': '7️⃣', 'digit-8': '8️⃣', 'digit-9': '9️⃣',
+  'digit-plus': '➕', 'digit-x': '✖️',
   'item-top': '👕', 'item-bottoms': '👖', 'item-shoes': '👟', 'item-accessory': '🧢',
   'item-dress': '👗', 'item-skirt': '👚', 'item-bag': '👜', 'item-other': '✨',
   'style-streetwear': '🛹', 'style-casual': '👕', 'style-y2k': '💿', 'style-alt': '🖤',
@@ -33,7 +37,7 @@ const EMOJI = {
 }
 
 // порядок в паке: монета, стили, вещи, остальное
-const ORDER = (id) => (id.startsWith('coin-') ? 0 : id.startsWith('theme-') ? 1 : id.startsWith('style-') ? 2 : id.startsWith('item-') ? 3 : 4)
+const ORDER = (id) => (id.startsWith('coin-') ? 0 : id.startsWith('theme-') ? 1 : id.startsWith('digit-') ? 2 : id.startsWith('style-') ? 3 : id.startsWith('item-') ? 4 : 5)
 
 async function readToken() {
   if (process.env.BOT_TOKEN) return process.env.BOT_TOKEN.trim()
