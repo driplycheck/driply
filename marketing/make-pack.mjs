@@ -35,6 +35,11 @@ const COVERS = [
   { id: '07b-theme-light', theme: 'light', kicker: 'тема · светлая', title: 'бумага, чёрный текст,<br>ничего лишнего', big: null },
   { id: '07c-theme-neon', theme: 'neon', kicker: 'тема · цветная', title: 'лайм, фиолет<br>и мягкое свечение', big: null },
   { id: '08-cta', accent: LIME, kicker: 'поехали', title: 'выложи первый образ', big: '+300' },
+  // обложки апдейтов: id вида uN-...
+  { id: 'u1-photos', accent: LIME, kicker: 'обновление', title: 'три фото, два стиля<br>и цены вещей', big: null },
+  { id: 'u2-week', accent: VIOLET, kicker: 'обновление', title: 'рейтинг недели.<br>обнуление в понедельник', big: null },
+  { id: 'u3-draft', accent: PINK, kicker: 'обновление', title: 'черновик образа<br>больше не теряется', big: null },
+  { id: 'u4-icons', accent: LIME, kicker: 'обновление', title: 'свои иконки стилей<br>и плавные переходы', big: null },
 ]
 
 function coverHtml(c) {

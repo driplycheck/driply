@@ -129,15 +129,67 @@ const POSTS = [
   },
 ]
 
+// Апдейты продукта: новые сверху. Добавляем сюда после каждой заметной работы по мини-аппу.
+const UPDATES = [
+  {
+    no: 'NEW', title: 'Иконки и плавность', tag: 'Готов к посту', tagClass: '', cover: 'u4-icons',
+    emoji: ['style-streetwear', 'style-y2k', 'item-shoes'],
+    text: `обновили приложение 🛹
+
+у каждого стиля и каждой вещи теперь своя иконка вместо стандартных эмодзи — и они меняются вместе с темой
+экраны открываются и закрываются плавно, без рывка
+лента больше не моргает при переключении «для тебя» и «подписки»
+
+мелочи, но приложение стало ощущаться нормальным`,
+    why: 'Про внешний вид и ощущение — то, что люди замечают сразу. Про кэш и анимации словами разработчика не пишем.',
+  },
+  {
+    no: 'NEW', title: 'Черновик образа', tag: 'Готов к посту', tagClass: 'tag--later', cover: 'u3-draft',
+    emoji: ['item-top', 'check'],
+    text: `вышел из создания образа — и всё пропало? больше нет ✅
+
+подпись, стили и вещи сохраняются сами
+вернёшься — продолжишь с того же места, кнопка «начать заново» рядом
+
+фото пока не сохраняется: его нужно выбрать заново`,
+    why: 'Честно говорим про ограничение с фото — иначе первое же возвращение разочарует.',
+  },
+  {
+    no: 'NEW', title: 'Рейтинг по неделям', tag: 'Готов к посту', tagClass: 'tag--violet', cover: 'u2-week',
+    emoji: ['crown', 'up', 'coin-tile'],
+    text: `рейтинг теперь не один, а три 👑
+
+неделя, месяц и всё время
+неделя обнуляется в понедельник — прошлое не тянется за тобой, каждый понедельник шанс заново
+видно, на сколько мест ты поднялся за сутки, и сколько дрипов пришло сегодня
+
+в топ-3 попасть за неделю реально, попробуй`,
+    why: 'Главный крючок на возвращение. «Попасть в топ-3 за неделю реально» — призыв, который работает при малом числе людей.',
+  },
+  {
+    no: 'NEW', title: 'Три фото и цены', tag: 'Готов к посту', tagClass: 'tag--later', cover: 'u1-photos',
+    emoji: ['item-top', 'item-shoes', 'coin-tile'],
+    text: `образ теперь показывается целиком 👕
+
+до 3 фото — общий план, детали, обувь
+до 2 стилей на образ: стритвир + y2k, как есть
+цены вещей — подписчики сразу видят, где брал и за сколько
+
+цена необязательная, но с ней образ собирают чаще`,
+    why: 'Самое заметное обновление продукта. Ставим первым, если постишь апдейты пачкой.',
+  },
+]
+
 const DIGITS = [...'0123456789'].map((d) => `digit-${d}`).concat(['digit-plus', 'digit-x'])
 
 const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
-const cards = []
-for (const p of POSTS) {
+async function renderCards(list) {
+  const out = []
+  for (const p of list) {
   const cover = await img(`covers-preview/${p.cover}.png`)
   const chips = await Promise.all(p.emoji.map(async (id) => `<img class="chip" src="${await img(`emoji/${id}.png`)}" alt="${id}" title="${id}">`))
-  cards.push(`
+    out.push(`
     <article class="post ${p.pin ? 'post--pin' : ''} ${p.theme ? `post--${p.theme}` : ''}">
       <img class="cover" src="${cover}" alt="обложка поста ${p.no}">
       <div class="post__head"><span class="post__no">${p.no}</span><span class="post__title">${esc(p.title)}</span><span class="tag ${p.tagClass}">${esc(p.tag)}</span></div>
@@ -145,7 +197,12 @@ for (const p of POSTS) {
       <div class="post__emoji">${chips.join('')}<span class="emoji-hint">эмодзи из пака</span></div>
       <div class="post__foot"><span class="why">${esc(p.why)}</span><span class="file">${p.cover}.png</span><button type="button" data-copy>Копировать</button></div>
     </article>`)
+  }
+  return out
 }
+
+const cards = await renderCards(POSTS)
+const updateCards = await renderCards(UPDATES)
 
 const digitChips = await Promise.all(DIGITS.map(async (id) => `<img class="chip chip--lg" src="${await img(`emoji/${id}.png`)}" alt="${id}">`))
 
@@ -208,13 +265,15 @@ const html = `<title>Стартовые посты Driply</title>
   .note ul{margin:0;padding-left:18px;color:var(--text-2);font-size:14px;line-height:1.6}
   .note li+li{margin-top:6px}
   .note code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;color:var(--drip)}
+  .section{font-family:var(--display);font-weight:700;font-size:18px;margin:36px 0 4px}
+  .section__note{margin:0;color:var(--muted);font-size:13px;line-height:1.45}
   @media (prefers-reduced-motion:reduce){button{transition:none}}
 </style>
 
 <div class="wrap">
   <header>
     <span class="logo">driply<i></i></span>
-    <p class="lede">Десять постов для запуска канала: текст, обложка и эмодзи к каждому. <b>Первый в закреп</b>, дальше по одному в день. Файлы обложек — в <b>marketing/tg-pack/covers</b>.</p>
+    <p class="lede">Посты для канала: текст, обложка и эмодзи к каждому. Сверху — <b>апдейты продукта</b>, ниже — серия на запуск. Файлы обложек лежат в <b>marketing/tg-pack/covers</b>.</p>
   </header>
 
   <div class="plan">
@@ -230,6 +289,13 @@ const html = `<title>Стартовые посты Driply</title>
     <div class="row">${digitChips.join('')}</div>
   </div>
 
+  <h2 class="section">Апдейты продукта</h2>
+  <p class="section__note">Свежие сверху. Появляются после каждой заметной работы по приложению — постить можно по одному, когда есть повод.</p>
+  <div class="posts">${updateCards.join('')}
+  </div>
+
+  <h2 class="section">Серия на запуск</h2>
+  <p class="section__note">Десять постов по порядку: первый в закреп, дальше по одному в день.</p>
   <div class="posts">${cards.join('')}
   </div>
 
