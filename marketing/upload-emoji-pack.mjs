@@ -8,6 +8,7 @@
 //
 // Токен берётся из переменной окружения BOT_TOKEN или из bot/.env. Никуда не сохраняется.
 // Условия Telegram: аккаунт-владелец должен был хотя бы раз написать боту.
+import { createHash } from 'node:crypto'
 import { readdir, readFile, writeFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 
@@ -109,37 +110,51 @@ if (token) {
   }
 }
 
-// Чистка повторов. Сравниваем по file_unique_id — это один и тот же файл.
-// По эмодзи сравнивать нельзя: у четырёх разных монет один базовый знак 💧.
+// Чистка повторов. Сравниваем по содержимому картинки: Telegram выдаёт новый
+// file_unique_id на каждую загрузку, а у четырёх монет один базовый знак 💧 —
+// значит ни по id, ни по эмодзи повторы не найти.
 if (DEDUPE) {
   if (!existing) { console.error('Пака нет'); process.exit(1) }
+  console.log(`Скачиваю ${existing.stickers.length} картинок для сравнения…`)
+
+  const hashes = []
+  for (const st of existing.stickers) {
+    const file = await api(token, 'getFile', { file_id: st.file_id })
+    const res = await fetch(`https://api.telegram.org/file/bot${token}/${file.file_path}`)
+    const buf = Buffer.from(await res.arrayBuffer())
+    hashes.push({ st, hash: createHash('sha256').update(buf).digest('hex') })
+  }
+
   const seen = new Set()
   const extra = []
-  for (const st of existing.stickers) {
-    if (seen.has(st.file_unique_id)) extra.push(st)
-    else seen.add(st.file_unique_id)
+  for (const h of hashes) {
+    if (seen.has(h.hash)) extra.push(h.st)
+    else seen.add(h.hash)
   }
-  console.log(`Уникальных: ${seen.size}, повторов: ${extra.length}`)
+  console.log(`Уникальных картинок: ${seen.size}, повторов: ${extra.length}`)
   if (!extra.length) process.exit(0)
   if (DRY) {
     console.log('--dry: удалил бы ' + extra.map((st) => st.emoji).join(' '))
     process.exit(0)
   }
+
   for (const st of extra) {
-    try {
-      await api(token, 'deleteStickerFromSet', { sticker: st.file_id })
-      console.log('удалён повтор', st.emoji)
-    } catch (e) {
-      // Telegram просит подождать при частых правках набора
-      const wait = Number(String(e.message).match(/retry after (\d+)/i)?.[1] ?? 0)
-      if (!wait) throw e
-      console.log(`пауза ${wait} с по требованию Telegram…`)
-      await new Promise((r) => setTimeout(r, (wait + 1) * 1000))
-      await api(token, 'deleteStickerFromSet', { sticker: st.file_id })
-      console.log('удалён повтор', st.emoji)
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        await api(token, 'deleteStickerFromSet', { sticker: st.file_id })
+        console.log('удалён повтор', st.emoji)
+        break
+      } catch (e) {
+        // Telegram просит подождать при частых правках набора
+        const wait = Number(String(e.message).match(/retry after (\d+)/i)?.[1] ?? 0)
+        if (!wait || attempt === 3) throw e
+        console.log(`пауза ${wait} с по требованию Telegram…`)
+        await new Promise((r) => setTimeout(r, (wait + 1) * 1000))
+      }
     }
     await new Promise((r) => setTimeout(r, 400))
   }
+
   const after = await api(token, 'getStickerSet', { name })
   console.log(`\nГотово. В паке осталось: ${after.stickers.length}`)
   process.exit(0)
