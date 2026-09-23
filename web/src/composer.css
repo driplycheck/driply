@@ -272,8 +272,10 @@
 
 /* форма вещи: категория / бренд + название / цена + «+» */
 .itemadd { grid-template-columns: 1fr 1fr 46px; }
-.itemadd > .field:first-child { grid-column: 1 / -1; }
+.catpick { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px; }
+.catpick .ui-chip { padding: 7px 12px; font-size: 13px; }
 .itemadd > .field-wrap:nth-child(2) { grid-column: 1; }
+.itemadd > .catpick + .field-wrap { grid-column: 1; }
 .itemadd > .field-wrap:nth-child(3) { grid-column: 2 / 4; }
 .itemadd > .itemadd__price { grid-column: 1 / 3; }
 .itemadd > .itemadd__btn { grid-column: 3; }

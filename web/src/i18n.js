@@ -87,9 +87,9 @@ const DICT = {
     caption_placeholder: 'Подпись (необязательно)',
     style_label: 'Стиль (необязательно)',
     brand_placeholder: 'Бренд', name_placeholder: 'Название',
-    cat_top: '👕 Верх', cat_bottoms: '👖 Низ', cat_shoes: '👟 Обувь',
-    cat_accessory: '🧢 Аксессуар', cat_other: '✨ Другое',
-    cat_dress: '👗 Платье', cat_skirt: '👚 Юбка', cat_bag: '👜 Сумка',
+    cat_top: 'Верх', cat_bottoms: 'Низ', cat_shoes: 'Обувь',
+    cat_accessory: 'Аксессуар', cat_other: 'Другое',
+    cat_dress: 'Платье', cat_skirt: 'Юбка', cat_bag: 'Сумка',
     reward_toast: '+{n} за образ',
 
     // карточка образа
@@ -271,9 +271,9 @@ const DICT = {
     caption_placeholder: 'Caption (optional)',
     style_label: 'Style (optional)',
     brand_placeholder: 'Brand', name_placeholder: 'Name',
-    cat_top: '👕 Top', cat_bottoms: '👖 Bottoms', cat_shoes: '👟 Shoes',
-    cat_accessory: '🧢 Accessory', cat_other: '✨ Other',
-    cat_dress: '👗 Dress', cat_skirt: '👚 Skirt', cat_bag: '👜 Bag',
+    cat_top: 'Top', cat_bottoms: 'Bottoms', cat_shoes: 'Shoes',
+    cat_accessory: 'Accessory', cat_other: 'Other',
+    cat_dress: 'Dress', cat_skirt: 'Skirt', cat_bag: 'Bag',
     reward_toast: '+{n} for the look',
 
     // post card

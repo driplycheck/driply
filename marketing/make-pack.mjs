@@ -78,7 +78,6 @@ const strokeHtml = (e) => `<style>*{margin:0}body{width:100px;height:100px;backg
 // монета — знак валюты, поэтому заливкой, а не штрихом; два варианта на выбор
 const COINS = [
   { id: 'coin-tile', svg: `<rect x="2" y="2" width="96" height="96" rx="28" fill="${LIME}"/><text x="40" y="54" font-family="Unbounded" font-weight="900" font-size="58" fill="${INK}" text-anchor="middle" dominant-baseline="central">d</text><circle cx="74" cy="68" r="9" fill="${INK}"/>` },
-  { id: 'coin-ring', svg: `<circle cx="50" cy="50" r="42" fill="none" stroke="${LIME}" stroke-width="10"/><text x="50" y="53" font-family="Unbounded" font-weight="900" font-size="50" fill="${LIME}" text-anchor="middle" dominant-baseline="central">d</text>` },
 ]
 
 const coinHtml = (c) => `${FONTS}<style>*{margin:0}body{width:100px;height:100px;background:transparent}</style>

@@ -112,11 +112,13 @@ function ItemForm({ categories, category, brand, name, price, brandSuggestions, 
 
   return (
     <div className="itemadd">
-      <select className="field" value={category} onChange={(e) => onCategory(e.target.value)}>
+      <div className="catpick">
         {categories.map((value) => (
-          <option key={value} value={value}>{t(`cat_${value}`)}</option>
+          <Chip key={value} active={category === value} onClick={() => onCategory(value)}>
+            <CategoryIcon category={value} size={15} /> {t(`cat_${value}`)}
+          </Chip>
         ))}
-      </select>
+      </div>
       <div className="field-wrap">
         <input
           className="field"
