@@ -8,18 +8,8 @@ import { t, styleName, timeAgo } from './i18n.js'
 import DripCoin from './components/ui/DripCoin.jsx'
 import OutfitCard from './components/ui/OutfitCard.jsx'
 import GlassBadge from './components/ui/GlassBadge.jsx'
+import { CategoryIcon, StyleIcon } from './components/ui/Icon.jsx'
 import Button from './components/ui/Button.jsx'
-
-const CATEGORY_ICON = {
-  top: '👕',
-  bottoms: '👖',
-  shoes: '👟',
-  accessory: '🧢',
-  dress: '👗',
-  skirt: '👚',
-  bag: '👜',
-  other: '✨',
-}
 
 const AMOUNTS = [10, 50, 100]
 
@@ -148,8 +138,8 @@ export default function PostCard({ post, alreadyVoted, onOpenProfile, selfId, on
       images={images}
       badge={style && (
         <>
-          <GlassBadge>{styleName(style)}</GlassBadge>
-          {style2 && <GlassBadge>{styleName(style2)}</GlassBadge>}
+          <GlassBadge><StyleIcon slug={style.slug} size={13} /> {styleName(style)}</GlassBadge>
+          {style2 && <GlassBadge><StyleIcon slug={style2.slug} size={13} /> {styleName(style2)}</GlassBadge>}
         </>
       )}
       author={{
@@ -164,7 +154,7 @@ export default function PostCard({ post, alreadyVoted, onOpenProfile, selfId, on
         <div className="ocard__tags">
           {items.map((item, index) => (
             <span className="ocard__tag" key={index}>
-              {CATEGORY_ICON[item.category] || '✨'} {item.brand} {item.name}
+              <CategoryIcon category={item.category} size={14} /> {item.brand} {item.name}
               {item.price != null && <b className="ocard__price">{formatPrice(item.price)}</b>}
             </span>
           ))}

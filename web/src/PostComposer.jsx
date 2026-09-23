@@ -8,6 +8,7 @@ import { track } from './analytics.js'
 import DripCoin from './components/ui/DripCoin.jsx'
 import Chip from './components/ui/Chip.jsx'
 import GlassBadge from './components/ui/GlassBadge.jsx'
+import { CategoryIcon, StyleIcon } from './components/ui/Icon.jsx'
 
 const CAPTION_MAX = 300
 // Черновик — всё кроме фото: файл в localStorage не положишь, а перезаливать его молча нельзя.
@@ -81,7 +82,7 @@ function StylePicker({ styles, selectedIds, onToggle }) {
           const on = selectedIds.includes(style.id)
           return (
             <Chip key={style.id} active={on} onClick={() => onToggle(style.id)}>
-              {on && <Check size={14} strokeWidth={3} className="stylepick__check" />}
+              {on ? <Check size={14} strokeWidth={3} /> : <StyleIcon slug={style.slug} size={15} />}
               {styleName(style)}
             </Chip>
           )
@@ -168,7 +169,7 @@ function AddedItems({ items, onRemove }) {
     <div className="chips">
       {items.map((item, index) => (
         <span className="chip" key={index} onClick={() => onRemove(index)}>
-          {[item.brand, item.name].filter(Boolean).join(' ')}
+          <CategoryIcon category={item.category} size={13} /> {[item.brand, item.name].filter(Boolean).join(' ')}
           {item.price != null && <b> · {Number(item.price).toLocaleString('ru-RU')} ₽</b>} ✕
         </span>
       ))}
@@ -206,7 +207,7 @@ export default function PostComposer({ selfId, onClose, onPosted, firstPost = fa
   useEffect(() => {
     let active = true
     supabase.from('styles')
-      .select('id, name_ru, name_en, emoji')
+      .select('id, slug, name_ru, name_en')
       .eq('active', true)
       .order('sort_order')
       .then(({ data }) => {

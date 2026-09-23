@@ -8,9 +8,9 @@ const SELECT =
   'id, media_url, extra_media, caption, score, user_id, hidden, created_at, ' +
   'users(id, username, display_name, avatar_url, style_score), ' +
   'post_items(price, items(name, brand, category)), ' +
-  'style2:styles!posts_style2_id_fkey(id, name_ru, name_en, emoji), ' +
+  'style2:styles!posts_style2_id_fkey(id, slug, name_ru, name_en), ' +
   // явная связь: у posts будет второй FK на styles, без подсказки PostgREST не выберет
-  'style:styles!posts_style_id_fkey(id, name_ru, name_en, emoji)'
+  'style:styles!posts_style_id_fkey(id, slug, name_ru, name_en)'
 
 export default function PostView({ postId, selfId, onClose, onOpenProfile, onChanged }) {
   const [post, setPost] = useState(null)

@@ -2,6 +2,7 @@
 // Запуск: node marketing/make-pack.mjs   (нужен playwright — стоит в web/)
 import { chromium } from '../web/node_modules/playwright/index.mjs'
 import { mkdir, writeFile } from 'node:fs/promises'
+import { CATEGORY_ICONS, STYLE_ICONS } from '../web/src/components/ui/icon-paths.js'
 import { fileURLToPath } from 'node:url'
 
 const OUT = fileURLToPath(new URL('./tg-pack/', import.meta.url))
@@ -58,22 +59,30 @@ function coverHtml(c) {
 </div>`
 }
 
-// эмодзи: простые плотные фигуры — они должны читаться на 20px в строке текста
-const EMOJI = [
-  { id: 'coin', svg: `<circle cx="50" cy="50" r="46" fill="${LIME}"/><text x="50" y="52" font-family="Unbounded" font-weight="900" font-size="54" fill="${INK}" text-anchor="middle" dominant-baseline="central">d</text>` },
-  { id: 'coin-ink', svg: `<circle cx="50" cy="50" r="46" fill="${INK}" stroke="${LIME}" stroke-width="6"/><text x="50" y="52" font-family="Unbounded" font-weight="900" font-size="52" fill="${LIME}" text-anchor="middle" dominant-baseline="central">d</text>` },
-  { id: 'crown', svg: `<path d="M12 74h76l8-44-24 16-22-30-22 30-24-16z" fill="${LIME}"/><rect x="12" y="80" width="76" height="10" rx="5" fill="${LIME}"/>` },
-  { id: 'up', svg: `<circle cx="50" cy="50" r="46" fill="${LIME}"/><path d="M50 22 78 54H62v26H38V54H22z" fill="${INK}"/>` },
-  { id: 'check', svg: `<circle cx="50" cy="50" r="46" fill="${LIME}"/><path d="M26 52l16 16 32-34" stroke="${INK}" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" fill="none"/>` },
-  { id: 'fire', svg: `<path d="M50 6c18 22 30 34 30 50a30 30 0 1 1-60 0C20 40 32 28 50 6z" fill="${PINK}"/><path d="M50 40c8 12 14 18 14 26a14 14 0 1 1-28 0c0-8 6-14 14-26z" fill="${INK}" opacity=".55"/>` },
-  { id: 'star', svg: `<path d="M50 8l11 27 29 2-22 19 7 28-25-15-25 15 7-28-22-19 29-2z" fill="${VIOLET}"/>` },
-  { id: 'arrow', svg: `<circle cx="50" cy="50" r="46" fill="${VIOLET}"/><path d="M28 50h38M52 32l18 18-18 18" stroke="#fff" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" fill="none"/>` },
-  { id: 'dot', svg: `<circle cx="50" cy="50" r="26" fill="${LIME}"/>` },
-  { id: 'hanger', svg: `<circle cx="50" cy="22" r="12" fill="none" stroke="${LIME}" stroke-width="8"/><path d="M50 34v10L14 74h72L50 44" fill="none" stroke="${LIME}" stroke-width="8" stroke-linejoin="round"/>` },
+// эмодзи собираются из того же набора иконок, что и приложение: одна форма — везде
+const STROKE = [
+  ...Object.entries(STYLE_ICONS).map(([id, svg]) => ({ id: `style-${id}`, svg, color: LIME })),
+  ...Object.entries(CATEGORY_ICONS).map(([id, svg]) => ({ id: `item-${id}`, svg, color: VIOLET })),
+  { id: 'crown', svg: '<path d="M3.4 18.4h17.2M3.4 18.4 2.2 7.6l5.6 3.6L12 4.6l4.2 6.6 5.6-3.6-1.2 10.8"/>', color: LIME },
+  { id: 'check', svg: '<path d="m4.6 12.6 4.8 4.8 10-10.8"/>', color: LIME },
+  { id: 'up', svg: '<path d="M12 20V4m0 0 6.4 6.4M12 4 5.6 10.4"/>', color: LIME },
+  { id: 'arrow', svg: '<path d="M4 12h16m0 0-6.4-6.4M20 12l-6.4 6.4"/>', color: VIOLET },
+  { id: 'fire', svg: '<path d="M12 2.6c4.2 5.4 7 8.6 7 12a7 7 0 1 1-14 0c0-3.4 2.8-6.6 7-12z"/><path d="M12 12c1.8 2.8 3 4.2 3 6a3 3 0 1 1-6 0c0-1.8 1.2-3.2 3-6z"/>', color: PINK },
+  { id: 'star', svg: '<path d="m12 3 2.7 6.3 6.8.5-5.2 4.4 1.6 6.6L12 17.3 6.1 20.8l1.6-6.6-5.2-4.4 6.8-.5z"/>', color: VIOLET },
 ]
 
-const emojiHtml = (e) => `${FONTS}<style>*{margin:0}body{width:100px;height:100px;background:transparent}</style>
-<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">${e.svg}</svg>`
+const strokeHtml = (e) => `<style>*{margin:0}body{width:100px;height:100px;background:transparent}</style>
+<svg width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="${e.color}" stroke-width="1.9"
+     stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">${e.svg}</svg>`
+
+// монета — знак валюты, поэтому заливкой, а не штрихом; два варианта на выбор
+const COINS = [
+  { id: 'coin-tile', svg: `<rect x="2" y="2" width="96" height="96" rx="28" fill="${LIME}"/><text x="40" y="54" font-family="Unbounded" font-weight="900" font-size="58" fill="${INK}" text-anchor="middle" dominant-baseline="central">d</text><circle cx="74" cy="68" r="9" fill="${INK}"/>` },
+  { id: 'coin-ring', svg: `<circle cx="50" cy="50" r="42" fill="none" stroke="${LIME}" stroke-width="10"/><text x="50" y="53" font-family="Unbounded" font-weight="900" font-size="50" fill="${LIME}" text-anchor="middle" dominant-baseline="central">d</text>` },
+]
+
+const coinHtml = (c) => `${FONTS}<style>*{margin:0}body{width:100px;height:100px;background:transparent}</style>
+<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">${c.svg}</svg>`
 
 const browser = await chromium.launch()
 
@@ -89,9 +98,9 @@ for (const c of COVERS) {
 await ctxCover.close()
 
 const ctxEmoji = await browser.newContext({ viewport: { width: 100, height: 100 }, deviceScaleFactor: 1 })
-for (const e of EMOJI) {
+for (const e of [...COINS.map((c) => ({ ...c, html: coinHtml(c) })), ...STROKE.map((e) => ({ ...e, html: strokeHtml(e) }))]) {
   const page = await ctxEmoji.newPage()
-  await page.setContent(emojiHtml(e), { waitUntil: 'networkidle' })
+  await page.setContent(e.html, { waitUntil: 'networkidle' })
   await page.evaluate(() => document.fonts.ready)
   await page.screenshot({ path: `${OUT}emoji/${e.id}.png`, omitBackground: true })
   await page.close()

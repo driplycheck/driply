@@ -181,3 +181,7 @@
 .ocard__dots { display: inline-flex; align-items: center; gap: 5px; margin-left: auto; padding: 7px 10px; border-radius: 999px; background: var(--glass-bg); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); }
 .ocard__dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--on-photo-muted); opacity: 0.6; transition: width 0.2s, opacity 0.2s; }
 .ocard__dots i.on { width: 16px; border-radius: 3px; background: var(--on-photo); opacity: 1; }
+
+/* иконки набора: цвет из currentColor, поэтому меняются вместе с темой */
+.icon { flex: none; display: inline-block; vertical-align: -0.15em; }
+.ui-chip { display: inline-flex; align-items: center; gap: 6px; }

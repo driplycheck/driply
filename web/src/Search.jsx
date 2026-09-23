@@ -3,6 +3,7 @@ import { supabase } from './supabase.js'
 import { avatarTier } from './tiers.js'
 import { t, styleName } from './i18n.js'
 import DripCoin from './components/ui/DripCoin.jsx'
+import { StyleIcon } from './components/ui/Icon.jsx'
 
 function PostGrid({ posts, onOpenPost }) {
   return (
@@ -32,7 +33,7 @@ export default function Search({ onClose, onOpenProfile, onOpenPost, onOpenTop }
   useEffect(() => {
     let active = true
     supabase.from('styles')
-      .select('id, name_ru, name_en, emoji')
+      .select('id, slug, name_ru, name_en')
       .eq('active', true)
       .order('sort_order')
       .then(({ data }) => { if (active) setStyles(data || []) })
@@ -72,7 +73,7 @@ export default function Search({ onClose, onOpenProfile, onOpenPost, onOpenTop }
   }
 
   async function openStyle(s) {
-    const label = `${s.emoji || ''} ${styleName(s)}`.trim()
+    const label = styleName(s)
     setItemView({ label, posts: null })
     const { data } = await supabase.rpc('posts_by_style', { p_uid: 0, p_style_id: s.id })
     setItemView({ label, posts: data || [] })
@@ -130,7 +131,7 @@ export default function Search({ onClose, onOpenProfile, onOpenPost, onOpenTop }
                 <div className="stylegrid">
                   {styles.map((s) => (
                     <button className="stylecard" key={s.id} onClick={() => openStyle(s)}>
-                      <span className="stylecard__emoji">{s.emoji}</span>
+                      <span className="stylecard__emoji"><StyleIcon slug={s.slug} size={20} /></span>
                       <span className="stylecard__name">{styleName(s)}</span>
                     </button>
                   ))}

@@ -58,7 +58,7 @@ async function withCarousel(page) {
 
 const SCREENS = {
   feed: async () => {},
-  carousel: async (p) => { await pause(p, 2500); await p.locator('.ocard__icon').first().click().catch(() => {}); await pause(p, 300) },
+  carousel: async (p) => { await pause(p, 2500); await p.locator('.ocard__icon[aria-pressed]').first().click().catch(() => {}); await pause(p, 300) },
   picker: async (p) => { await p.locator('.dripctl .ui-btn').first().click(); await pause(p, 300) },
   profile: async (p) => { await p.locator('.ocard__author').first().click(); await pause(p, 1500) },
   post: async (p) => { await p.locator('.ocard__author').first().click(); await pause(p, 1500); await p.locator('.grid__item').first().click(); await pause(p, 1500) },
