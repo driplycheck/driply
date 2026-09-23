@@ -2,6 +2,7 @@
 //
 //   BOT_TOKEN=... node marketing/upload-emoji-pack.mjs --user 957954261          # создать или дополнить
 //   BOT_TOKEN=... node marketing/upload-emoji-pack.mjs --info                     # что сейчас в паке
+//   BOT_TOKEN=... node marketing/upload-emoji-pack.mjs --dedupe [--dry]            # убрать повторы
 //   BOT_TOKEN=... node marketing/upload-emoji-pack.mjs --user ... --only digit-   # залить только часть
 //   node marketing/upload-emoji-pack.mjs --user 957954261 --dry                   # показать план
 //
@@ -19,6 +20,7 @@ const flag = (name, fallback = null) => {
 const DRY = args.includes('--dry')
 const INFO = args.includes('--info')
 const TEST = args.includes('--test')   // бот пришлёт сообщение, набранное кастомными эмодзи
+const DEDUPE = args.includes('--dedupe') // убрать повторы одного и того же файла
 const ONLY = flag('only')            // подстрока в имени файла: digit-, style-, item-
 const MANIFEST = fileURLToPath(new URL('./tg-pack/.uploaded.json', import.meta.url))
 const USER_ID = Number(flag('user') || process.env.TG_USER_ID || 0)
@@ -105,6 +107,42 @@ if (token) {
   } else {
     console.log('Пака с таким именем нет — будет создан новый')
   }
+}
+
+// Чистка повторов. Сравниваем по file_unique_id — это один и тот же файл.
+// По эмодзи сравнивать нельзя: у четырёх разных монет один базовый знак 💧.
+if (DEDUPE) {
+  if (!existing) { console.error('Пака нет'); process.exit(1) }
+  const seen = new Set()
+  const extra = []
+  for (const st of existing.stickers) {
+    if (seen.has(st.file_unique_id)) extra.push(st)
+    else seen.add(st.file_unique_id)
+  }
+  console.log(`Уникальных: ${seen.size}, повторов: ${extra.length}`)
+  if (!extra.length) process.exit(0)
+  if (DRY) {
+    console.log('--dry: удалил бы ' + extra.map((st) => st.emoji).join(' '))
+    process.exit(0)
+  }
+  for (const st of extra) {
+    try {
+      await api(token, 'deleteStickerFromSet', { sticker: st.file_id })
+      console.log('удалён повтор', st.emoji)
+    } catch (e) {
+      // Telegram просит подождать при частых правках набора
+      const wait = Number(String(e.message).match(/retry after (\d+)/i)?.[1] ?? 0)
+      if (!wait) throw e
+      console.log(`пауза ${wait} с по требованию Telegram…`)
+      await new Promise((r) => setTimeout(r, (wait + 1) * 1000))
+      await api(token, 'deleteStickerFromSet', { sticker: st.file_id })
+      console.log('удалён повтор', st.emoji)
+    }
+    await new Promise((r) => setTimeout(r, 400))
+  }
+  const after = await api(token, 'getStickerSet', { name })
+  console.log(`\nГотово. В паке осталось: ${after.stickers.length}`)
+  process.exit(0)
 }
 
 // Проверка «пак реально работает»: собираем сообщение с сущностями custom_emoji.
