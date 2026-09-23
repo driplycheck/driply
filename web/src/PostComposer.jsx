@@ -6,6 +6,7 @@ import { X, Check, Tag, ImagePlus, Plus } from 'lucide-react'
 import { t, styleName } from './i18n.js'
 import { track } from './analytics.js'
 import { uploadImage } from './upload.js'
+import { checkPhotos, warmUpNsfw } from './nsfw.js'
 import DripCoin from './components/ui/DripCoin.jsx'
 import Chip from './components/ui/Chip.jsx'
 import GlassBadge from './components/ui/GlassBadge.jsx'
@@ -191,6 +192,7 @@ export default function PostComposer({ selfId, onClose, onPosted, firstPost = fa
   const [name, setName] = useState('')
   const [price, setPrice] = useState('')
   const [busy, setBusy] = useState(false)
+  const [checking, setChecking] = useState(false)
   const [error, setError] = useState(null)
   const [styles, setStyles] = useState([])
   const [styleIds, setStyleIds] = useState([])
@@ -235,6 +237,7 @@ export default function PostComposer({ selfId, onClose, onPosted, firstPost = fa
       setDraftRestored(true)
     }
     track('composer_opened', { draft: Boolean(hasContent), first: firstPost })
+    warmUpNsfw()   // модель успеет загрузиться, пока человек готовит образ
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -305,6 +308,17 @@ export default function PostComposer({ selfId, onClose, onPosted, firstPost = fa
     setBusy(true)
     setError(null)
     try {
+      // проверка на откровенный контент — до загрузки, чтобы такое фото вообще не попало в хранилище
+      setChecking(true)
+      const verdict = await checkPhotos(photos.map((p) => p.file))
+      setChecking(false)
+      if (!verdict.ok) {
+        track('nsfw_blocked', { score: verdict.score })
+        setError(t('nsfw_blocked'))
+        setBusy(false)
+        return
+      }
+
       const urls = await Promise.all(photos.map((p) => uploadImage(p.file, 'post')))
       const { data: result, error } = await supabase.functions.invoke('quick-handler', {
         body: {
@@ -328,6 +342,7 @@ export default function PostComposer({ selfId, onClose, onPosted, firstPost = fa
       track('post_created', { photos: urls.length, styles: styleIds.length, items: tagItems ? items.length : 0 })
       onPosted(result)
     } catch (e) {
+      setChecking(false)
       track('publish_failed', { code: String(e?.message || 'UNKNOWN').slice(0, 40) })
       setError(t('post_failed'))
       setBusy(false)
@@ -440,7 +455,7 @@ export default function PostComposer({ selfId, onClose, onPosted, firstPost = fa
 
       <div className="composer__footer">
         <button className="publish" onClick={submit} disabled={busy || photos.length === 0}>
-          {busy ? '…' : t('publish')}
+          {checking ? t('nsfw_checking') : busy ? '…' : t('publish')}
           {!busy && reward && (
             <span className="publish__reward"><DripCoin size={14} /> +{reward}</span>
           )}

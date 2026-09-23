@@ -1,0 +1,63 @@
+.mod {
+  position: fixed;
+  inset: 0;
+  z-index: 97;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--text);
+  transition: var(--theme-transition);
+}
+.mod__top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: calc(env(safe-area-inset-top) + 12px) var(--gutter) 12px;
+  border-bottom: 1px solid var(--border);
+}
+.mod__back {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  cursor: pointer;
+}
+.mod__title { font: 700 18px/1.2 var(--font-display); }
+.mod__count { margin-left: auto; font: 700 15px/1 var(--font-display); color: var(--danger); font-variant-numeric: tabular-nums; }
+.mod__body { flex: 1; overflow-y: auto; padding: 14px var(--gutter) calc(32px + var(--safe-bottom, 0px)); display: flex; flex-direction: column; gap: 12px; }
+.mod__state { padding: 48px 24px; text-align: center; color: var(--text-muted); font-size: 15px; line-height: 1.45; }
+
+.modcard {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+.modcard__photo { width: 96px; height: 128px; flex: none; border-radius: var(--r-sm); object-fit: cover; background: var(--surface-2); }
+.modcard__side { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.modcard__reason { font: 700 11px/1.2 var(--font-body); letter-spacing: 0.08em; text-transform: uppercase; color: var(--danger); }
+.modcard__meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 14px; font-weight: 600; }
+.modcard__meta--dim { font-size: 12px; font-weight: 400; color: var(--text-muted); }
+.modcard__badge { padding: 2px 8px; border-radius: 999px; background: var(--danger); color: #fff; font-size: 11px; font-weight: 700; }
+.modcard__caption { font-size: 13px; line-height: 1.4; color: var(--text-2); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.modcard__actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.modcard__actions .ui-btn { flex: 1 1 auto; font-size: 13px; padding: 8px 12px; }
+.modcard__danger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--danger);
+  background: transparent;
+  color: var(--danger);
+  font: 600 13px/1 var(--font-body);
+  cursor: pointer;
+}

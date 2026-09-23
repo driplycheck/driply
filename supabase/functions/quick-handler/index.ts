@@ -45,6 +45,7 @@ const LIMITS = {
   set_follow: [60, 3600],
   set_block: [30, 3600],
   report: [10, 3600],
+  mod_act: [200, 3600],
   reward_story: [5, 3600],
   upload_url: [30, 3600],
   set_referrer: [10, 3600],
@@ -117,6 +118,21 @@ Deno.serve(async (req) => {
 
     if (!(await rateOk(supabase, tgUser.id, body.action))) {
       return jsonResponse({ error: 'RATE_LIMIT' }, 429)
+    }
+
+    // Модерация: право проверяет сама база (is_founder), тут только передаём telegram_id из подписи
+    if (body.action === 'mod_queue') {
+      const { data, error } = await supabase.rpc('mod_queue', { p_tid: tgUser.id })
+      if (error) return jsonResponse({ error: error.message }, error.message.includes('FORBIDDEN') ? 403 : 400)
+      return jsonResponse(data ?? [], 200)
+    }
+
+    if (body.action === 'mod_act') {
+      const { data, error } = await supabase.rpc('mod_act', {
+        p_tid: tgUser.id, p_report_id: body.report_id, p_action: String(body.mod_action ?? ''),
+      })
+      if (error) return jsonResponse({ error: error.message }, error.message.includes('FORBIDDEN') ? 403 : 400)
+      return jsonResponse(data, 200)
     }
 
     // Загрузка картинок: клиент получает одноразовую подписанную ссылку.

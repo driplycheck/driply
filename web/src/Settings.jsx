@@ -27,7 +27,7 @@ function Toggle({ active, onClick, disabled, label }) {
   )
 }
 
-export default function Settings({ me, lang, onLang, side, onSide, onClose, onEditProfile, onChanged, onOpenBlocked, onOpenReferral, onOpenAppearance }) {
+export default function Settings({ me, lang, onLang, side, onSide, onClose, onEditProfile, onChanged, onOpenBlocked, onOpenReferral, onOpenAppearance, onOpenModeration }) {
   const { enabled: themesEnabled } = useTheme()
   const [prefs, setPrefs] = useState({
     all: me.notify_prefs?.all !== false,
@@ -63,6 +63,7 @@ export default function Settings({ me, lang, onLang, side, onSide, onClose, onEd
         <div className="ssection">{t('sec_general')}</div>
         <SettingsLink label={t('edit_profile')} onClick={onEditProfile} />
         {themesEnabled && <SettingsLink label={t('appearance')} onClick={onOpenAppearance} />}
+        {me.is_founder && <SettingsLink label={t('moderation')} onClick={onOpenModeration} />}
         <div className="srow srow--col">
           <div className="srow__label">{t('interface_side')}</div>
           <div className="langrow">

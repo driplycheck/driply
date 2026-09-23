@@ -1,7 +1,7 @@
 {
   "name": "driply-web",
   "private": true,
-  "version": "3.0.0",
+  "version": "3.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -12,7 +12,9 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
+    "@tensorflow/tfjs": "^4.22.0",
     "lucide-react": "^1.47.0",
+    "nsfwjs": "^4.3.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },

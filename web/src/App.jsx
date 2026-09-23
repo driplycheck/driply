@@ -20,6 +20,7 @@ import TopUsers from './TopUsers.jsx'
 import BlockedList from './BlockedList.jsx'
 import Referral from './Referral.jsx'
 import Appearance from './Appearance.jsx'
+import Moderation from './Moderation.jsx'
 import TabBar from './components/ui/TabBar.jsx'
 import DripCoin from './components/ui/DripCoin.jsx'
 import { useTheme } from './theme/ThemeProvider.jsx'
@@ -188,6 +189,7 @@ export default function App() {
             onOpenBlocked={() => push('blocked')}
             onOpenReferral={() => push('referral')}
             onOpenAppearance={() => push('appearance')}
+            onOpenModeration={() => push('moderation')}
           />
         </Overlay>
       )}
@@ -201,6 +203,12 @@ export default function App() {
             onOpenProfile={(id) => replace('profile', { userId: id })}
             onChanged={onPostDeleted}
           />
+        </Overlay>
+      )}
+
+      {top?.type === 'moderation' && (
+        <Overlay onClose={pop} leaving={top.leaving}>
+          <Moderation onClose={pop} onChanged={() => setFeedKey((k) => k + 1)} />
         </Overlay>
       )}
 

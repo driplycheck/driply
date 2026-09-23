@@ -43,6 +43,7 @@ const COVERS = [
   { id: 'u5-firstdrip', accent: LIME, kicker: 'статус', title: 'first drip —<br>первой сотне', big: null },
   { id: 'u6-story', accent: VIOLET, kicker: 'истории', title: 'карточка в сторис<br>с твоей ссылкой', big: '+200' },
   { id: 'u7-storycard', accent: LIME, kicker: 'истории', title: 'в сторис уходит<br>твой образ', big: null },
+  { id: 'u8-rules', accent: PINK, kicker: 'правила', title: 'жалобы разбираем,<br>откровенное не пройдёт', big: null },
 ]
 
 function coverHtml(c) {
