@@ -48,6 +48,7 @@ jobs:
             Задача от основателя лежит в файле /tmp/agent/task.md — прочитай и выполни её.
             В конце дай короткий ответ по-русски: он уйдёт человеку в Telegram как есть.
           claude_args: --max-turns 30
+          show_full_output: true   # без этого ошибки агента не видно, только «is_error»
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
