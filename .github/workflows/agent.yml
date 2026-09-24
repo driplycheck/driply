@@ -49,6 +49,18 @@ jobs:
         if: github.event.inputs.kind == 'dev'
         run: git checkout -b "agent/fix-${{ github.run_id }}"
 
+      # список инструментов считаем заранее: длинное условие прямо в claude_args ломает разбор файла
+      - name: список инструментов
+        id: tools
+        env:
+          KIND: ${{ github.event.inputs.kind || 'tester' }}
+        run: |
+          if [ "$KIND" = "dev" ]; then
+            echo 'list=Read,Glob,Grep,Edit,Write,Bash(npm:*),Bash(npx:*),Bash(node:*),Bash(git:*),Bash(gh pr:*)' >> "$GITHUB_OUTPUT"
+          else
+            echo 'list=Read,Glob,Grep,Bash(npm:*),Bash(npx:*),Bash(node:*),Bash(git status:*),Bash(git log:*),Bash(git diff:*)' >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: anthropics/claude-code-action@v1
         id: claude
         with:
@@ -57,11 +69,7 @@ jobs:
             Твоя роль описана в файле .agent/role.md — прочитай его первым делом и следуй ему.
             Задача от основателя лежит в файле .agent/task.md — прочитай и выполни её.
             В конце дай короткий ответ по-русски: он уйдёт человеку в Telegram как есть.
-          claude_args: >-
-            --max-turns 60
-            --allowedTools "${{ github.event.inputs.kind == 'dev'
-              && 'Read,Glob,Grep,Edit,Write,Bash(npm:*),Bash(npx:*),Bash(node:*),Bash(git:*),Bash(gh pr:*)'
-              || 'Read,Glob,Grep,Bash(npm:*),Bash(npx:*),Bash(node:*),Bash(git status:*),Bash(git log:*),Bash(git diff:*)' }}"
+          claude_args: --max-turns 60 --allowedTools "${{ steps.tools.outputs.list }}"
           show_full_output: true   # без этого ошибки агента не видно, только «is_error»
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
