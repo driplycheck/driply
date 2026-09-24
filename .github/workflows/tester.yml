@@ -1,0 +1,51 @@
+# Тестировщик: ходит по живому приложению и бэкенду, отчитывается в тему «Отчёты».
+# Ничего не пишет в прод — только читает и жмёт кнопки.
+name: Тестировщик
+
+on:
+  schedule:
+    - cron: '0 6,18 * * *'   # 09:00 и 21:00 МСК
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['web/**', 'supabase/functions/**']
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - run: npm ci
+        working-directory: web
+
+      - run: npx playwright install --with-deps chromium
+        working-directory: web
+
+      # после пуша Vercel ещё катит сборку — проверять старую версию бессмысленно
+      - if: github.event_name == 'push'
+        run: sleep 120
+
+      - run: node scripts/smoke.mjs --report
+        working-directory: web
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          CI_SECRET: ${{ secrets.CI_SECRET }}
+          SHOTS_TG_ID: ${{ secrets.SHOTS_TG_ID }}
+          SHOTS_USER_ID: ${{ secrets.SHOTS_USER_ID }}
+
+      # кадры упавших проверок — чтобы было видно, что именно сломалось
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: кадры-упавших-проверок
+          path: web/.smoke/*.png
+          if-no-files-found: ignore

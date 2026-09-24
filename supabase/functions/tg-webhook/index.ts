@@ -9,12 +9,16 @@ function db() {
 const BOT_TOKEN = Deno.env.get('BOT_TOKEN') ?? ''
 const WEBAPP_URL = Deno.env.get('WEBAPP_URL') ?? ''
 const WEBHOOK_SECRET = Deno.env.get('TG_WEBHOOK_SECRET') ?? ''
+// Отдельный ключ для автоматических проверок: у CI нет причин знать боевой секрет вебхука
+const CI_SECRET = Deno.env.get('CI_SECRET') ?? ''
+const serviceKey = (key: string | null) => Boolean(key) && (key === CI_SECRET || key === WEBHOOK_SECRET)
 
 // Темы в группе поддержки: имя топика ↔ колонка в support_routing
 const SUPPORT_TOPICS = [
   { kind: 'bug', col: 'thread_bug', name: '🛠 Не работает', icon: 0x6FB9F0 },
   { kind: 'idea', col: 'thread_idea', name: '💡 Идеи', icon: 0xFFD67E },
   { kind: 'partner', col: 'thread_partner', name: '🤝 Сотрудничество', icon: 0xCB86DB },
+  { kind: 'reports', col: 'thread_reports', name: '🤖 Отчёты проверок', icon: 0x8EEE98 },
 ]
 const SUPPORT_LABEL: Record<string, string> = {
   bug: '🛠 <b>Не работает</b>', idea: '💡 <b>Идея</b>', partner: '🤝 <b>Сотрудничество</b>',
@@ -133,6 +137,45 @@ Deno.serve(async (req) => {
   if (!BOT_TOKEN) return new Response('NO_BOT_TOKEN', { status: 500 })
 
   const url = new URL(req.url)
+  // Отчёт автоматической проверки в тему «Отчёты»: POST { text } с тем же секретом.
+  if (url.searchParams.get('report')) {
+    if (!serviceKey(url.searchParams.get('report'))) return new Response('forbidden', { status: 403 })
+    const body = await req.json().catch(() => ({}))
+    const text = String(body?.text ?? '').slice(0, 3500)
+    if (!text) return Response.json({ ok: false, error: 'EMPTY' }, { status: 400 })
+    const { data: routes } = await db().rpc('support_routing_get')
+    const route = Array.isArray(routes) ? routes[0] : routes
+    if (!route?.chat_id) return Response.json({ ok: false, error: 'NO_CHAT' }, { status: 400 })
+    const sent = await tg('sendMessage', {
+      chat_id: route.chat_id, text, parse_mode: 'HTML',
+      ...(route.thread_reports ? { message_thread_id: route.thread_reports } : {}),
+    })
+    return Response.json({ ok: Boolean(sent?.ok), description: sent?.description ?? null })
+  }
+
+  // Самопроверка: CI спрашивает, живы ли база, роутинг и сам бот.
+  if (url.searchParams.get('health')) {
+    if (!serviceKey(url.searchParams.get('health'))) return new Response('forbidden', { status: 403 })
+    const checks: Record<string, unknown> = {}
+    const supabase = db()
+    const me = await tg('getMe', {})
+    checks.bot = me?.ok ? me.result.username : `FAIL: ${me?.description ?? 'нет ответа'}`
+    const hook = await tg('getWebhookInfo', {})
+    checks.webhook_url = hook?.result?.url ?? null
+    checks.webhook_pending = hook?.result?.pending_update_count ?? null
+    checks.webhook_last_error = hook?.result?.last_error_message ?? null
+    const { data: mod, error: modErr } = await supabase.rpc('support_moderator_tid')
+    checks.moderator = modErr ? `FAIL: ${modErr.message}` : mod
+    const { data: routes, error: routeErr } = await supabase.rpc('support_routing_get')
+    const route = Array.isArray(routes) ? routes[0] : routes
+    checks.support_chat = routeErr ? `FAIL: ${routeErr.message}` : (route?.chat_id ?? null)
+    checks.topics = route ? SUPPORT_TOPICS.filter((t) => route[t.col]).map((t) => t.kind) : []
+    const { data: slots, error: slotErr } = await supabase.rpc('first_drip_left')
+    checks.first_drip_left = slotErr ? `FAIL: ${slotErr.message}` : slots
+    const bad = Object.values(checks).some((v) => typeof v === 'string' && v.startsWith('FAIL'))
+    return Response.json({ ok: !bad && !checks.webhook_last_error, checks })
+  }
+
   const setupKey = url.searchParams.get('setup')
   if (setupKey) {
     if (!WEBHOOK_SECRET || setupKey !== WEBHOOK_SECRET) return new Response('forbidden', { status: 403 })
