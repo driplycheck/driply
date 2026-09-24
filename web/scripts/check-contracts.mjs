@@ -8,6 +8,7 @@
 //      получает «что-то пошло не так» там, где мы точно знаем причину.
 import { readdir, readFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
+import { parse as parseYaml } from 'yaml'
 
 const ROOT = fileURLToPath(new URL('../../', import.meta.url))
 const problems = []
@@ -29,6 +30,28 @@ for (const dir of await readdir(FUNCTIONS_DIR, { withFileTypes: true })) {
     problems.push(`${dir.name}/index.ts:${i + 1} — прямое обращение к таблице «${hit[1]}». Нужен RPC: у service_role нет прав на таблицы.`)
   })
 }
+
+// --- 1.5. воркфлоу должны разбираться ---
+// Сломанный YAML не ломает сборку и не виден в интерфейсе: GitHub просто перестаёт
+// признавать триггеры, и агенты молча не запускаются. Один раз уже наступили.
+const WORKFLOWS = ROOT + '.github/workflows/'
+try {
+  for (const file of (await readdir(WORKFLOWS)).filter((f) => f.endsWith('.yml') || f.endsWith('.yaml'))) {
+    const raw = await readFile(WORKFLOWS + file, 'utf8')
+    let doc
+    try {
+      doc = parseYaml(raw)
+    } catch (e) {
+      problems.push(`.github/workflows/${file} — YAML не разбирается: ${String(e.message).split('\n')[0]}`)
+      continue
+    }
+    if (!doc?.name) problems.push(`.github/workflows/${file} — нет поля name`)
+    const on = doc?.on ?? doc?.true   // YAML читает голое on как булево true
+    if (!on || (typeof on === 'object' && !Object.keys(on).length)) {
+      problems.push(`.github/workflows/${file} — не вижу триггеров, воркфлоу не запустится`)
+    }
+  }
+} catch { /* папки нет — проверять нечего */ }
 
 // --- 2. коды ошибок из базы против словаря в приложении ---
 // Функции, созданные до перехода на миграции, в файлах не видны — держим их списком.
