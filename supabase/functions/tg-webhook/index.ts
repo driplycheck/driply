@@ -1,7 +1,7 @@
 // Бот целиком на Edge Function: Telegram шлёт апдейты вебхуком, отдельный процесс не нужен.
 // Секреты: BOT_TOKEN, WEBAPP_URL, TG_WEBHOOK_SECRET (+ SUPABASE_* для аналитики, они уже есть).
 import { createClient } from 'npm:@supabase/supabase-js@2'
-import { AGENTS, askAgent } from './agents.ts'
+import { AGENTS } from './agents.ts'
 
 function db() {
   return createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
@@ -194,6 +194,16 @@ Deno.serve(async (req) => {
     return Response.json({ ok: Boolean(sent?.ok), description: sent?.description ?? null })
   }
 
+  // Срезы для агента-аналитика: набор запросов фиксирован в базе, снаружи только имя и глубина.
+  if (url.searchParams.get('stats')) {
+    if (!serviceKey(url.searchParams.get('stats'))) return new Response('forbidden', { status: 403 })
+    const name = url.searchParams.get('name') ?? 'funnel'
+    const days = Number(url.searchParams.get('days')) || 30
+    const { data, error } = await db().rpc('agent_stats', { p_name: name, p_days: days })
+    if (error) return Response.json({ ok: false, error: error.message }, { status: 400 })
+    return Response.json({ ok: true, name, days, data })
+  }
+
   // Самопроверка: CI спрашивает, живы ли база, роутинг и сам бот.
   if (url.searchParams.get('health')) {
     if (!serviceKey(url.searchParams.get('health'))) return new Response('forbidden', { status: 403 })
@@ -264,22 +274,9 @@ Deno.serve(async (req) => {
             return
           }
 
-          const { data: history } = await supabase.rpc('agent_history', { p_kind: kind, p_limit: 12 })
-          const ordered = Array.isArray(history) ? [...history].reverse() : []
-          let answer: string
-          try {
-            answer = await askAgent(kind, text, ordered, {
-              selfUrl: new URL(req.url).origin + '/tg-webhook',
-              ciSecret: CI_SECRET || WEBHOOK_SECRET,
-            })
-          } catch (e) {
-            answer = `Не смог ответить: ${e instanceof Error ? e.message : String(e)}`
-          }
-          await supabase.rpc('agent_log', { p_kind: kind, p_role: 'user', p_body: text })
-          await supabase.rpc('agent_log', { p_kind: kind, p_role: 'assistant', p_body: answer })
           await tg('sendMessage', {
             chat_id: message.chat.id, message_thread_id: thread,
-            text: answer.slice(0, 3800), parse_mode: 'HTML',
+            text: 'Запускать некому: не задан GH_TOKEN, агенты работают через GitHub Actions.',
           })
         })())
         return new Response('ok')
