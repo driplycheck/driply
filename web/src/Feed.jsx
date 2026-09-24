@@ -4,6 +4,7 @@ import { t, styleName } from './i18n.js'
 import DripCoin from './components/ui/DripCoin.jsx'
 import Chip from './components/ui/Chip.jsx'
 import PostCard from './PostCard.jsx'
+import { SlidersHorizontal } from 'lucide-react'
 import { usePager } from './usePager.js'
 
 export default function Feed({ selfId, balance, scrollTopKey, onOpenProfile, onBalance }) {
@@ -12,6 +13,7 @@ export default function Feed({ selfId, balance, scrollTopKey, onOpenProfile, onB
   const [votedIds, setVotedIds] = useState(new Set())
   const [error, setError] = useState(null)
   const [styleId, setStyleId] = useState(null)
+  const [filterOpen, setFilterOpen] = useState(false)
   const scroller = useRef(null)
   // лента уже загруженной вкладки показывается сразу, обновление идёт фоном
   const cache = useRef({})
@@ -85,13 +87,24 @@ export default function Feed({ selfId, balance, scrollTopKey, onOpenProfile, onB
             {t(id === 'all' ? 'tab_all' : 'tab_following')}
           </button>
         ))}
+        {/* фильтр свёрнут в одну кнопку: ряд стилей занимал полосу экрана у каждого образа */}
+        {tab === 'all' && styles.length > 1 && (
+          <button
+            className={`feed-filter ${styleId ? 'feed-filter--on' : ''}`}
+            onClick={() => setFilterOpen((v) => !v)}
+            aria-expanded={filterOpen}
+          >
+            <SlidersHorizontal size={14} strokeWidth={2.2} />
+            {styleId ? styleName(styles.find((s) => s.id === styleId) ?? {}) : t('chip_all')}
+          </button>
+        )}
       </nav>
 
-      {tab === 'all' && styles.length > 1 && (
+      {filterOpen && tab === 'all' && styles.length > 1 && (
         <div className="feed-chips">
-          <Chip active={!styleId} onClick={() => setStyleId(null)}>{t('chip_all')}</Chip>
+          <Chip active={!styleId} onClick={() => { setStyleId(null); setFilterOpen(false) }}>{t('chip_all')}</Chip>
           {styles.map((s) => (
-            <Chip key={s.id} active={styleId === s.id} onClick={() => setStyleId(s.id)}>{styleName(s)}</Chip>
+            <Chip key={s.id} active={styleId === s.id} onClick={() => { setStyleId(s.id); setFilterOpen(false) }}>{styleName(s)}</Chip>
           ))}
         </div>
       )}

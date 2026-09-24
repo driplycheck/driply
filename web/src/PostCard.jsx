@@ -156,6 +156,7 @@ export default function PostCard({ post, alreadyVoted, onOpenProfile, selfId, on
           {items.length > 0 && (
             <IconAction label={t('items_aria')} active={showItems} onClick={() => setShowItems((v) => !v)}>
               <Shirt size={22} strokeWidth={1.9} />
+              <span className="ocard__count">{items.length}</span>
             </IconAction>
           )}
           {canReport && (

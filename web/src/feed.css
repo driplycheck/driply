@@ -101,7 +101,22 @@ input, textarea, select, .field { font-size: 16px; }
   transition: var(--theme-transition);
 }
 
-.feed-tabs { display: flex; gap: 20px; padding: 14px 20px 0; }
+.feed-tabs { display: flex; align-items: center; gap: 20px; padding: 14px 20px 0; }
+
+/* свёрнутый фильтр стилей: живёт в ряду вкладок, разворачивает ряд чипов по нажатию */
+.feed-filter {
+  margin-left: auto;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-2);
+  font-size: 13px; font-weight: 600;
+  cursor: pointer;
+}
+.feed-filter--on { background: var(--primary); color: var(--on-primary); border-color: var(--primary); }
+.feed-filter:active { transform: scale(0.96); }
 .feed-tab {
   position: relative;
   padding: 0 0 12px;
@@ -126,9 +141,15 @@ input, textarea, select, .field { font-size: 16px; }
 }
 
 .feed-chips {
+  /* выпадает поверх ленты, а не раздвигает её: иначе карточка прыгает при открытии */
+  position: absolute;
+  z-index: 3;
+  left: 0; right: 0;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
   display: flex;
   gap: 8px;
-  padding: 10px var(--gutter) 0;
+  padding: 10px var(--gutter);
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -138,7 +159,7 @@ input, textarea, select, .field { font-size: 16px; }
   /* Фото — это и есть продукт: карточка занимает всю свободную высоту,
      а не фиксированную пропорцию, иначе под ней остаётся мёртвая полоса. */
   aspect-ratio: auto;
-  height: calc(var(--app-height, 100dvh) - 254px - env(safe-area-inset-top) - max(var(--safe-bottom, 0px), env(safe-area-inset-bottom)));
+  height: calc(var(--app-height, 100dvh) - 208px - env(safe-area-inset-top) - max(var(--safe-bottom, 0px), env(safe-area-inset-bottom)));
   min-height: 360px;
 }
 .feed-list { display: flex; flex-direction: column; gap: 16px; padding: 10px var(--gutter) 0; }
@@ -172,6 +193,7 @@ input, textarea, select, .field { font-size: 16px; }
   font-variant-numeric: tabular-nums;
 }
 .ocard__icon {
+  position: relative;
   display: grid;
   place-items: center;
   width: 36px;
@@ -291,4 +313,14 @@ input, textarea, select, .field { font-size: 16px; }
 .lb, .earn, .composer, .postview, .onb, .edit, .about, .overlay-backdrop {
   height: var(--app-height, 100dvh);
   bottom: auto;
+}
+
+/* Число вещей на иконке: иначе непонятно, что за ней вообще что-то есть */
+.ocard__count {
+  position: absolute; top: -2px; right: -2px;
+  min-width: 16px; height: 16px; padding: 0 4px;
+  display: grid; place-items: center;
+  border-radius: 999px;
+  background: var(--drip); color: var(--on-drip);
+  font-size: 10px; font-weight: 800; line-height: 1;
 }

@@ -201,7 +201,8 @@ export default function PostComposer({ selfId, onClose, onPosted, firstPost = fa
   const [error, setError] = useState(null)
   const [styles, setStyles] = useState([])
   const [styleIds, setStyleIds] = useState(() => [editPost?.style_id, editPost?.style2_id].filter(Boolean))
-  const [tagItems, setTagItems] = useState(Boolean(editPost?.items?.length))
+  // форма вещей открыта по умолчанию: пока она была за выключателем, вещи указывали в 3 постах из 14
+  const [tagItems, setTagItems] = useState(editPost ? Boolean(editPost.items?.length) : true)
   const [draftRestored, setDraftRestored] = useState(false)
   const [hasPosts, setHasPosts] = useState(firstPost ? false : null)
   const [slotsLeft, setSlotsLeft] = useState(null)
