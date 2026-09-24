@@ -143,12 +143,19 @@ Deno.serve(async (req) => {
       // (в группе поддержки или в личке основателя — в группе бот видит только реплаи на свои сообщения)
       if (replyTo && (inSupportChat || (fromTid && modTid && fromTid === modTid))) {
         const { data: found } = await supabase.rpc('support_by_message', { p_msg_id: replyTo })
-        const src = Array.isArray(found) ? found[0] : found
+        let src = Array.isArray(found) ? found[0] : found
+        // запасной путь: адресат всегда написан в шапке пересланного сообщения («· id 12345»),
+        // поэтому ответ дойдёт даже если запись в базу не удалась
+        if (!src?.tid) {
+          const fallback = String(message.reply_to_message?.text ?? '').match(/·\s*id\s+(\d+)/)
+          if (fallback) src = { tid: Number(fallback[1]) }
+        }
         const back = { chat_id: message.chat.id, reply_to_message_id: message.message_id }
         if (src?.tid) {
           const sent = await tg('sendMessage', { chat_id: src.tid, text: `<b>Поддержка Driply</b>\n\n${text}`, parse_mode: 'HTML' })
           if (sent?.ok) {
-            await supabase.rpc('support_add_reply', { p_tid: src.tid, p_body: text })
+            const { error: logErr } = await supabase.rpc('support_add_reply', { p_tid: src.tid, p_body: text })
+            if (logErr) console.error('support_add_reply', logErr.message)
             await tg('sendMessage', { ...back, text: '✅ Отправлено' })
           } else {
             await tg('sendMessage', { ...back, text: `Не доставлено: ${sent?.description ?? 'Telegram отказал'}` })
@@ -178,7 +185,8 @@ Deno.serve(async (req) => {
             text: `${head}\n\n${text}\n\n<i>Ответь реплаем на это сообщение</i>`,
           })
           if (sent?.result?.message_id && row?.id) {
-            await supabase.rpc('support_mark_sent', { p_id: row.id, p_msg_id: sent.result.message_id })
+            const { error: markErr } = await supabase.rpc('support_mark_sent', { p_id: row.id, p_msg_id: sent.result.message_id })
+            if (markErr) console.error('support_mark_sent', markErr.message)
           }
         }
         await tg('sendMessage', { chat_id: message.chat.id, text: 'Принял, отвечу здесь же 👌' })

@@ -144,33 +144,40 @@ Deno.serve(async (req) => {
       const row = Array.isArray(added) ? added[0] : added
 
       // группа с темами, если настроена; иначе личка основателя
-      const { data: routes } = await supabase.rpc('support_routing_get')
+      const { data: routes, error: routeErr } = await supabase.rpc('support_routing_get')
       const route = Array.isArray(routes) ? routes[0] : routes
-      const { data: modTid } = await supabase.rpc('support_moderator_tid')
+      const { data: modTid, error: modErr } = await supabase.rpc('support_moderator_tid')
+      if (routeErr || modErr) console.error('support routing', routeErr?.message ?? modErr?.message)
       const chatId = route?.chat_id ?? modTid
       const threadId = route?.[SUPPORT_THREAD[kind]] ?? null
 
-      if (chatId) {
-        const who = row?.display_name || tgUser.username || tgUser.first_name || 'user'
-        const head = `${SUPPORT_LABEL[kind]} · ${who}${tgUser.username ? ' @' + tgUser.username : ''} · id ${tgUser.id}`
-        const res = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            chat_id: chatId,
-            ...(threadId ? { message_thread_id: threadId } : {}),
-            text: `${head}\n\n${text}\n\n<i>Ответь реплаем на это сообщение</i>`,
-            parse_mode: 'HTML',
-          }),
-        })
-        const sent = await res.json().catch(() => ({}))
-        if (sent?.result?.message_id && row?.id) {
-          // по этому id находим адресата, когда модератор ответит реплаем
-          await supabase.rpc('support_mark_sent', { p_id: row.id, p_msg_id: sent.result.message_id })
-        } else {
-          console.error('support forward failed', sent?.description ?? '')
-        }
+      // некому доставить — честнее сказать человеку, чем показать «отправлено»
+      if (!chatId) return jsonResponse({ error: 'NOT_DELIVERED' }, 502)
+
+      const who = row?.display_name || tgUser.username || tgUser.first_name || 'user'
+      const head = `${SUPPORT_LABEL[kind]} · ${who}${tgUser.username ? ' @' + tgUser.username : ''} · id ${tgUser.id}`
+      const res = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: chatId,
+          ...(threadId ? { message_thread_id: threadId } : {}),
+          text: `${head}\n\n${text}\n\n<i>Ответь реплаем на это сообщение</i>`,
+          parse_mode: 'HTML',
+        }),
+      })
+      const sent = await res.json().catch(() => ({}))
+      if (!sent?.result?.message_id) {
+        console.error('support forward failed', sent?.description ?? '')
+        return jsonResponse({ error: 'NOT_DELIVERED' }, 502)
       }
+      if (row?.id) {
+        // по этому id находим адресата, когда модератор ответит реплаем
+        const { error: markErr } = await supabase.rpc('support_mark_sent', { p_id: row.id, p_msg_id: sent.result.message_id })
+        if (markErr) console.error('support_mark_sent', markErr.message)  // ответ реплаем не найдёт адресата
+      }
+    
+
       return jsonResponse({ ok: true }, 200)
     }
 

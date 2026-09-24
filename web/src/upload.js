@@ -36,7 +36,7 @@ export async function uploadImage(file, kind = 'post') {
   const { error: upErr } = await supabase.storage
     .from('outfits')
     .uploadToSignedUrl(data.path, data.token, prepared, { contentType: type })
-  if (upErr) throw new Error('upload')
+  if (upErr) throw Object.assign(new Error('upload'), { code: 'UPLOAD_FAILED' })
 
   return data.publicUrl
 }

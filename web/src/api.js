@@ -50,6 +50,8 @@ const ERROR_KEYS = {
   NO_USER: 'err_no_user',
   NOT_OWNER: 'err_forbidden',
   FORBIDDEN: 'err_forbidden',
+  NOT_DELIVERED: 'err_not_delivered',
+  UPLOAD_FAILED: 'err_upload',
   NETWORK: 'err_network',
 }
 
