@@ -2,9 +2,9 @@
 # Ничего не пишет в прод — только читает и жмёт кнопки.
 name: Тестировщик
 
+# Быстрая проверка после каждого пуша. Ежедневный отчёт делает агент (agent.yml),
+# поэтому сюда расписание не нужно: тут молчим, пока всё зелёное.
 on:
-  schedule:
-    - cron: '0 6,18 * * *'   # 09:00 и 21:00 МСК
   workflow_dispatch:
   push:
     branches: [main]
@@ -33,7 +33,8 @@ jobs:
       - if: github.event_name == 'push'
         run: sleep 120
 
-      - run: node scripts/smoke.mjs --report
+      # после пуша отчитываемся только когда что-то сломалось, чтобы не шуметь каждый раз
+      - run: node scripts/smoke.mjs ${{ github.event_name == 'push' && '--report-on-fail' || '--report' }}
         working-directory: web
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}

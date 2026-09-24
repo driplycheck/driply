@@ -2,6 +2,9 @@
 name: Агент
 
 on:
+  # ежедневный аудит в 12:00 МСК, остальное — по запросу из Telegram
+  schedule:
+    - cron: '0 9 * * *'
   workflow_dispatch:
     inputs:
       kind:
@@ -34,11 +37,17 @@ jobs:
       # а текст из чата так не попадает в YAML и ничего не ломает
       - name: положить задачу в файл
         env:
-          TASK: ${{ github.event.inputs.message }}
+          KIND: ${{ github.event.inputs.kind || 'tester' }}
+          TASK: ${{ github.event.inputs.message || 'Ежедневный аудит. Прогони полную проверку прода, контракты и линтер. Отчитайся коротко: что работает, что сломано, что тревожит. Если всё чисто — так и скажи одной строкой, не растекайся.' }}
         run: |
           mkdir -p .agent
           printf '%s' "$TASK" > .agent/task.md
-          cp ".github/agents/${{ github.event.inputs.kind }}.md" .agent/role.md
+          cp ".github/agents/$KIND.md" .agent/role.md
+
+      # правки кода уходят в отдельную ветку: в main агент попасть не может
+      - name: ветка под правки
+        if: github.event.inputs.kind == 'dev'
+        run: git checkout -b "agent/fix-${{ github.run_id }}"
 
       - uses: anthropics/claude-code-action@v1
         id: claude
@@ -48,7 +57,11 @@ jobs:
             Твоя роль описана в файле .agent/role.md — прочитай его первым делом и следуй ему.
             Задача от основателя лежит в файле .agent/task.md — прочитай и выполни её.
             В конце дай короткий ответ по-русски: он уйдёт человеку в Telegram как есть.
-          claude_args: --max-turns 30 --allowedTools "Read,Glob,Grep,Bash(npm:*),Bash(npx:*),Bash(node:*),Bash(git status:*),Bash(git log:*)"
+          claude_args: >-
+            --max-turns 60
+            --allowedTools "${{ github.event.inputs.kind == 'dev'
+              && 'Read,Glob,Grep,Edit,Write,Bash(npm:*),Bash(npx:*),Bash(node:*),Bash(git:*),Bash(gh pr:*)'
+              || 'Read,Glob,Grep,Bash(npm:*),Bash(npx:*),Bash(node:*),Bash(git status:*),Bash(git log:*),Bash(git diff:*)' }}"
           show_full_output: true   # без этого ошибки агента не видно, только «is_error»
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
@@ -64,5 +77,5 @@ jobs:
           HOOK: ${{ secrets.TG_WEBHOOK_URL }}
           CI_SECRET: ${{ secrets.CI_SECRET }}
           THREAD_ID: ${{ github.event.inputs.thread_id }}
-          KIND: ${{ github.event.inputs.kind }}
+          KIND: ${{ github.event.inputs.kind || 'tester' }}
         run: node .github/scripts/report-agent.mjs

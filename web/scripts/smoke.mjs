@@ -259,7 +259,11 @@ const head = failed.length
 
 console.log('\n' + head.replace(/<\/?b>/g, '') + '\n' + lines.join('\n') + '\n')
 
-if (process.argv.includes('--report')) {
+// --report-on-fail: молчим, пока всё зелёное. Нужен после пуша, чтобы не шуметь каждый раз.
+const wantsReport = process.argv.includes('--report')
+  || (process.argv.includes('--report-on-fail') && failed.length > 0)
+
+if (wantsReport) {
   if (!HOOK || !SECRET) {
     console.error('Отчёт не отправлен: нет CI_SECRET')
   } else {
