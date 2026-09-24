@@ -23,25 +23,35 @@ const WEBAPP_HTTPS = WEBAPP_URL.startsWith('https://')
 
 const COPY = {
   ru: {
-    welcome: '<b>Driply</b> — открывай мини-апп, там всё 👇',
-    welcome_ref: '<b>Driply</b> — тебя пригласил друг. Открой мини-апп и выложи первый образ: бонус придёт обоим 👇',
+    welcome: '<b>driply</b> — лента образов 💧\n\nвыкладываешь лук → тебе кидают дрипы → чем больше дрипов, тем выше ты в рейтинге\n\nдрипы нельзя купить, только заработать. за первый образ — <b>300 💧</b>',
+    welcome_ref: '<b>driply</b> — лента образов 💧\n\nтебя позвал друг: выложи первый образ, и бонус упадёт обоим — тебе <b>+200 💧</b>, ему <b>+500 💧</b>\n\nдрипы нельзя купить, только заработать',
+    slots: (n: number) => `\n\nстатус <b>first drip</b> получат только первые 50 авторов. ${left(n)}`,
     open: 'Открыть Driply',
-    help: '<b>Driply</b> — лента образов.\n\n/app — открыть мини-апп\n/help — эта справка\n\nВопросы и жалобы — пиши сюда же, читаю.',
+    help: '<b>driply</b> — лента образов.\n\n/app — открыть мини-апп\n/help — эта справка\n\nчто-то сломалось, есть идея или предложение — пиши сюда же, читаю лично.',
     cmd_start: 'Открыть Driply',
     cmd_app: 'Открыть мини-апп',
     cmd_help: 'Что это и как работает',
     menu: 'Driply',
   },
   en: {
-    welcome: '<b>Driply</b> — open the mini app, it’s all there 👇',
-    welcome_ref: '<b>Driply</b> — a friend invited you. Open the mini app and post your first look: you both get a bonus 👇',
+    welcome: '<b>driply</b> — a feed of outfits 💧\n\npost a look → people drop drips on it → the more drips, the higher you rank\n\ndrips can’t be bought, only earned. your first look pays <b>300 💧</b>',
+    welcome_ref: '<b>driply</b> — a feed of outfits 💧\n\na friend invited you: post your first look and you both get paid — <b>+200 💧</b> to you, <b>+500 💧</b> to them\n\ndrips can’t be bought, only earned',
+    slots: (n: number) => `\n\nonly the first 50 authors get the <b>first drip</b> status. ${n} ${n === 1 ? 'spot' : 'spots'} left`,
     open: 'Open Driply',
-    help: '<b>Driply</b> is a feed of outfits.\n\n/app — open the mini app\n/help — this help\n\nQuestions or reports — just write here, I read them.',
+    help: '<b>driply</b> is a feed of outfits.\n\n/app — open the mini app\n/help — this help\n\nbroken something, got an idea or an offer — write here, I read every message.',
     cmd_start: 'Open Driply',
     cmd_app: 'Open the mini app',
     cmd_help: 'What this is and how it works',
     menu: 'Driply',
   },
+}
+
+// «осталось 43 места» / «41 место» / «2 места» — иначе текст выглядит машинным
+function left(n: number) {
+  const tail = n % 100 >= 11 && n % 100 <= 14 ? 'мест'
+    : n % 10 === 1 ? 'место'
+    : n % 10 >= 2 && n % 10 <= 4 ? 'места' : 'мест'
+  return `осталось ${n} ${tail}`
 }
 
 async function tg(method: string, body: unknown) {
@@ -75,6 +85,17 @@ function openButton(lang: 'ru' | 'en', ref: string | null) {
     ? { text: COPY[lang].open, web_app: { url } }
     : { text: COPY[lang].open, url }
   return { inline_keyboard: [[button]] }
+}
+
+// Строка про свободные места first drip. Не получилось посчитать — просто её не будет.
+async function slotsLine(lang: 'ru' | 'en') {
+  try {
+    const { data, error } = await db().rpc('first_drip_left')
+    if (error || typeof data !== 'number' || data <= 0) return ''
+    return COPY[lang].slots(data)
+  } catch {
+    return ''
+  }
 }
 
 async function track(tid: number, kind: string, meta: Record<string, unknown>) {
@@ -280,13 +301,13 @@ Deno.serve(async (req) => {
         const ref = parseRef(payload)
         await tg('sendMessage', {
           chat_id: chatId,
-          text: ref ? COPY[lang].welcome_ref : COPY[lang].welcome,
+          text: (ref ? COPY[lang].welcome_ref : COPY[lang].welcome) + await slotsLine(lang),
           parse_mode: 'HTML',
           reply_markup: openButton(lang, ref),
         })
         if (message.from?.id) await track(message.from.id, 'bot_start', { ref: Boolean(ref), lang })
       } else if (command === '/app') {
-        await tg('sendMessage', { chat_id: chatId, text: COPY[lang].welcome, parse_mode: 'HTML', reply_markup: openButton(lang, null) })
+        await tg('sendMessage', { chat_id: chatId, text: COPY[lang].welcome + await slotsLine(lang), parse_mode: 'HTML', reply_markup: openButton(lang, null) })
       } else if (command === '/help') {
         await tg('sendMessage', { chat_id: chatId, text: COPY[lang].help, parse_mode: 'HTML', reply_markup: openButton(lang, null) })
       }

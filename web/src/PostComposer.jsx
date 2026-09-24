@@ -200,6 +200,7 @@ export default function PostComposer({ selfId, onClose, onPosted, firstPost = fa
   const [tagItems, setTagItems] = useState(false)
   const [draftRestored, setDraftRestored] = useState(false)
   const [hasPosts, setHasPosts] = useState(firstPost ? false : null)
+  const [slotsLeft, setSlotsLeft] = useState(null)
   const reward = hasPosts === false ? REWARD_FIRST : hasPosts ? REWARD_NEXT : null
 
   const remoteBrands = useItemSuggestions('brand', brand)
@@ -238,6 +239,12 @@ export default function PostComposer({ selfId, onClose, onPosted, firstPost = fa
       setDraftRestored(true)
     }
     track('composer_opened', { draft: Boolean(hasContent), first: firstPost })
+    // статус first drip — первым 50 авторам; на первом образе это самый весомый аргумент
+    if (firstPost) {
+      supabase.rpc('first_drip_left').then(({ data }) => {
+        if (typeof data === 'number' && data > 0) setSlotsLeft(data)
+      })
+    }
     warmUpNsfw()   // модель успеет загрузиться, пока человек готовит образ
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -359,6 +366,9 @@ export default function PostComposer({ selfId, onClose, onPosted, firstPost = fa
             <span className="photo__empty">
               <span className="photo__label">{t('add_photo_title')}</span>
               <span className="photo__hint">{firstPost ? t('first_post_hint') : t('photos_hint', { n: MAX_PHOTOS })}</span>
+              {firstPost && slotsLeft !== null && (
+                <span className="photo__slots">{t('first_drip_left', { n: slotsLeft })}</span>
+              )}
               <span className="photo__ways">
                 {/* capture открывает камеру сразу, без системного меню выбора */}
                 <label className="photoway photoway--primary">
