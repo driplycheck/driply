@@ -46,6 +46,7 @@ const COVERS = [
   { id: 'u8-rules', accent: PINK, kicker: 'правила', title: 'жалобы разбираем,<br>откровенное не пройдёт', big: null },
   { id: 'u9-support', accent: LIME, kicker: 'поддержка', title: 'вопрос — прямо<br>из приложения', big: null },
   { id: 'u10-edit', accent: VIOLET, kicker: 'обновление', title: 'образ можно<br>поправить после поста', big: null },
+  { id: 'u11-bigger', accent: LIME, kicker: 'обновление', title: 'образы стали<br>крупнее', big: null },
 ]
 
 function coverHtml(c) {
