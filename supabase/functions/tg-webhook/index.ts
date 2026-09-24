@@ -157,6 +157,13 @@ Deno.serve(async (req) => {
     const route = Array.isArray(routes) ? routes[0] : routes
     if (!route?.chat_id) return Response.json({ ok: false, error: 'NO_CHAT' }, { status: 400 })
     const thread = Number(body?.thread_id) || route.thread_reports
+    // ответ пришёл в тему агента — кладём в его историю, иначе следующий вопрос будет без контекста
+    if (Number(body?.thread_id)) {
+      const { data: kind } = await db().rpc('agent_by_thread', {
+        p_chat_id: route.chat_id, p_thread_id: Number(body.thread_id),
+      })
+      if (kind) await db().rpc('agent_log', { p_kind: kind, p_role: 'assistant', p_body: text })
+    }
     const sent = await tg('sendMessage', {
       chat_id: route.chat_id, text, parse_mode: 'HTML',
       ...(thread ? { message_thread_id: thread } : {}),
@@ -217,6 +224,14 @@ Deno.serve(async (req) => {
           // основной путь: агент работает в GitHub Actions с доступом к репозиторию,
           // по подписке Claude Code. Ответ придёт отдельным сообщением через пару минут.
           if (GH_TOKEN) {
+            const { data: past } = await supabase.rpc('agent_history', { p_kind: kind, p_limit: 6 })
+            const context = (Array.isArray(past) ? [...past].reverse() : [])
+              .map((m: { role: string; body: string }) => `${m.role === 'user' ? 'Основатель' : 'Ты'}: ${m.body}`)
+              .join('\n')
+            const task = context
+              ? `Недавняя переписка в этой теме:\n${context}\n\nНовое сообщение от основателя:\n${text}`
+              : text
+
             const res = await fetch(`https://api.github.com/repos/${GH_REPO}/actions/workflows/agent.yml/dispatches`, {
               method: 'POST',
               headers: {
@@ -225,7 +240,7 @@ Deno.serve(async (req) => {
                 'User-Agent': 'driply-agents',
                 'Content-Type': 'application/json',
               },
-              body: JSON.stringify({ ref: 'main', inputs: { kind, message: text, thread_id: String(thread) } }),
+              body: JSON.stringify({ ref: 'main', inputs: { kind, message: task, thread_id: String(thread) } }),
             })
             await supabase.rpc('agent_log', { p_kind: kind, p_role: 'user', p_body: text })
             if (res.ok) {
