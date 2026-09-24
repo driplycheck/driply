@@ -312,13 +312,23 @@ Deno.serve(async (req) => {
           return new Response('ok')
         }
 
-        if (route?.chat_id === chatId && arg !== 'force') {
-          await tg('sendMessage', { chat_id: chatId, text: 'Группа уже настроена. Пересоздать темы: /setup_support force' })
+        if (route?.chat_id === chatId && arg === 'force') {
+          await tg('sendMessage', {
+            chat_id: chatId,
+            text: 'Пересоздание отключено: оно плодит дубли тем. Чтобы перепривязать тему — зайди в неё и отправь /setup_support <тип>. Список: /topics',
+          })
+          return new Response('ok')
+        }
+
+        // создаём только недостающие: иначе повторный запуск плодит дубли тем
+        const missing = SUPPORT_TOPICS.filter((t) => !(route?.chat_id === chatId && route?.[t.col]))
+        if (!missing.length) {
+          await tg('sendMessage', { chat_id: chatId, text: 'Все темы уже привязаны. Список: /topics' })
           return new Response('ok')
         }
 
         const threads: Record<string, number> = {}
-        for (const topic of SUPPORT_TOPICS) {
+        for (const topic of missing) {
           const res = await tg('createForumTopic', { chat_id: chatId, name: topic.name, icon_color: topic.icon })
           if (!res?.ok) {
             await tg('sendMessage', { chat_id: chatId, text: `Не смог создать тему «${topic.name}»: ${res?.description ?? 'нет прав'}. Дай боту права администратора с управлением темами.` })
@@ -327,7 +337,7 @@ Deno.serve(async (req) => {
           threads[topic.col] = res.result.message_thread_id
         }
 
-        for (const topic of SUPPORT_TOPICS) {
+        for (const topic of missing) {
           const { error: saveErr } = await supabase.rpc('support_routing_set', {
             p_chat_id: chatId, p_kind: topic.kind, p_thread: threads[topic.col],
           })
@@ -336,7 +346,26 @@ Deno.serve(async (req) => {
             return new Response('ok')
           }
         }
-        await tg('sendMessage', { chat_id: chatId, text: '✅ Готово. Обращения будут падать в темы выше, отвечай реплаем на сообщение.' })
+        await tg('sendMessage', { chat_id: chatId, text: `✅ Создано тем: ${missing.length} (${missing.map((t) => t.kind).join(', ')}). Список: /topics` })
+        return new Response('ok')
+      }
+
+      // Что куда привязано: без этого непонятно, какая из одинаковых тем настоящая.
+      if (command === '/topics') {
+        const supabase = db()
+        const { data: modTid } = await supabase.rpc('support_moderator_tid')
+        if (!modTid || message.from?.id !== modTid) return new Response('ok')
+        const { data: routes } = await supabase.rpc('support_routing_get')
+        const route = Array.isArray(routes) ? routes[0] : routes
+        if (!route?.chat_id) {
+          await tg('sendMessage', { chat_id: chatId, text: 'Группа не настроена. Отправь /setup_support в группе с темами.' })
+          return new Response('ok')
+        }
+        const lines = SUPPORT_TOPICS.map((t) => `${route[t.col] ? '✅' : '⬜️'} ${t.name} — ${t.kind}${route[t.col] ? ` (тема ${route[t.col]})` : ' не привязана'}`)
+        await tg('sendMessage', {
+          chat_id: chatId,
+          text: `Группа ${route.chat_id}\n\n${lines.join('\n')}\n\nПерепривязать: зайди в нужную тему и отправь /setup_support <тип>. Лишние темы удали руками через меню темы.`,
+        })
         return new Response('ok')
       }
 
