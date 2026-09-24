@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { callOrToast } from './api.js'
 import { supabase } from './supabase.js'
+import { Pencil } from 'lucide-react'
 import PostCard from './PostCard.jsx'
 import { t } from './i18n.js'
 
@@ -12,7 +13,18 @@ const SELECT =
   // явная связь: у posts будет второй FK на styles, без подсказки PostgREST не выберет
   'style:styles!posts_style_id_fkey(id, slug, name_ru, name_en)'
 
-export default function PostView({ postId, selfId, onClose, onOpenProfile, onChanged, onBalance }) {
+// то, что умеет править update_post: фото и счёт остаются как есть
+function toEditable(post) {
+  return {
+    id: post.id, caption: post.caption, media_url: post.media_url, extra_media: post.extra_media,
+    style_id: post.style?.id ?? null, style2_id: post.style2?.id ?? null,
+    items: (post.post_items || []).filter((pi) => pi.items).map((pi) => ({
+      category: pi.items.category, brand: pi.items.brand, name: pi.items.name, price: pi.price,
+    })),
+  }
+}
+
+export default function PostView({ postId, selfId, onClose, onOpenProfile, onChanged, onBalance, onEdit }) {
   const [post, setPost] = useState(null)
   const [loading, setLoading] = useState(true)
   const [confirm, setConfirm] = useState(false)
@@ -50,7 +62,12 @@ export default function PostView({ postId, selfId, onClose, onOpenProfile, onCha
     <div className="postview">
       <button className="postview__close" onClick={onClose} aria-label={t('close_aria')}>✕</button>
       {isOwn && (
-        <button className="postview__del" onClick={() => setConfirm(true)} aria-label={t('hide_look_aria')}>🙈</button>
+        <>
+          <button className="postview__edit" onClick={() => onEdit?.(toEditable(post))} aria-label={t('edit_post')}>
+            <Pencil size={18} strokeWidth={2} />
+          </button>
+          <button className="postview__del" onClick={() => setConfirm(true)} aria-label={t('hide_look_aria')}>🙈</button>
+        </>
       )}
       {loading ? (
         <div className="state">{t('loading')}</div>

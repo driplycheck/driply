@@ -97,6 +97,7 @@ export default function App() {
     if (result?.balance != null) {
       setProfile((p) => (p ? { ...p, daily_credits: result.balance } : p))
     }
+    if (result?.edited) { flash(t('saved')); return }
     const gained = (result?.reward ?? 0) + (result?.ref_bonus ?? 0)
     if (gained > 0) flash(<><DripCoin size={15} tone="ink" /> {t('reward_toast', { n: gained })}</>)
   }
@@ -211,6 +212,7 @@ export default function App() {
             onOpenProfile={(id) => replace('profile', { userId: id })}
             onChanged={onPostDeleted}
             onBalance={(n) => setProfile((p) => (p ? { ...p, daily_credits: n } : p))}
+            onEdit={(post) => push('composer', { editPost: post })}
           />
         </Overlay>
       )}

@@ -45,6 +45,7 @@ const COVERS = [
   { id: 'u7-storycard', accent: LIME, kicker: 'истории', title: 'в сторис уходит<br>твой образ', big: null },
   { id: 'u8-rules', accent: PINK, kicker: 'правила', title: 'жалобы разбираем,<br>откровенное не пройдёт', big: null },
   { id: 'u9-support', accent: LIME, kicker: 'поддержка', title: 'вопрос — прямо<br>из приложения', big: null },
+  { id: 'u10-edit', accent: VIOLET, kicker: 'обновление', title: 'образ можно<br>поправить после поста', big: null },
 ]
 
 function coverHtml(c) {

@@ -340,7 +340,7 @@ export default function PostComposer({ selfId, onClose, onPosted, firstPost = fa
     if (!res.ok) { setError(errorText(res.code)); return }
     haptic('medium')
     track('post_edited', { post: editPost.id, items: tagItems ? items.length : 0 })
-    onPosted(res.data)
+    onPosted({ ...res.data, edited: true })
   }
 
   function removeItem(idx) {
