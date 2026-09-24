@@ -138,7 +138,7 @@ const DICT = {
     // профиль
     my_votes: 'Мои оценки', archive_aria: 'Архив',
     profile_not_found: 'Профиль не найден',
-    badge_founder: '★ Основатель', badge_first_drip: 'первый дрип',
+    badge_founder: '★ Основатель', badge_first_drip: 'first drip',
     stat_style_score: 'очки стиля', stat_rank: 'в рейтинге', stat_looks: 'образов',
     stat_looks_short: 'образы', stat_followers: 'подписчики', stat_following: 'подписки', stat_drips: 'дрипов',
     rank_label: 'Ранг', rank_place: '#{n} в рейтинге', rank_next: 'до {tier} · {pct}%', rank_max: 'максимальный уровень',
