@@ -131,27 +131,27 @@ Deno.serve(async (req) => {
     }
 
     // Поддержка: обращение уходит в группу поддержки, в топик по типу обращения.
-    // Ответ модератора возвращается человеку реплаем (см. tg-webhook).
+    // Пишем только через RPC: прав на таблицы у service_role в этом проекте нет.
     if (body.action === 'support') {
       const text = String(body.text ?? '').trim().slice(0, 1000)
       if (text.length < 3) return jsonResponse({ error: 'TOO_SHORT' }, 400)
       const kind = SUPPORT_KINDS.includes(String(body.kind)) ? String(body.kind) : 'bug'
 
-      const { data: uid } = await supabase.from('users').select('id, display_name')
-        .eq('telegram_id', tgUser.id).maybeSingle()
-      const { data: row, error } = await supabase.from('support_messages')
-        .insert({ user_id: uid?.id ?? null, tid: tgUser.id, direction: 'in', body: text, kind })
-        .select('id').single()
+      const { data: added, error } = await supabase.rpc('support_add', {
+        p_tid: tgUser.id, p_kind: kind, p_body: text,
+      })
       if (error) return jsonResponse({ error: error.message }, 400)
+      const row = Array.isArray(added) ? added[0] : added
 
       // группа с темами, если настроена; иначе личка основателя
-      const { data: route } = await supabase.from('support_routing').select('*').maybeSingle()
+      const { data: routes } = await supabase.rpc('support_routing_get')
+      const route = Array.isArray(routes) ? routes[0] : routes
       const { data: modTid } = await supabase.rpc('support_moderator_tid')
       const chatId = route?.chat_id ?? modTid
       const threadId = route?.[SUPPORT_THREAD[kind]] ?? null
 
       if (chatId) {
-        const who = uid?.display_name || tgUser.username || tgUser.first_name || 'user'
+        const who = row?.display_name || tgUser.username || tgUser.first_name || 'user'
         const head = `${SUPPORT_LABEL[kind]} · ${who}${tgUser.username ? ' @' + tgUser.username : ''} · id ${tgUser.id}`
         const res = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
           method: 'POST',
@@ -164,10 +164,9 @@ Deno.serve(async (req) => {
           }),
         })
         const sent = await res.json().catch(() => ({}))
-        if (sent?.result?.message_id) {
+        if (sent?.result?.message_id && row?.id) {
           // по этому id находим адресата, когда модератор ответит реплаем
-          await supabase.from('support_messages')
-            .update({ tg_message_id: sent.result.message_id }).eq('id', row.id)
+          await supabase.rpc('support_mark_sent', { p_id: row.id, p_msg_id: sent.result.message_id })
         } else {
           console.error('support forward failed', sent?.description ?? '')
         }

@@ -2,7 +2,7 @@
 -- Доступ только у service_role: quick-handler пишет входящие, tg-webhook — ответы.
 create table if not exists public.support_messages (
   id            bigserial primary key,
-  user_id       uuid references public.users(id) on delete set null,
+  user_id       bigint references public.users(id) on delete set null,
   tid           bigint not null,
   direction     text not null check (direction in ('in', 'out')),
   body          text not null,

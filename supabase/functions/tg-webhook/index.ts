@@ -128,27 +128,31 @@ Deno.serve(async (req) => {
     const message = update.message
     const text: string = message?.text ?? ''
 
-    // Обычное сообщение (не команда) — это поддержка
+    // Обычное сообщение (не команда) — это поддержка.
+    // Только RPC: прямых прав на таблицы у service_role в проекте нет.
     if (message?.chat?.id && text && !text.startsWith('/')) {
       const supabase = db()
       const fromTid = message.from?.id
       const { data: modTid } = await supabase.rpc('support_moderator_tid')
-      const { data: route } = await supabase.from('support_routing').select('*').maybeSingle()
+      const { data: routes } = await supabase.rpc('support_routing_get')
+      const route = Array.isArray(routes) ? routes[0] : routes
       const replyTo = message.reply_to_message?.message_id
       const inSupportChat = route?.chat_id && message.chat.id === Number(route.chat_id)
 
       // ответ реплаем на пересланное обращение → отправляем человеку
-      // (в группе поддержки или в личке основателя — бот в группе видит только реплаи на свои сообщения)
+      // (в группе поддержки или в личке основателя — в группе бот видит только реплаи на свои сообщения)
       if (replyTo && (inSupportChat || (fromTid && modTid && fromTid === modTid))) {
-        const { data: src } = await supabase.from('support_messages')
-          .select('tid, user_id').eq('tg_message_id', replyTo).maybeSingle()
+        const { data: found } = await supabase.rpc('support_by_message', { p_msg_id: replyTo })
+        const src = Array.isArray(found) ? found[0] : found
         const back = { chat_id: message.chat.id, reply_to_message_id: message.message_id }
         if (src?.tid) {
-          await tg('sendMessage', { chat_id: src.tid, text: `<b>Поддержка Driply</b>\n\n${text}`, parse_mode: 'HTML' })
-          await supabase.from('support_messages').insert({
-            user_id: src.user_id, tid: src.tid, direction: 'out', body: text.slice(0, 1000),
-          })
-          await tg('sendMessage', { ...back, text: '✅ Отправлено' })
+          const sent = await tg('sendMessage', { chat_id: src.tid, text: `<b>Поддержка Driply</b>\n\n${text}`, parse_mode: 'HTML' })
+          if (sent?.ok) {
+            await supabase.rpc('support_add_reply', { p_tid: src.tid, p_body: text })
+            await tg('sendMessage', { ...back, text: '✅ Отправлено' })
+          } else {
+            await tg('sendMessage', { ...back, text: `Не доставлено: ${sent?.description ?? 'Telegram отказал'}` })
+          }
         } else {
           await tg('sendMessage', { ...back, text: 'Не нашёл, кому это адресовано. Отвечай реплаем на само обращение.' })
         }
@@ -160,15 +164,13 @@ Deno.serve(async (req) => {
 
       // обычный человек написал боту — принимаем как обращение
       if (fromTid) {
-        const { data: user } = await supabase.from('users').select('id, display_name')
-          .eq('telegram_id', fromTid).maybeSingle()
-        const { data: row } = await supabase.from('support_messages')
-          .insert({ user_id: user?.id ?? null, tid: fromTid, direction: 'in', body: text.slice(0, 1000), kind: 'bug' })
-          .select('id').single()
+        const { data: added, error } = await supabase.rpc('support_add', { p_tid: fromTid, p_kind: 'bug', p_body: text })
+        if (error) console.error('support_add', error.message)
+        const row = Array.isArray(added) ? added[0] : added
 
         const chatId = route?.chat_id ?? modTid
         if (chatId) {
-          const who = user?.display_name || message.from?.username || message.from?.first_name || 'user'
+          const who = row?.display_name || message.from?.username || message.from?.first_name || 'user'
           const head = `${SUPPORT_LABEL.bug} · ${who}${message.from?.username ? ' @' + message.from.username : ''} · id ${fromTid}`
           const sent = await tg('sendMessage', {
             chat_id: chatId, parse_mode: 'HTML',
@@ -176,8 +178,7 @@ Deno.serve(async (req) => {
             text: `${head}\n\n${text}\n\n<i>Ответь реплаем на это сообщение</i>`,
           })
           if (sent?.result?.message_id && row?.id) {
-            await supabase.from('support_messages')
-              .update({ tg_message_id: sent.result.message_id }).eq('id', row.id)
+            await supabase.rpc('support_mark_sent', { p_id: row.id, p_msg_id: sent.result.message_id })
           }
         }
         await tg('sendMessage', { chat_id: message.chat.id, text: 'Принял, отвечу здесь же 👌' })
@@ -203,7 +204,8 @@ Deno.serve(async (req) => {
           return new Response('ok')
         }
 
-        const { data: route } = await supabase.from('support_routing').select('*').maybeSingle()
+        const { data: routes } = await supabase.rpc('support_routing_get')
+        const route = Array.isArray(routes) ? routes[0] : routes
         const arg = (payload ?? '').trim().toLowerCase()
         const picked = SUPPORT_TOPICS.find((t) => t.kind === arg)
 
@@ -214,9 +216,15 @@ Deno.serve(async (req) => {
             await tg('sendMessage', { chat_id: chatId, text: 'Отправь эту команду внутри самой темы, а не в общем чате.' })
             return new Response('ok')
           }
-          await supabase.from('support_routing')
-            .upsert({ id: 1, chat_id: chatId, [picked.col]: threadId, updated_at: new Date().toISOString() })
-          const { data: now } = await supabase.from('support_routing').select('*').maybeSingle()
+          const { error: saveErr } = await supabase.rpc('support_routing_set', {
+            p_chat_id: chatId, p_kind: picked.kind, p_thread: threadId,
+          })
+          if (saveErr) {
+            await tg('sendMessage', { chat_id: chatId, message_thread_id: threadId, text: `Не сохранил: ${saveErr.message}` })
+            return new Response('ok')
+          }
+          const { data: after } = await supabase.rpc('support_routing_get')
+          const now = Array.isArray(after) ? after[0] : after
           const left = SUPPORT_TOPICS.filter((t) => !now?.[t.col]).map((t) => '/setup_support ' + t.kind)
           await tg('sendMessage', {
             chat_id: chatId, message_thread_id: threadId,
@@ -247,7 +255,15 @@ Deno.serve(async (req) => {
           threads[topic.col] = res.result.message_thread_id
         }
 
-        await supabase.from('support_routing').upsert({ id: 1, chat_id: chatId, ...threads, updated_at: new Date().toISOString() })
+        for (const topic of SUPPORT_TOPICS) {
+          const { error: saveErr } = await supabase.rpc('support_routing_set', {
+            p_chat_id: chatId, p_kind: topic.kind, p_thread: threads[topic.col],
+          })
+          if (saveErr) {
+            await tg('sendMessage', { chat_id: chatId, text: `Темы создал, но не сохранил: ${saveErr.message}` })
+            return new Response('ok')
+          }
+        }
         await tg('sendMessage', { chat_id: chatId, text: '✅ Готово. Обращения будут падать в темы выше, отвечай реплаем на сообщение.' })
         return new Response('ok')
       }
