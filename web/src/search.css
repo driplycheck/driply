@@ -89,9 +89,3 @@
 .stylecard__name { font-size: 14px; font-weight: 500; }
 
 .sresult__rank { font-size: 15px; font-weight: 700; color: var(--text-muted); width: 28px; flex-shrink: 0; text-align: center; }
-
-.about-body { padding: 16px; color: var(--text); line-height: 1.5; }
-.about-body p { margin: 0 0 16px; color: var(--text-2); font-size: 14px; }
-.about-body h3 { font-size: 15px; font-weight: 600; margin: 20px 0 10px; color: var(--text); }
-.about-body ul { margin: 0 0 16px; padding-left: 18px; }
-.about-body li { margin-bottom: 8px; font-size: 14px; color: var(--text-2); }
