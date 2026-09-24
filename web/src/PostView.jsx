@@ -12,7 +12,7 @@ const SELECT =
   // явная связь: у posts будет второй FK на styles, без подсказки PostgREST не выберет
   'style:styles!posts_style_id_fkey(id, slug, name_ru, name_en)'
 
-export default function PostView({ postId, selfId, onClose, onOpenProfile, onChanged }) {
+export default function PostView({ postId, selfId, onClose, onOpenProfile, onChanged, onBalance }) {
   const [post, setPost] = useState(null)
   const [loading, setLoading] = useState(true)
   const [confirm, setConfirm] = useState(false)
@@ -57,7 +57,7 @@ export default function PostView({ postId, selfId, onClose, onOpenProfile, onCha
       ) : !post ? (
         <div className="state">{t('post_not_found')}</div>
       ) : (
-        <PostCard post={post} alreadyVoted={voted} selfId={selfId} onOpenProfile={onOpenProfile} />
+        <PostCard post={post} alreadyVoted={voted} selfId={selfId} onOpenProfile={onOpenProfile} onBalance={onBalance} />
       )}
       {confirm && (
         <div className="confirm">

@@ -93,6 +93,7 @@ export default function App() {
     pop()
     setFeedKey((k) => k + 1)
     touch('profile')
+    touch('archive')   // после правки список своих образов обязан показать новые данные
     if (result?.balance != null) {
       setProfile((p) => (p ? { ...p, daily_credits: result.balance } : p))
     }
@@ -126,6 +127,7 @@ export default function App() {
         balance={profile ? (profile.daily_credits ?? 0) : null}
         scrollTopKey={scrollTopKey}
         onOpenProfile={(id) => push('profile', { userId: id })}
+        onBalance={(n) => setProfile((p) => (p ? { ...p, daily_credits: n } : p))}
       />
 
       <div className="tabbar-fade" aria-hidden="true" />
@@ -153,7 +155,13 @@ export default function App() {
 
       {top?.type === 'composer' && (
         <Overlay onClose={pop} leaving={top.leaving}>
-          <PostComposer selfId={profile?.id} onClose={pop} onPosted={onPosted} firstPost={top.props.firstPost} />
+          <PostComposer
+            selfId={profile?.id}
+            onClose={pop}
+            onPosted={onPosted}
+            firstPost={top.props.firstPost}
+            editPost={top.props.editPost}
+          />
         </Overlay>
       )}
 
@@ -202,6 +210,7 @@ export default function App() {
             onClose={pop}
             onOpenProfile={(id) => replace('profile', { userId: id })}
             onChanged={onPostDeleted}
+            onBalance={(n) => setProfile((p) => (p ? { ...p, daily_credits: n } : p))}
           />
         </Overlay>
       )}
@@ -241,6 +250,7 @@ export default function App() {
           <PostsArchive
             onClose={pop}
             onChanged={() => { setFeedKey((k) => k + 1); touch('profile') }}
+            onEdit={(post) => push('composer', { editPost: post })}
           />
         </Overlay>
       )}

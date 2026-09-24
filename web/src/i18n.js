@@ -84,11 +84,13 @@ const DICT = {
 
     // публикация
     composer_new: 'Новый образ',
-    composer_first: 'Твой первый образ',
+    composer_first: 'Твой первый образ', composer_edit: 'Изменить образ',
+    edit_photo_locked: 'Фото менять нельзя — за него уже начислены дрипы. Подпись, стили и вещи правятся свободно.',
+    edit_post: 'Изменить',
     post_btn: 'Выложить',
     add_photo: '+ Добавить фото', add_photo_title: 'Добавить фото', photo_change: 'Сменить фото',
     style_title: 'Стиль', style_max: 'до {n}', tag_items: 'Отметить вещи и цены', tag_items_hint: 'Подписчики увидят, что на тебе и сколько стоит',
-    photo_camera: 'Снять', photo_gallery: 'Из галереи',
+    photo_camera: 'Снять', photo_pick: 'Выбрать фото', photo_gallery: 'Из галереи',
     photo_cover: 'Обложка', photo_more: 'Ещё фото', photo_remove: 'Убрать фото', photos_hint: 'До {n} фото — первое станет обложкой',
     price_placeholder: 'Цена, ₽ (необязательно)',
     draft_restored: 'Продолжаем незаконченный образ', draft_clear: 'Начать заново',
@@ -301,11 +303,13 @@ const DICT = {
 
     // composer
     composer_new: 'New look',
-    composer_first: 'Your first look',
+    composer_first: 'Your first look', composer_edit: 'Edit look',
+    edit_photo_locked: 'The photo stays — drips were already given for it. Caption, styles and items are free to change.',
+    edit_post: 'Edit',
     post_btn: 'Post',
     add_photo: '+ Add photo', add_photo_title: 'Add a photo', photo_change: 'Change photo',
     style_title: 'Style', style_max: 'up to {n}', tag_items: 'Tag items and prices', tag_items_hint: 'Followers will see what you wear and what it costs',
-    photo_camera: 'Take a photo', photo_gallery: 'From gallery',
+    photo_camera: 'Take a photo', photo_pick: 'Choose photo', photo_gallery: 'From gallery',
     photo_cover: 'Cover', photo_more: 'More photos', photo_remove: 'Remove photo', photos_hint: 'Up to {n} photos — the first becomes the cover',
     price_placeholder: 'Price, ₽ (optional)',
     draft_restored: 'Picking up your unfinished look', draft_clear: 'Start over',

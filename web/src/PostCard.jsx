@@ -68,7 +68,7 @@ function IconAction({ label, active = false, onClick, children }) {
   )
 }
 
-export default function PostCard({ post, alreadyVoted, onOpenProfile, selfId, onReported, priority = false }) {
+export default function PostCard({ post, alreadyVoted, onOpenProfile, selfId, onReported, onBalance, priority = false }) {
   const [reportOpen, setReportOpen] = useState(false)
   const author = post.users || {}
   const items = getItems(post)
@@ -103,6 +103,8 @@ export default function PostCard({ post, alreadyVoted, onOpenProfile, selfId, on
       const id = Date.now()
       setDrips((d) => [...d, { id, amount }])
       setTimeout(() => setDrips((d) => d.filter((x) => x.id !== id)), 900)
+      // баланс в шапке берётся из профиля — без этого списание видно только после перезахода
+      if (res.remaining_credits != null) onBalance?.(res.remaining_credits)
       flash(t('credits_left', { n: res.remaining_credits }))
     } else {
       if (res.code === 'ALREADY_VOTED') setVotedLocal(true)

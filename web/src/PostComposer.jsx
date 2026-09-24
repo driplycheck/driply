@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { call, errorText } from './api.js'
 import { supabase } from './supabase.js'
-import { haptic } from './telegram.js'
+import { haptic, canOpenCamera } from './telegram.js'
 import { matchBrands } from './brands.js'
 import { X, Check, Tag, ImagePlus, Plus, Camera } from 'lucide-react'
 import { t, styleName } from './i18n.js'
@@ -16,6 +16,7 @@ import { CategoryIcon, StyleIcon } from './components/ui/Icon.jsx'
 const CAPTION_MAX = 300
 // Черновик — всё кроме фото: файл в localStorage не положишь, а перезаливать его молча нельзя.
 const DRAFT_KEY = 'driply_draft'
+const CAMERA = canOpenCamera()
 const MAX_PHOTOS = 3
 const MAX_STYLES = 2
 // экономика: первый образ +300, следующие +100 (create_post)
@@ -182,12 +183,15 @@ function AddedItems({ items, onRemove }) {
   )
 }
 
-export default function PostComposer({ selfId, onClose, onPosted, firstPost = false }) {
+export default function PostComposer({ selfId, onClose, onPosted, firstPost = false, editPost = null }) {
+  const editing = Boolean(editPost)
   const [photos, setPhotos] = useState([]) // [{ file, url }], первое — обложка
   const photosRef = useRef(photos)
   photosRef.current = photos
-  const [caption, setCaption] = useState('')
-  const [items, setItems] = useState([])
+  const [caption, setCaption] = useState(editPost?.caption || '')
+  const [items, setItems] = useState(() => (editPost?.items || []).map((i) => ({
+    category: i.category || 'other', brand: i.brand || '', name: i.name || '', price: i.price ?? null,
+  })))
   const [cat, setCat] = useState('top')
   const [brand, setBrand] = useState('')
   const [name, setName] = useState('')
@@ -196,8 +200,8 @@ export default function PostComposer({ selfId, onClose, onPosted, firstPost = fa
   const [checking, setChecking] = useState(false)
   const [error, setError] = useState(null)
   const [styles, setStyles] = useState([])
-  const [styleIds, setStyleIds] = useState([])
-  const [tagItems, setTagItems] = useState(false)
+  const [styleIds, setStyleIds] = useState(() => [editPost?.style_id, editPost?.style2_id].filter(Boolean))
+  const [tagItems, setTagItems] = useState(Boolean(editPost?.items?.length))
   const [draftRestored, setDraftRestored] = useState(false)
   const [hasPosts, setHasPosts] = useState(firstPost ? false : null)
   const [slotsLeft, setSlotsLeft] = useState(null)
@@ -228,6 +232,10 @@ export default function PostComposer({ selfId, onClose, onPosted, firstPost = fa
 
   // вернуть незаконченный образ: подпись, стили и вещи переживают закрытие экрана
   useEffect(() => {
+    if (editing) {
+      track('post_edit_opened', { post: editPost.id })
+      return
+    }
     let draft = null
     try { draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null') } catch { draft = null }
     const hasContent = draft && (draft.caption || draft.styleIds?.length || draft.items?.length)
@@ -250,13 +258,14 @@ export default function PostComposer({ selfId, onClose, onPosted, firstPost = fa
   }, [])
 
   useEffect(() => {
+    if (editing) return   // правим опубликованное — черновик нового образа трогать нельзя
     const draft = { caption, styleIds, items }
     const empty = !caption && styleIds.length === 0 && items.length === 0
     try {
       if (empty) localStorage.removeItem(DRAFT_KEY)
       else localStorage.setItem(DRAFT_KEY, JSON.stringify(draft))
     } catch {}
-  }, [caption, styleIds, items])
+  }, [caption, styleIds, items, editing])
 
   function clearDraft() {
     try { localStorage.removeItem(DRAFT_KEY) } catch {}
@@ -298,6 +307,16 @@ export default function PostComposer({ selfId, onClose, onPosted, firstPost = fa
       : ids.length >= MAX_STYLES ? ids : [...ids, id])
   }
 
+  // вещь привязана к категории: сменил категорию — это уже другая вещь,
+  // иначе бренд и модель от топа молча уезжают в джинсы
+  function changeCategory(next) {
+    if (next === cat) return
+    setCat(next)
+    setBrand('')
+    setName('')
+    setPrice('')
+  }
+
   function addItem() {
     if (!name.trim()) return
     setItems((arr) => [...arr, { category: cat, brand: brand.trim(), name: name.trim(), price: price ? Number(price) : null }])
@@ -306,12 +325,31 @@ export default function PostComposer({ selfId, onClose, onPosted, firstPost = fa
     setPrice('')
   }
 
+  // правка опубликованного: фото остаётся прежним, меняются подпись, стили и вещи
+  async function saveEdit() {
+    setBusy(true)
+    setError(null)
+    const res = await call('update_post', {
+      post_id: editPost.id,
+      caption: caption.trim(),
+      items: tagItems ? items : [],
+      style_id: styleIds[0] ?? null,
+      style2_id: styleIds[1] ?? null,
+    })
+    setBusy(false)
+    if (!res.ok) { setError(errorText(res.code)); return }
+    haptic('medium')
+    track('post_edited', { post: editPost.id, items: tagItems ? items.length : 0 })
+    onPosted(res.data)
+  }
+
   function removeItem(idx) {
     setItems((arr) => arr.filter((_, i) => i !== idx))
   }
 
 
   async function submit() {
+    if (editing) return saveEdit()
     if (photos.length === 0) { setError(t('photo_required')); return }
     setBusy(true)
     setError(null)
@@ -356,12 +394,22 @@ export default function PostComposer({ selfId, onClose, onPosted, firstPost = fa
         <button className="composer__close" onClick={onClose} aria-label={t('close_aria')}>
           <X size={20} strokeWidth={2.2} />
         </button>
-        <span className="composer__title">{firstPost ? t('composer_first') : t('composer_new')}</span>
+        <span className="composer__title">{editing ? t('composer_edit') : firstPost ? t('composer_first') : t('composer_new')}</span>
         <span className="composer__spacer" />
       </header>
 
       <div className="composer__body">
-        {photos.length === 0 ? (
+        {editing ? (
+          // фото не меняем: за него уже отдали дрипы, подменять картинку под голосами нечестно
+          <div className="editphotos">
+            <div className="editphotos__row">
+              {[editPost.media_url, ...(editPost.extra_media || [])].filter(Boolean).map((url) => (
+                <img key={url} className="editphotos__img" src={url} alt="" />
+              ))}
+            </div>
+            <span className="editphotos__note">{t('edit_photo_locked')}</span>
+          </div>
+        ) : photos.length === 0 ? (
           <div className="photo photo--empty">
             <span className="photo__empty">
               <span className="photo__label">{t('add_photo_title')}</span>
@@ -370,13 +418,15 @@ export default function PostComposer({ selfId, onClose, onPosted, firstPost = fa
                 <span className="photo__slots">{t('first_drip_left', { n: slotsLeft })}</span>
               )}
               <span className="photo__ways">
-                {/* capture открывает камеру сразу, без системного меню выбора */}
-                <label className="photoway photoway--primary">
-                  <Camera size={20} strokeWidth={2} /> {t('photo_camera')}
-                  <input type="file" accept="image/*" capture="environment" onChange={(e) => pickPhoto(0, e)} hidden />
-                </label>
-                <label className="photoway">
-                  <ImagePlus size={20} strokeWidth={2} /> {t('photo_gallery')}
+                {/* отдельная «Снять» — только там, где capture реально открывает камеру */}
+                {CAMERA && (
+                  <label className="photoway photoway--primary">
+                    <Camera size={20} strokeWidth={2} /> {t('photo_camera')}
+                    <input type="file" accept="image/*" capture="environment" onChange={(e) => pickPhoto(0, e)} hidden />
+                  </label>
+                )}
+                <label className={`photoway ${CAMERA ? '' : 'photoway--primary'}`}>
+                  <ImagePlus size={20} strokeWidth={2} /> {CAMERA ? t('photo_gallery') : t('photo_pick')}
                   <input type="file" accept="image/*" onChange={(e) => pickPhoto(0, e)} hidden />
                 </label>
               </span>
@@ -451,7 +501,7 @@ export default function PostComposer({ selfId, onClose, onPosted, firstPost = fa
               price={price}
               brandSuggestions={brandSuggestions}
               nameSuggestions={nameSuggestions}
-              onCategory={setCat}
+              onCategory={changeCategory}
               onBrand={setBrand}
               onName={setName}
               onPrice={setPrice}
@@ -467,9 +517,9 @@ export default function PostComposer({ selfId, onClose, onPosted, firstPost = fa
       </div>
 
       <div className="composer__footer">
-        <button className="publish" onClick={submit} disabled={busy || photos.length === 0}>
-          {checking ? t('nsfw_checking') : busy ? '…' : t('publish')}
-          {!busy && reward && (
+        <button className="publish" onClick={submit} disabled={busy || (!editing && photos.length === 0)}>
+          {checking ? t('nsfw_checking') : busy ? '…' : editing ? t('save') : t('publish')}
+          {!busy && !editing && reward && (
             <span className="publish__reward"><DripCoin size={14} /> +{reward}</span>
           )}
         </button>

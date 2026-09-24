@@ -325,3 +325,12 @@
 }
 .photoway:active { transform: scale(0.96); }
 .photoway--primary { background: var(--primary); color: var(--on-primary); border-color: var(--primary); }
+
+/* правка опубликованного: фото показываем, но не даём трогать */
+.editphotos { display: flex; flex-direction: column; gap: 8px; }
+.editphotos__row { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; }
+.editphotos__img {
+  width: 92px; height: 122px; flex: 0 0 auto; object-fit: cover;
+  border-radius: 14px; opacity: 0.85;
+}
+.editphotos__note { font-size: 12px; line-height: 1.4; color: var(--text-muted); }

@@ -40,6 +40,7 @@ async function validateInitData(initData, botToken) {
 // сколько действий в час разрешаем одному человеку
 const LIMITS = {
   create_post: [10, 3600],
+  update_post: [30, 3600],
   cast_vote: [60, 3600],
   set_profile: [20, 3600],
   set_follow: [60, 3600],
@@ -248,6 +249,17 @@ Deno.serve(async (req) => {
     if (body.action === 'set_notify_prefs') {
       const { data, error } = await supabase.rpc('set_notify_prefs', {
         p_tid: tgUser.id, p_prefs: body.prefs ?? {},
+      })
+      if (error) return jsonResponse({ error: error.message }, 400)
+      return jsonResponse(data, 200)
+    }
+
+    // Правка опубликованного образа: подпись, стили, вещи. Фото не меняется — см. update_post в базе.
+    if (body.action === 'update_post') {
+      const { data, error } = await supabase.rpc('update_post', {
+        p_tid: tgUser.id, p_post_id: body.post_id,
+        p_caption: body.caption ?? '', p_items: body.items ?? [],
+        p_style_id: body.style_id ?? null, p_style2_id: body.style2_id ?? null,
       })
       if (error) return jsonResponse({ error: error.message }, 400)
       return jsonResponse(data, 200)

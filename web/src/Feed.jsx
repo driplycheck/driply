@@ -6,7 +6,7 @@ import Chip from './components/ui/Chip.jsx'
 import PostCard from './PostCard.jsx'
 import { usePager } from './usePager.js'
 
-export default function Feed({ selfId, balance, scrollTopKey, onOpenProfile }) {
+export default function Feed({ selfId, balance, scrollTopKey, onOpenProfile, onBalance }) {
   const [tab, setTab] = useState('all')
   const [posts, setPosts] = useState(null)
   const [votedIds, setVotedIds] = useState(new Set())
@@ -117,6 +117,7 @@ export default function Feed({ selfId, balance, scrollTopKey, onOpenProfile }) {
               selfId={selfId}
               onReported={(id) => setPosts((ps) => ps.filter((x) => x.id !== id))}
               onOpenProfile={onOpenProfile}
+              onBalance={onBalance}
             />
           ))}
         </div>

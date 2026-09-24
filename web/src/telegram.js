@@ -45,6 +45,13 @@ export function haptic(style = 'light') {
 }
 
 export function getInitData() { return tg?.initData ?? '' }
+
+// Атрибут capture честно открывает камеру только в Android-вебвью Telegram.
+// В iOS, macOS и десктопе он игнорируется — открывается обычный выбор файла,
+// поэтому там кнопку «Снять» не показываем: она обещала бы то, чего не делает.
+export function canOpenCamera() {
+  return tg?.platform === 'android'
+}
 // код приглашения: из start_param (ссылка ?startapp=) либо из адреса (?ref= от бота)
 export function getStartParam() {
   const fromTg = window.Telegram?.WebApp?.initDataUnsafe?.start_param

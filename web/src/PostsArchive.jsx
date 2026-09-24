@@ -3,7 +3,7 @@ import { callOrToast, readPrivate } from './api.js'
 import { t } from './i18n.js'
 import DripCoin from './components/ui/DripCoin.jsx'
 
-export default function PostsArchive({ onClose, onChanged }) {
+export default function PostsArchive({ onClose, onChanged, onEdit }) {
   const [posts, setPosts] = useState(null)
   const [busyId, setBusyId] = useState(null)
   const [confirmId, setConfirmId] = useState(null)
@@ -54,6 +54,10 @@ export default function PostsArchive({ onClose, onChanged }) {
                 {p.caption && <div className="arow__cap">{p.caption}</div>}
               </div>
               <div className="arow__acts">
+                <button className="arow__btn" disabled={busyId === p.id}
+                  onClick={() => onEdit?.(p)}>
+                  {t('edit_post')}
+                </button>
                 <button className="arow__btn" disabled={busyId === p.id}
                   onClick={() => toggleHidden(p)}>
                   {p.hidden ? t('restore') : t('hide')}
