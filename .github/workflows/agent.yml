@@ -1,0 +1,65 @@
+# Агент отвечает в своей теме в Telegram. Запускается ботом, работает по подписке Claude Code.
+name: Агент
+
+on:
+  workflow_dispatch:
+    inputs:
+      kind:
+        description: 'Кто отвечает: tester, analyst, support, dev'
+        required: true
+      message:
+        description: 'Что нужно сделать'
+        required: true
+      thread_id:
+        description: 'Тема в группе, куда отправить ответ'
+        required: false
+
+jobs:
+  answer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # задачу кладём файлом: так текст из чата не попадает в YAML и ничего не ломает
+      - name: положить задачу в файл
+        env:
+          TASK: ${{ github.event.inputs.message }}
+        run: |
+          mkdir -p /tmp/agent
+          printf '%s' "$TASK" > /tmp/agent/task.md
+          cat ".github/agents/${{ github.event.inputs.kind }}.md" > /tmp/agent/role.md
+
+      - uses: anthropics/claude-code-action@v1
+        id: claude
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            Твоя роль описана в файле /tmp/agent/role.md — прочитай его первым делом и следуй ему.
+            Задача от основателя лежит в файле /tmp/agent/task.md — прочитай и выполни её.
+            В конце дай короткий ответ по-русски: он уйдёт человеку в Telegram как есть.
+          claude_args: --max-turns 30
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          CI_SECRET: ${{ secrets.CI_SECRET }}
+          SHOTS_TG_ID: ${{ secrets.SHOTS_TG_ID }}
+          SHOTS_USER_ID: ${{ secrets.SHOTS_USER_ID }}
+
+      - name: отправить ответ в тему
+        if: always()
+        env:
+          EXEC_FILE: ${{ steps.claude.outputs.execution_file }}
+          HOOK: ${{ secrets.TG_WEBHOOK_URL }}
+          CI_SECRET: ${{ secrets.CI_SECRET }}
+          THREAD_ID: ${{ github.event.inputs.thread_id }}
+          KIND: ${{ github.event.inputs.kind }}
+        run: node .github/scripts/report-agent.mjs

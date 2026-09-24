@@ -12,6 +12,8 @@ const WEBAPP_URL = Deno.env.get('WEBAPP_URL') ?? ''
 const WEBHOOK_SECRET = Deno.env.get('TG_WEBHOOK_SECRET') ?? ''
 // Отдельный ключ для автоматических проверок: у CI нет причин знать боевой секрет вебхука
 const CI_SECRET = Deno.env.get('CI_SECRET') ?? ''
+const GH_TOKEN = Deno.env.get('GH_TOKEN') ?? ''
+const GH_REPO = Deno.env.get('GH_REPO') ?? 'driplycheck/driply'
 // ответ Claude идёт дольше, чем Telegram готов ждать: отвечаем 200 сразу, работаем следом
 function runInBackground(task: Promise<unknown>) {
   // @ts-ignore EdgeRuntime есть только в проде
@@ -154,9 +156,10 @@ Deno.serve(async (req) => {
     const { data: routes } = await db().rpc('support_routing_get')
     const route = Array.isArray(routes) ? routes[0] : routes
     if (!route?.chat_id) return Response.json({ ok: false, error: 'NO_CHAT' }, { status: 400 })
+    const thread = Number(body?.thread_id) || route.thread_reports
     const sent = await tg('sendMessage', {
       chat_id: route.chat_id, text, parse_mode: 'HTML',
-      ...(route.thread_reports ? { message_thread_id: route.thread_reports } : {}),
+      ...(thread ? { message_thread_id: thread } : {}),
     })
     return Response.json({ ok: Boolean(sent?.ok), description: sent?.description ?? null })
   }
@@ -210,6 +213,30 @@ Deno.serve(async (req) => {
         const thread = message.message_thread_id
         runInBackground((async () => {
           await tg('sendChatAction', { chat_id: message.chat.id, message_thread_id: thread, action: 'typing' })
+
+          // основной путь: агент работает в GitHub Actions с доступом к репозиторию,
+          // по подписке Claude Code. Ответ придёт отдельным сообщением через пару минут.
+          if (GH_TOKEN) {
+            const res = await fetch(`https://api.github.com/repos/${GH_REPO}/actions/workflows/agent.yml/dispatches`, {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${GH_TOKEN}`,
+                Accept: 'application/vnd.github+json',
+                'User-Agent': 'driply-agents',
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ ref: 'main', inputs: { kind, message: text, thread_id: String(thread) } }),
+            })
+            await supabase.rpc('agent_log', { p_kind: kind, p_role: 'user', p_body: text })
+            if (res.ok) {
+              await tg('sendMessage', { chat_id: message.chat.id, message_thread_id: thread, text: '🛠 Взял в работу, вернусь через пару минут.' })
+            } else {
+              const err = await res.text()
+              await tg('sendMessage', { chat_id: message.chat.id, message_thread_id: thread, text: `Не смог запуститься: ${err.slice(0, 200)}` })
+            }
+            return
+          }
+
           const { data: history } = await supabase.rpc('agent_history', { p_kind: kind, p_limit: 12 })
           const ordered = Array.isArray(history) ? [...history].reverse() : []
           let answer: string
