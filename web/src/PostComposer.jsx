@@ -205,6 +205,8 @@ export default function PostComposer({ selfId, onClose, onPosted, firstPost = fa
   const [draftRestored, setDraftRestored] = useState(false)
   const [hasPosts, setHasPosts] = useState(firstPost ? false : null)
   const [slotsLeft, setSlotsLeft] = useState(null)
+  const openedAt = useRef(Date.now())
+  const pendingPick = useRef(null)   // какой способ выбрали и когда — чтобы поймать отказ в системном окне
   const reward = hasPosts === false ? REWARD_FIRST : hasPosts ? REWARD_NEXT : null
 
   const remoteBrands = useItemSuggestions('brand', brand)
@@ -282,9 +284,35 @@ export default function PostComposer({ selfId, onClose, onPosted, firstPost = fa
   }, [firstPost, selfId])
 
   // slot < длины — замена фото, иначе добавление
+  // Системное окно выбора файла не сообщает об отмене: событие change просто не приходит.
+  // Ловим возврат фокуса — если файла так и нет, человек передумал, и это надо видеть в данных.
+  function startPick(way) {
+    pendingPick.current = { way, at: Date.now() }
+    track('photo_way', { way, first: photos.length === 0 })
+  }
+
+  useEffect(() => {
+    function onBack() {
+      const pick = pendingPick.current
+      if (!pick || Date.now() - pick.at < 400) return
+      setTimeout(() => {
+        if (pendingPick.current !== pick) return   // файл всё-таки пришёл
+        pendingPick.current = null
+        track('photo_cancelled', { way: pick.way })
+      }, 1200)
+    }
+    window.addEventListener('focus', onBack)
+    document.addEventListener('visibilitychange', onBack)
+    return () => {
+      window.removeEventListener('focus', onBack)
+      document.removeEventListener('visibilitychange', onBack)
+    }
+  }, [])
+
   function pickPhoto(slot, e) {
     const f = e.target.files?.[0]
     e.target.value = ''
+    pendingPick.current = null
     if (!f) return
     if (photos.length === 0) track('photo_added', { n: 1 })
     setPhotos((arr) => {
@@ -323,6 +351,16 @@ export default function PostComposer({ selfId, onClose, onPosted, firstPost = fa
     setBrand('')
     setName('')
     setPrice('')
+  }
+
+  // на каком шаге закрыли экран: единственный способ понять, где теряются люди
+  function closeComposer() {
+    if (!editing) {
+      const stage = photos.length === 0 ? (pendingPick.current ? 'picker' : 'empty')
+        : (caption || styleIds.length || items.length) ? 'ready' : 'photo'
+      track('composer_closed', { stage, sec: Math.round((Date.now() - openedAt.current) / 1000) })
+    }
+    onClose()
   }
 
   // правка опубликованного: фото остаётся прежним, меняются подпись, стили и вещи
@@ -391,7 +429,7 @@ export default function PostComposer({ selfId, onClose, onPosted, firstPost = fa
   return (
     <div className="composer">
       <header className="composer__top">
-        <button className="composer__close" onClick={onClose} aria-label={t('close_aria')}>
+        <button className="composer__close" onClick={closeComposer} aria-label={t('close_aria')}>
           <X size={20} strokeWidth={2.2} />
         </button>
         <span className="composer__title">{editing ? t('composer_edit') : firstPost ? t('composer_first') : t('composer_new')}</span>
@@ -420,12 +458,12 @@ export default function PostComposer({ selfId, onClose, onPosted, firstPost = fa
               <span className="photo__ways">
                 {/* отдельная «Снять» — только там, где capture реально открывает камеру */}
                 {CAMERA && (
-                  <label className="photoway photoway--primary">
+                  <label className="photoway photoway--primary" onClick={() => startPick('camera')}>
                     <Camera size={20} strokeWidth={2} /> {t('photo_camera')}
                     <input type="file" accept="image/*" capture="environment" onChange={(e) => pickPhoto(0, e)} hidden />
                   </label>
                 )}
-                <label className={`photoway ${CAMERA ? '' : 'photoway--primary'}`}>
+                <label className={`photoway ${CAMERA ? '' : 'photoway--primary'}`} onClick={() => startPick('gallery')}>
                   <ImagePlus size={20} strokeWidth={2} /> {CAMERA ? t('photo_gallery') : t('photo_pick')}
                   <input type="file" accept="image/*" onChange={(e) => pickPhoto(0, e)} hidden />
                 </label>
