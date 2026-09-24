@@ -101,7 +101,7 @@ input, textarea, select, .field { font-size: 16px; }
   transition: var(--theme-transition);
 }
 
-.feed-tabs { display: flex; gap: 20px; padding: 22px 20px 0; }
+.feed-tabs { display: flex; gap: 20px; padding: 14px 20px 0; }
 .feed-tab {
   position: relative;
   padding: 0 0 12px;
@@ -128,17 +128,20 @@ input, textarea, select, .field { font-size: 16px; }
 .feed-chips {
   display: flex;
   gap: 8px;
-  padding: 16px var(--gutter) 0;
+  padding: 10px var(--gutter) 0;
   overflow-x: auto;
   scrollbar-width: none;
 }
 .feed-chips::-webkit-scrollbar { display: none; }
 
 .feed-list > .ocard {
-  /* на низких экранах карточка не уходит под таб-бар */
-  max-height: calc(var(--app-height, 100dvh) - 128px - env(safe-area-inset-top) - max(var(--safe-bottom, 0px), env(safe-area-inset-bottom)));
+  /* Фото — это и есть продукт: карточка занимает всю свободную высоту,
+     а не фиксированную пропорцию, иначе под ней остаётся мёртвая полоса. */
+  aspect-ratio: auto;
+  height: calc(var(--app-height, 100dvh) - 254px - env(safe-area-inset-top) - max(var(--safe-bottom, 0px), env(safe-area-inset-bottom)));
+  min-height: 360px;
 }
-.feed-list { display: flex; flex-direction: column; gap: 16px; padding: 16px var(--gutter) 0; }
+.feed-list { display: flex; flex-direction: column; gap: 16px; padding: 10px var(--gutter) 0; }
 .feed-state { padding: 64px 32px; text-align: center; color: var(--text-muted); font-size: 15px; line-height: 1.45; }
 .feed-skeleton {
   width: 100%;
