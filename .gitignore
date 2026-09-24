@@ -25,3 +25,4 @@ supabase/.temp/
 .shots/
 marketing/tg-pack/.uploaded.json
 web/.smoke/
+.agent/

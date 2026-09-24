@@ -30,24 +30,25 @@ jobs:
         with:
           node-version: 20
 
-      # задачу кладём файлом: так текст из чата не попадает в YAML и ничего не ломает
+      # задачу кладём файлом внутри репозитория: за его пределы агент не видит,
+      # а текст из чата так не попадает в YAML и ничего не ломает
       - name: положить задачу в файл
         env:
           TASK: ${{ github.event.inputs.message }}
         run: |
-          mkdir -p /tmp/agent
-          printf '%s' "$TASK" > /tmp/agent/task.md
-          cat ".github/agents/${{ github.event.inputs.kind }}.md" > /tmp/agent/role.md
+          mkdir -p .agent
+          printf '%s' "$TASK" > .agent/task.md
+          cp ".github/agents/${{ github.event.inputs.kind }}.md" .agent/role.md
 
       - uses: anthropics/claude-code-action@v1
         id: claude
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           prompt: |
-            Твоя роль описана в файле /tmp/agent/role.md — прочитай его первым делом и следуй ему.
-            Задача от основателя лежит в файле /tmp/agent/task.md — прочитай и выполни её.
+            Твоя роль описана в файле .agent/role.md — прочитай его первым делом и следуй ему.
+            Задача от основателя лежит в файле .agent/task.md — прочитай и выполни её.
             В конце дай короткий ответ по-русски: он уйдёт человеку в Telegram как есть.
-          claude_args: --max-turns 30
+          claude_args: --max-turns 30 --allowedTools "Read,Glob,Grep,Bash(npm:*),Bash(npx:*),Bash(node:*),Bash(git status:*),Bash(git log:*)"
           show_full_output: true   # без этого ошибки агента не видно, только «is_error»
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
