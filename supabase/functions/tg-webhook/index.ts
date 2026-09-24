@@ -1,6 +1,7 @@
 // Бот целиком на Edge Function: Telegram шлёт апдейты вебхуком, отдельный процесс не нужен.
 // Секреты: BOT_TOKEN, WEBAPP_URL, TG_WEBHOOK_SECRET (+ SUPABASE_* для аналитики, они уже есть).
 import { createClient } from 'npm:@supabase/supabase-js@2'
+import { AGENTS, askAgent } from './agents.ts'
 
 function db() {
   return createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
@@ -11,6 +12,13 @@ const WEBAPP_URL = Deno.env.get('WEBAPP_URL') ?? ''
 const WEBHOOK_SECRET = Deno.env.get('TG_WEBHOOK_SECRET') ?? ''
 // Отдельный ключ для автоматических проверок: у CI нет причин знать боевой секрет вебхука
 const CI_SECRET = Deno.env.get('CI_SECRET') ?? ''
+// ответ Claude идёт дольше, чем Telegram готов ждать: отвечаем 200 сразу, работаем следом
+function runInBackground(task: Promise<unknown>) {
+  // @ts-ignore EdgeRuntime есть только в проде
+  if (typeof EdgeRuntime !== 'undefined') EdgeRuntime.waitUntil(task)
+  else void task
+}
+
 const serviceKey = (key: string | null) => Boolean(key) && (key === CI_SECRET || key === WEBHOOK_SECRET)
 
 // Темы в группе поддержки: имя топика ↔ колонка в support_routing
@@ -192,6 +200,38 @@ Deno.serve(async (req) => {
     const message = update.message
     const text: string = message?.text ?? ''
 
+    // Тема агента: пишем ему — он отвечает здесь же.
+    if (message?.chat?.id && text && !text.startsWith('/') && message.message_thread_id) {
+      const supabase = db()
+      const { data: kind } = await supabase.rpc('agent_by_thread', {
+        p_chat_id: message.chat.id, p_thread_id: message.message_thread_id,
+      })
+      if (kind && AGENTS[kind]) {
+        const thread = message.message_thread_id
+        runInBackground((async () => {
+          await tg('sendChatAction', { chat_id: message.chat.id, message_thread_id: thread, action: 'typing' })
+          const { data: history } = await supabase.rpc('agent_history', { p_kind: kind, p_limit: 12 })
+          const ordered = Array.isArray(history) ? [...history].reverse() : []
+          let answer: string
+          try {
+            answer = await askAgent(kind, text, ordered, {
+              selfUrl: new URL(req.url).origin + '/tg-webhook',
+              ciSecret: CI_SECRET || WEBHOOK_SECRET,
+            })
+          } catch (e) {
+            answer = `Не смог ответить: ${e instanceof Error ? e.message : String(e)}`
+          }
+          await supabase.rpc('agent_log', { p_kind: kind, p_role: 'user', p_body: text })
+          await supabase.rpc('agent_log', { p_kind: kind, p_role: 'assistant', p_body: answer })
+          await tg('sendMessage', {
+            chat_id: message.chat.id, message_thread_id: thread,
+            text: answer.slice(0, 3800), parse_mode: 'HTML',
+          })
+        })())
+        return new Response('ok')
+      }
+    }
+
     // Обычное сообщение (не команда) — это поддержка.
     // Только RPC: прямых прав на таблицы у service_role в проекте нет.
     if (message?.chat?.id && text && !text.startsWith('/')) {
@@ -347,6 +387,48 @@ Deno.serve(async (req) => {
           }
         }
         await tg('sendMessage', { chat_id: chatId, text: `✅ Создано тем: ${missing.length} (${missing.map((t) => t.kind).join(', ')}). Список: /topics` })
+        return new Response('ok')
+      }
+
+      // Тема под агента: команда отправляется внутри нужной темы.
+      if (command === '/setup_agent') {
+        const supabase = db()
+        const { data: modTid } = await supabase.rpc('support_moderator_tid')
+        if (!modTid || message.from?.id !== modTid) return new Response('ok')
+
+        const kind = (payload ?? '').trim().toLowerCase()
+        const known = Object.keys(AGENTS)
+        if (!AGENTS[kind]) {
+          await tg('sendMessage', { chat_id: chatId, text: `Кого заводим? Доступны: ${known.join(', ')}.\nОтправь /setup_agent <кто> внутри его темы.` })
+          return new Response('ok')
+        }
+        if (!message.message_thread_id) {
+          await tg('sendMessage', { chat_id: chatId, text: 'Отправь эту команду внутри темы агента, а не в общем чате.' })
+          return new Response('ok')
+        }
+        const { error } = await supabase.rpc('agent_topic_set', {
+          p_kind: kind, p_chat_id: chatId, p_thread_id: message.message_thread_id,
+        })
+        if (error) {
+          await tg('sendMessage', { chat_id: chatId, message_thread_id: message.message_thread_id, text: `Не сохранил: ${error.message}` })
+          return new Response('ok')
+        }
+        await tg('sendMessage', {
+          chat_id: chatId, message_thread_id: message.message_thread_id,
+          text: `✅ ${AGENTS[kind].name} теперь живёт здесь. Пиши ему прямо в эту тему.`,
+        })
+        return new Response('ok')
+      }
+
+      if (command === '/agents') {
+        const supabase = db()
+        const { data: modTid } = await supabase.rpc('support_moderator_tid')
+        if (!modTid || message.from?.id !== modTid) return new Response('ok')
+        const { data: list } = await supabase.rpc('agent_topics_list')
+        const bound = new Map((Array.isArray(list) ? list : []).map((r: Record<string, number>) => [r.kind, r.thread_id]))
+        const lines = Object.entries(AGENTS).map(([kind, a]) =>
+          `${bound.has(kind) ? '✅' : '⬜️'} ${a.name} — ${kind}${bound.has(kind) ? ` (тема ${bound.get(kind)})` : ' не заведён'}`)
+        await tg('sendMessage', { chat_id: chatId, text: `${lines.join('\n')}\n\nЗавести: создай тему и отправь в ней /setup_agent <кто>.` })
         return new Response('ok')
       }
 
