@@ -210,7 +210,19 @@ input, textarea, select, .field { font-size: 16px; }
 .ocard__icon:active { transform: scale(0.9); }
 .ocard__icon--on { background: var(--on-photo); color: var(--on-photo-ink); }
 .ocard__spacer { flex: 1; }
-.ocard__tags { display: flex; flex-wrap: wrap; gap: 6px; }
+/* Вещей может быть много: раскладываем в одну строку с прокруткой,
+   иначе список разрастается и закрывает половину образа. */
+.ocard__tags {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin: 0 -2px;
+  padding: 0 2px 2px;
+}
+.ocard__tags::-webkit-scrollbar { display: none; }
+.ocard__tag { flex: 0 0 auto; white-space: nowrap; }
 .ocard__tag {
   display: inline-flex;
   align-items: center;
@@ -337,3 +349,21 @@ input, textarea, select, .field { font-size: 16px; }
 .archive__body > * {
   flex-shrink: 0;
 }
+
+/* точки карусели уступают место кнопке просмотра */
+.ocard__top { right: 58px; }
+
+/* кнопка просмотра: правый верхний угол, поверх фото */
+.ocard__zoom {
+  position: absolute;
+  top: 14px; right: 14px;
+  z-index: 3;
+  width: 34px; height: 34px;
+  display: grid; place-items: center;
+  border: none; border-radius: 50%;
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
+  color: var(--on-photo);
+  cursor: pointer;
+}
+.ocard__zoom:active { transform: scale(0.92); }

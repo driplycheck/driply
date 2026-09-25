@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { X } from 'lucide-react'
+import { X, Expand } from 'lucide-react'
 import './ui.css'
 
 // Карточка принимает пропорции снимка: так у вертикальных фото нет полей,
@@ -37,7 +37,6 @@ export default function OutfitCard({ images, imageUrl, badge, author, caption, t
               <img className="ocard__blur" src={src} alt="" aria-hidden="true" decoding="async" />
               <img className="ocard__photo" src={src} alt=""
                 onLoad={i === 0 ? onFirstLoad : undefined}
-                onClick={() => setZoom(true)}
                 loading={i === 0 && priority ? 'eager' : 'lazy'}
                 fetchPriority={i === 0 && priority ? 'high' : 'auto'} decoding="async" />
             </div>
@@ -48,12 +47,15 @@ export default function OutfitCard({ images, imageUrl, badge, author, caption, t
           <img className="ocard__blur" src={photos[0]} alt="" aria-hidden="true" decoding="async" />
           <img className="ocard__img" src={photos[0]} alt=""
             onLoad={onFirstLoad}
-            onClick={() => setZoom(true)}
             loading={priority ? 'eager' : 'lazy'}
             fetchPriority={priority ? 'high' : 'auto'} decoding="async" />
         </>
       )}
       <div className="ocard__scrim" />
+      {/* просмотр во весь экран — отдельной кнопкой: тап по фото мешал листать карусель */}
+      <button className="ocard__zoom" onClick={() => setZoom(true)} aria-label="Открыть фото">
+        <Expand size={17} strokeWidth={2.2} />
+      </button>
       {(badge || photos.length > 1) && (
         <div className="ocard__top">
           {badge}
