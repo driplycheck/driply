@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { call, errorText } from './api.js'
+import { supabase } from './supabase.js'
+import DripCoin from './components/ui/DripCoin.jsx'
 import { getStartParam } from './telegram.js'
 import { track } from './analytics.js'
 import { uploadImage } from './upload.js'
@@ -12,6 +14,14 @@ export default function Onboarding({ tgUser, onDone }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
   const [gender, setGender] = useState(null)
+  const [slotsLeft, setSlotsLeft] = useState(null)
+
+  // человек ещё ничего не знает о продукте: показываем, что он получит, до анкеты
+  useEffect(() => {
+    supabase.rpc('first_drip_left').then(({ data }) => {
+      if (typeof data === 'number' && data > 0) setSlotsLeft(data)
+    })
+  }, [])
 
   useEffect(() => () => {
     if (preview && preview !== tgUser?.photo_url) URL.revokeObjectURL(preview)
@@ -58,35 +68,50 @@ export default function Onboarding({ tgUser, onDone }) {
         <h1 className="onb__title">{t('onb_title')}</h1>
         <p className="onb__sub">{t('onb_sub')}</p>
 
+        <div className="onb__gift">
+          <span className="onb__gift-row"><DripCoin size={18} /> {t('onb_gift_start')}</span>
+          <span className="onb__gift-row"><DripCoin size={18} /> {t('onb_gift_first')}</span>
+          {slotsLeft !== null && <span className="onb__gift-note">{t('first_drip_left', { n: slotsLeft })}</span>}
+        </div>
+
         <label className="onb__ava tier-base">
           {preview ? <img src={preview} alt="" /> : <span className="onb__plus">＋</span>}
           <input type="file" accept="image/*" onChange={onPickFile} hidden />
         </label>
         <span className="onb__avahint">{t('avatar_hint')}</span>
 
-        <input
-          className="field onb__nick"
-          placeholder={t('nick_placeholder')}
-          maxLength={24}
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
+        <label className="onb__field">
+          <span className="onb__label">{t('nick_placeholder')}</span>
+          <input
+            className="field onb__nick"
+            placeholder={t('nick_placeholder')}
+            maxLength={24}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+        </label>
 
-        <div className="gender-pick">
-          <button type="button" className={`gender-opt ${gender === 'male' ? 'gender-opt--on' : ''}`}
-            onClick={() => setGender('male')}>{t('gender_male')}</button>
-          <button type="button" className={`gender-opt ${gender === 'female' ? 'gender-opt--on' : ''}`}
-            onClick={() => setGender('female')}>{t('gender_female')}</button>
+        <div className="onb__field">
+          <span className="onb__label">{t('gender')} <i>{t('onb_optional')}</i></span>
+          <div className="gender-pick">
+            <button type="button" className={`gender-opt ${gender === 'male' ? 'gender-opt--on' : ''}`}
+              onClick={() => setGender(gender === 'male' ? null : 'male')}>{t('gender_male')}</button>
+            <button type="button" className={`gender-opt ${gender === 'female' ? 'gender-opt--on' : ''}`}
+              onClick={() => setGender(gender === 'female' ? null : 'female')}>{t('gender_female')}</button>
+          </div>
         </div>
-        <button type="button" className="gender-skip" onClick={() => setGender(null)}>
-          {t('skip')}
-        </button>
 
         {error && <div className="composer__err">{error}</div>}
 
         <button className="onb__btn" onClick={submit} disabled={busy || !name.trim()}>
           {busy ? '…' : t('continue')}
         </button>
+
+        <ol className="onb__steps">
+          <li>{t('onb_step_post')}</li>
+          <li>{t('onb_step_drips')}</li>
+          <li>{t('onb_step_rank')}</li>
+        </ol>
       </div>
     </div>
   )

@@ -73,8 +73,14 @@ const DICT = {
     search_aria: 'Поиск', my_profile_aria: 'Мой профиль',
 
     // онбординг
-    onb_title: 'Создай профиль',
-    onb_sub: 'Так тебя увидят в Driply',
+    onb_title: 'Driply — лента образов',
+    onb_sub: 'Выкладываешь лук, тебе кидают дрипы. Дрипы нельзя купить — только заработать.',
+    onb_gift_start: '200 на старте',
+    onb_gift_first: '+300 за первый образ',
+    onb_optional: 'необязательно',
+    onb_step_post: 'Выложи образ — минута, если фото уже есть',
+    onb_step_drips: 'Получай дрипы от тех, кому зашло',
+    onb_step_rank: 'Поднимайся в рейтинге недели',
     avatar_hint: 'Нажми, чтобы сменить фото',
     nick_placeholder: 'Ник',
     nick_required: 'Придумай ник',
@@ -293,8 +299,14 @@ const DICT = {
     search_aria: 'Search', my_profile_aria: 'My profile',
 
     // onboarding
-    onb_title: 'Create your profile',
-    onb_sub: 'This is how you show up in Driply',
+    onb_title: 'Driply — a feed of outfits',
+    onb_sub: 'Post a look, people drop drips on it. Drips can’t be bought, only earned.',
+    onb_gift_start: '200 to start',
+    onb_gift_first: '+300 for your first look',
+    onb_optional: 'optional',
+    onb_step_post: 'Post a look — a minute if you already have a photo',
+    onb_step_drips: 'Collect drips from people who liked it',
+    onb_step_rank: 'Climb the weekly leaderboard',
     avatar_hint: 'Tap to change the photo',
     nick_placeholder: 'Nickname',
     nick_required: 'Pick a nickname',

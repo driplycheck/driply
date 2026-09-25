@@ -264,3 +264,47 @@
 .support__done p { font-size: 14px; line-height: 1.45; color: var(--text-muted); max-width: 30ch; }
 .support__done .ui-btn { margin-top: 10px; }
 .support__kinds { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* Онбординг: человек ещё не знает, куда попал — сначала суть и награда, потом анкета */
+.onb__gift {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}
+.onb__gift-row { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; }
+.onb__gift-note { margin-top: 4px; font-size: 12px; line-height: 1.35; color: var(--drip); font-weight: 600; text-align: left; }
+
+/* тело онбординга центрировано — полям нужно явно растянуться на всю ширину */
+.onb__field { align-self: stretch; display: flex; flex-direction: column; gap: 6px; text-align: left; }
+.onb__field .gender-pick { display: flex; gap: 8px; }
+.onb__field .gender-opt { flex: 1; }
+.onb__label { font-size: 12px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); }
+.onb__label i { font-style: normal; font-weight: 500; letter-spacing: 0; text-transform: none; opacity: 0.75; }
+.onb__nick { text-align: left; }
+
+/* что будет дальше — три шага вместо пустоты под кнопкой */
+.onb__steps {
+  margin: 4px 0 0; padding: 0; list-style: none;
+  display: flex; flex-direction: column; gap: 10px;
+  counter-reset: onb;
+}
+.onb__steps li {
+  display: flex; align-items: flex-start; gap: 10px;
+  font-size: 13px; line-height: 1.4; color: var(--text-2); text-align: left;
+  counter-increment: onb;
+}
+.onb__steps li::before {
+  content: counter(onb);
+  flex: none;
+  width: 20px; height: 20px; margin-top: 1px;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-size: 11px; font-weight: 700;
+}
+
+.onb__steps { align-self: stretch; }
+.onb__gift { align-self: stretch; }
