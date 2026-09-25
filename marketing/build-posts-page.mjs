@@ -309,6 +309,54 @@ const DIGITS = [...'0123456789'].map((d) => `digit-${d}`).concat(['digit-plus', 
 
 const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
+// Приглашения: личные сообщения и тексты для чатов. Обложек им не нужно.
+const INVITES = [
+  {
+    title: 'Личное сообщение другу',
+    tag: 'Самое рабочее',
+    text: `делаю приложение про образы — driply
+
+выкладываешь лук, тебе кидают дрипы, по ним рейтинг. купить их нельзя, только заработать
+
+сейчас там мало людей, и мне нужны нормальные образы для старта. глянешь? на старте дам 200 дрипов, за первый образ ещё 300
+
+<ссылка из профиля → пригласить>`,
+    why: 'Первые двадцать человек приходят не из рекламы, а лично. Работает, если честно сказать, что людей мало и нужна помощь, а не делать вид, что это большой сервис.',
+  },
+  {
+    title: 'Сообщение в тематический чат',
+    tag: 'Осторожно',
+    text: `сделал мини-апп про уличный стиль: выкладываешь образ, другие кидают внутреннюю валюту, по ней рейтинг недели
+
+дрипы нельзя купить за деньги — только заработать, поэтому оценка кое-что значит
+
+людей пока мало, ищу тех, кому интересно быть в начале
+t.me/Driplycheckbot`,
+    why: 'В чаты идти только туда, где тема совпадает, и только с одним сообщением. Ссылку давать общую, не реферальную: в чатах реферальная выглядит как заработок на людях.',
+  },
+  {
+    title: 'Подпись к сторис',
+    tag: 'К карточке',
+    text: `мой образ в driply
+
+выкладывай свой — за первый дают 300 💧
+ссылка в карточке`,
+    why: 'Карточку приложение рисует само: профиль → пригласить → в историю. В ней уже стоит личная ссылка, за перешедшего и выложившего образ придёт 500.',
+  },
+  {
+    title: 'Пост-приглашение в канал',
+    tag: 'Готов к посту',
+    text: `в driply осталось 41 место со статусом FIRST DRIP 👑
+
+его получают первые 50 авторов — дальше не выдаётся никому и никогда
+
+выложить образ — минута, если фото уже есть. за первый дают 300 💧
+
+@Driplycheckbot`,
+    why: 'Дефицит работает, когда он измеримый и правдивый. Число живое: оно уменьшается с каждым новым автором и обратно не растёт.',
+  },
+]
+
 async function renderCards(list) {
   const out = []
   for (const p of list) {
@@ -325,6 +373,14 @@ async function renderCards(list) {
   }
   return out
 }
+
+// у приглашений нет обложек и эмодзи — карточка проще
+const inviteCards = INVITES.map((p) => `
+    <article class="post post--plain">
+      <div class="post__head"><span class="post__title">${esc(p.title)}</span><span class="tag">${esc(p.tag)}</span></div>
+      <div class="post__text">${esc(p.text)}</div>
+      <div class="post__foot"><span class="why">${esc(p.why)}</span><button type="button" data-copy>Копировать</button></div>
+    </article>`)
 
 const cards = await renderCards(POSTS)
 const updateCards = await renderCards(UPDATES)
@@ -391,6 +447,7 @@ const html = `<title>Стартовые посты Driply</title>
   .note li+li{margin-top:6px}
   .note code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;color:var(--drip)}
   .section{font-family:var(--display);font-weight:700;font-size:18px;margin:36px 0 4px}
+  .post--plain{padding-top:18px}
   .section__note{margin:0;color:var(--muted);font-size:13px;line-height:1.45}
   @media (prefers-reduced-motion:reduce){button{transition:none}}
 </style>
@@ -412,6 +469,11 @@ const html = `<title>Стартовые посты Driply</title>
     <h2>Фирменные цифры</h2>
     <p>Для чисел экономики во втором посте и везде, где числа — главное. Набираешь 2️⃣0️⃣0️⃣, Telegram подставляет эти.</p>
     <div class="row">${digitChips.join('')}</div>
+  </div>
+
+  <h2 class="section">Приглашения</h2>
+  <p class="section__note">Первые двадцать-тридцать человек приходят вручную. Личное сообщение — самое рабочее, чаты — осторожно и по одному сообщению, сторис — через карточку из приложения.</p>
+  <div class="posts">${inviteCards.join('')}
   </div>
 
   <h2 class="section">Апдейты продукта</h2>
