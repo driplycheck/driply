@@ -5,12 +5,11 @@ import { toast } from './toast.js'
 
 // Приватные данные «про себя» ходят через quick-handler: он проверяет подпись Telegram
 // и сам подставляет telegram_id. Напрямую из браузера эти RPC закрыты.
+// undefined — «не смогли прочитать», null — «сервер ответил, данных нет».
+// Смешивать их нельзя: из-за этого моргнувшая сеть выкидывала знакомого юзера в регистрацию.
 export async function readPrivate(fn) {
-  const { data, error } = await supabase.functions.invoke('quick-handler', {
-    body: { action: 'read', fn, initData: getInitData() },
-  })
-  if (error) return null
-  return data
+  const res = await call('read', { fn })
+  return res.ok ? res.data : undefined
 }
 
 // Единая точка вызова роутера. Настоящая причина ошибки лежит в теле ответа,

@@ -3,7 +3,7 @@ import { supabase } from './supabase.js'
 import { readPrivate } from './api.js'
 import { tg } from './telegram.js'
 import { t } from './i18n.js'
-import { Check } from 'lucide-react'
+import { Check, ChevronLeft } from 'lucide-react'
 import DripCoin from './components/ui/DripCoin.jsx'
 import { shareRankCard } from './storyCard.js'
 
@@ -75,10 +75,12 @@ export default function Referral({ me, onClose }) {
 
   return (
     <div className="referral">
-      <header className="referral__top">
-        <button className="referral__close" onClick={onClose}>{t('back')}</button>
-        <span className="referral__title">{t('referral')}</span>
-        <span className="referral__spacer" />
+      <header className="scr-top">
+        <button className="scr-back" onClick={onClose} aria-label={t('back')}>
+          <ChevronLeft size={22} strokeWidth={2} />
+        </button>
+        <span className="scr-title">{t('referral')}</span>
+        <span className="scr-spacer" />
       </header>
       <div className="referral__body">
         <div className="refcard">

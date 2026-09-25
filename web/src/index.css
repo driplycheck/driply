@@ -129,3 +129,40 @@ body {
   .overlay-backdrop, .overlay-backdrop.is-leaving { animation-duration: 1ms; }
   .screen-anim, .confirm, .earn { animation: none; }
 }
+
+/* экран «не смогли загрузить»: кнопка повтора вместо тупика */
+.state__retry { margin-top: 16px; }
+
+/* Общая шапка внутренних экранов: круглая кнопка назад и заголовок по центру.
+   Раньше половина экранов носила текстовую кнопку «Назад» — интерфейс выглядел
+   собранным из разных приложений. */
+.scr-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: calc(env(safe-area-inset-top) + 10px) 14px 10px;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+.scr-back {
+  width: 38px; height: 38px; flex: none;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  cursor: pointer;
+}
+.scr-back:active { transform: scale(0.94); }
+.scr-title {
+  flex: 1;
+  text-align: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 17px;
+  letter-spacing: -0.01em;
+}
+.scr-spacer { width: 38px; flex: none; }

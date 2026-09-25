@@ -324,3 +324,16 @@ input, textarea, select, .field { font-size: 16px; }
   background: var(--drip); color: var(--on-drip);
   font-size: 10px; font-weight: 800; line-height: 1;
 }
+
+/* Прокручиваемое тело экрана — колоночный флекс, а его дети по умолчанию сжимаются.
+   Когда содержимое не помещается, вместо прокрутки схлопывались сами блоки:
+   аватар становился овалом, у списка переключателей срезало нижнюю строку.
+   Запрещаем сжатие — тогда содержимое честно выходит за край и экран прокручивается. */
+.pedit__body > *,
+.settings__body > *,
+.composer__body > *,
+.mod__body > *,
+.profile__body > *,
+.archive__body > * {
+  flex-shrink: 0;
+}

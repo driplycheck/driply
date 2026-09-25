@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { ChevronLeft } from 'lucide-react'
 import { callOrToast, readPrivate } from './api.js'
 import { avatarTier } from './tiers.js'
 import { t } from './i18n.js'
@@ -23,10 +24,12 @@ export default function BlockedList({ onClose }) {
 
   return (
     <div className="follist">
-      <header className="follist__top">
-        <button className="follist__close" onClick={onClose}>{t('back')}</button>
-        <span className="follist__title">{t('blocked_list')}</span>
-        <span className="follist__spacer" />
+      <header className="scr-top">
+        <button className="scr-back" onClick={onClose} aria-label={t('back')}>
+          <ChevronLeft size={22} strokeWidth={2} />
+        </button>
+        <span className="scr-title">{t('blocked_list')}</span>
+        <span className="scr-spacer" />
       </header>
       <div className="follist__body">
         {!people ? (

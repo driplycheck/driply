@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { ChevronLeft } from 'lucide-react'
 import { callOrToast, readPrivate } from './api.js'
 import { t } from './i18n.js'
 import DripCoin from './components/ui/DripCoin.jsx'
@@ -33,10 +34,12 @@ export default function PostsArchive({ onClose, onChanged, onEdit }) {
 
   return (
     <div className="archive">
-      <header className="archive__top">
-        <button className="archive__close" onClick={onClose}>{t('back')}</button>
-        <span className="archive__title">{t('archive_title')}</span>
-        <span className="archive__spacer" />
+      <header className="scr-top">
+        <button className="scr-back" onClick={onClose} aria-label={t('back')}>
+          <ChevronLeft size={22} strokeWidth={2} />
+        </button>
+        <span className="scr-title">{t('archive_title')}</span>
+        <span className="scr-spacer" />
       </header>
       <div className="archive__body">
         {!posts ? (

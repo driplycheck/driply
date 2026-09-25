@@ -2,6 +2,7 @@ const DICT = {
   ru: {
     // общее
     back: '‹ Назад', loading: 'Загрузка…', cancel: 'Отмена',
+    retry: 'Повторить',
     save: 'Сохранить', delete: 'Удалить', retry_failed: 'Не получилось, попробуй ещё раз',
     save_failed: 'Не получилось сохранить, попробуй ещё раз',
 
@@ -221,6 +222,7 @@ const DICT = {
   en: {
     // common
     back: '‹ Back', loading: 'Loading…', cancel: 'Cancel',
+    retry: 'Try again',
     save: 'Save', delete: 'Delete', retry_failed: 'Something went wrong, try again',
     save_failed: 'Couldn’t save, try again',
 

@@ -1,6 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
 import { initTelegram } from './telegram.js'
-import { readPrivate } from './api.js'
+
+// Последний известный профиль: если чтение сорвалось, приложение работает на нём,
+// а не встречает знакомого человека регистрацией.
+const PROFILE_KEY = 'driply_profile'
+function loadCachedProfile() {
+  try { return JSON.parse(localStorage.getItem(PROFILE_KEY) || 'null') } catch { return null }
+}
+function saveCachedProfile(p) {
+  try { localStorage.setItem(PROFILE_KEY, JSON.stringify(p)) } catch { /* приватный режим */ }
+}
+import { call, errorText } from './api.js'
 import { t, loadLang, saveLang, setActiveLang } from './i18n.js'
 import { track } from './analytics.js'
 import { useOverlayStack } from './useOverlayStack.js'
@@ -40,6 +50,7 @@ export default function App() {
   const [scrollTopKey, setScrollTopKey] = useState(0)
   const [openFirstComposer, setOpenFirstComposer] = useState(false)
   const [toast, setToast] = useState(null)
+  const [loadError, setLoadError] = useState(null)
   const toastTimer = useRef(null)
 
   const { top, push, replace, pop, touch } = useOverlayStack()
@@ -57,11 +68,22 @@ export default function App() {
     loadProfile().then((known) => track('app_open', { known }))
   }, [])
 
-  // telegram_id больше не нужен: quick-handler берёт его из подписанной initData
+  // telegram_id больше не нужен: quick-handler берёт его из подписанной initData.
+  // Важно: в регистрацию отправляем только когда сервер ответил и профиля правда нет.
+  // Не смогли прочитать — показываем прошлый профиль из памяти или экран повтора.
   async function loadProfile() {
-    const data = await readPrivate('my_profile')
-    const known = !!data?.display_name
-    setProfile(known ? data : null)
+    const res = await call('read', { fn: 'my_profile' })
+    if (!res.ok) {
+      const cached = loadCachedProfile()
+      if (cached) { setProfile(cached); setLoadError(null); return true }
+      setProfile(undefined)
+      setLoadError(res.code)
+      return false
+    }
+    const known = !!res.data?.display_name
+    if (known) saveCachedProfile(res.data)
+    setLoadError(null)
+    setProfile(known ? res.data : null)
     return known
   }
 
@@ -105,6 +127,18 @@ export default function App() {
   function onSettingsChanged(update) { setProfile((p) => ({ ...p, ...update })); touch('profile') }
   function onFollowChanged() { setFeedKey((k) => k + 1) }
   function onPostDeleted() { pop(); setFeedKey((k) => k + 1); touch('profile') }
+
+  // сеть или подпись подвели — это не повод спрашивать имя заново
+  if (loadError) {
+    return (
+      <div className="state">
+        {errorText(loadError)}
+        <button className="ui-btn ui-btn--primary state__retry" onClick={() => { setLoadError(null); setProfile(undefined); loadProfile() }}>
+          {t('retry')}
+        </button>
+      </div>
+    )
+  }
 
   if (profile === undefined) return <div className="state">{t('loading')}</div>
 

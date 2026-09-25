@@ -1,4 +1,5 @@
 import { t } from './i18n.js'
+import { ChevronLeft } from 'lucide-react'
 import { hapticSelect } from './telegram.js'
 import { useTheme, CHOICES } from './theme/ThemeProvider.jsx'
 import './theme/appearance.css'
@@ -66,10 +67,12 @@ export default function Appearance({ onClose }) {
 
   return (
     <div className="appearance">
-      <header className="appearance__top">
-        <button className="appearance__back" onClick={onClose}>{t('back')}</button>
-        <span className="appearance__title">{t('appearance')}</span>
-        <span className="appearance__spacer" />
+      <header className="scr-top">
+        <button className="scr-back" onClick={onClose} aria-label={t('back')}>
+          <ChevronLeft size={22} strokeWidth={2} />
+        </button>
+        <span className="scr-title">{t('appearance')}</span>
+        <span className="scr-spacer" />
       </header>
       <div className="appearance__body">
         <div className="themegrid">
