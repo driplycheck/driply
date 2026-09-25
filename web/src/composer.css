@@ -308,7 +308,9 @@
   cursor: pointer;
 }
 
-.photo--empty { cursor: default; }
+/* пустая рамка — это только приглашение выбрать фото: ей не нужна высота снимка,
+   иначе поля под подпись и вещи уезжают за экран */
+.photo--empty { cursor: default; aspect-ratio: auto; min-height: 232px; max-height: none; }
 .photo__ways { display: flex; gap: 10px; margin-top: 6px; flex-wrap: wrap; justify-content: center; }
 .photoway {
   display: inline-flex;

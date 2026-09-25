@@ -245,7 +245,8 @@
 .pseg__opt--on { background: var(--primary); color: var(--on-primary); }
 
 .pswitches { display: flex; flex-direction: column; border-radius: var(--r-lg); border: 1px solid var(--border); background: var(--surface); overflow: hidden; }
-.pswitch { display: flex; align-items: center; gap: 12px; padding: 14px 16px; }
+.pswitch { display: flex; align-items: center; gap: 12px; padding: 14px 16px;   gap: 12px;
+}
 .pswitch + .pswitch { border-top: 1px solid var(--border); }
 .pswitch__text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .pswitch__title { font: 600 15px/1.2 var(--font-body); }

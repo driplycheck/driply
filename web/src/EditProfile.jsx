@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { call, errorText } from './api.js'
 import { avatarTier } from './tiers.js'
-import { X, Camera } from 'lucide-react'
+import { X, Camera, AtSign, MessageCircle } from 'lucide-react'
 import { t } from './i18n.js'
 import { uploadImage } from './upload.js'
 
@@ -100,6 +100,7 @@ export default function EditProfile({ me, onClose, onSaved }) {
         <h2 className="pedit__sec">{t('sec_privacy')}</h2>
         <div className="pswitches">
           <div className="pswitch">
+            <span className="srow__icon"><AtSign size={17} strokeWidth={2} /></span>
             <span className="pswitch__text">
               <span className="pswitch__title">{t('hide_username')}</span>
               <span className="pswitch__hint">{t('hide_username_hint')}</span>
@@ -110,6 +111,7 @@ export default function EditProfile({ me, onClose, onSaved }) {
             </button>
           </div>
           <div className="pswitch">
+            <span className="srow__icon"><MessageCircle size={17} strokeWidth={2} /></span>
             <span className="pswitch__text">
               <span className="pswitch__title">{t('dm_allow')}</span>
               <span className="pswitch__hint">{hideUsername ? t('dm_needs_username') : t('dm_allow_hint')}</span>

@@ -41,7 +41,9 @@
   border-radius: var(--r-sm);
 }
 
-.themegrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+/* Четыре темы в один ряд не помещались: карточки жались, подписи переносились,
+   а последняя уезжала за край. Две колонки — и превью видно по-настоящему. */
+.themegrid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
 
 .themeopt {
   display: flex;
@@ -69,7 +71,7 @@
 }
 .themeopt:active .themeopt__frame { transform: scale(0.97); }
 .themeopt--on .themeopt__frame { outline: 2px solid var(--primary); outline-offset: 2px; }
-.themeopt__label { font-size: 12px; font-weight: 500; text-align: center; line-height: 1.2; }
+.themeopt__label { font-size: 13px; font-weight: 500; text-align: center; line-height: 1.25; }
 .themeopt--on .themeopt__label { color: var(--text); font-weight: 600; }
 .themeopt__check {
   position: absolute;

@@ -17,7 +17,7 @@ export default function Feed({ selfId, balance, scrollTopKey, onOpenProfile, onB
   const scroller = useRef(null)
   // лента уже загруженной вкладки показывается сразу, обновление идёт фоном
   const cache = useRef({})
-  usePager(scroller, '.feed-list > .ocard', [])
+  usePager(scroller, '.feed-slot', [])
 
   // повторный тап по «Ленте» в таб-баре — наверх
   useEffect(() => {
@@ -122,16 +122,17 @@ export default function Feed({ selfId, balance, scrollTopKey, onOpenProfile, onB
       ) : (
         <div className="feed-list">
           {visible.map((post, i) => (
-            <PostCard
-              key={post.id}
-              priority={i === 0}
-              post={post}
-              alreadyVoted={votedIds.has(post.id)}
-              selfId={selfId}
-              onReported={(id) => setPosts((ps) => ps.filter((x) => x.id !== id))}
-              onOpenProfile={onOpenProfile}
-              onBalance={onBalance}
-            />
+            <div className="feed-slot" key={post.id}>
+              <PostCard
+                priority={i === 0}
+                post={post}
+                alreadyVoted={votedIds.has(post.id)}
+                selfId={selfId}
+                onReported={(id) => setPosts((ps) => ps.filter((x) => x.id !== id))}
+                onOpenProfile={onOpenProfile}
+                onBalance={onBalance}
+              />
+            </div>
           ))}
         </div>
       )}

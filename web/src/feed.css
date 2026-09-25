@@ -155,12 +155,18 @@ input, textarea, select, .field { font-size: 16px; }
 }
 .feed-chips::-webkit-scrollbar { display: none; }
 
-.feed-list > .ocard {
-  /* Фото — это и есть продукт: карточка занимает всю свободную высоту,
-     а не фиксированную пропорцию, иначе под ней остаётся мёртвая полоса. */
-  /* высоту задаёт само фото (см. OutfitCard), но не выше свободного места */
+.feed-slot > .ocard {
+    /* высоту задаёт само фото (см. OutfitCard), но не выше свободного места */
   height: auto;
-  max-height: calc(var(--app-height, 100dvh) - 208px - env(safe-area-inset-top) - max(var(--safe-bottom, 0px), env(safe-area-inset-bottom)));
+  max-height: 100%;
+}
+
+/* Место под один образ: карточка стоит по центру, а не прижата к верху —
+   у вертикальных фото это незаметно, у горизонтальных убирает провал снизу. */
+.feed-slot {
+  display: grid;
+  place-items: center;
+  min-height: calc(var(--app-height, 100dvh) - 208px - env(safe-area-inset-top) - max(var(--safe-bottom, 0px), env(safe-area-inset-bottom)));
 }
 .feed-list { display: flex; flex-direction: column; gap: 16px; padding: 10px var(--gutter) 0; }
 .feed-state { padding: 64px 32px; text-align: center; color: var(--text-muted); font-size: 15px; line-height: 1.45; }
