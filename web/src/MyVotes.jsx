@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { ChevronLeft } from 'lucide-react'
 import { readPrivate } from './api.js'
 import './MyVotes.css'
 import { t } from './i18n.js'
@@ -22,10 +23,13 @@ export default function MyVotes({ onClose, onOpenPost }) {
 
   return (
     <div className="myvotes">
-      <div className="myvotes__head">
-        <button className="myvotes__back" onClick={onClose} aria-label={t('back')}>←</button>
-        <div className="myvotes__title">{t('my_votes')}</div>
-      </div>
+      <header className="scr-top">
+        <button className="scr-back" onClick={onClose} aria-label={t('back')}>
+          <ChevronLeft size={22} strokeWidth={2} />
+        </button>
+        <span className="scr-title">{t('my_votes')}</span>
+        <span className="scr-spacer" />
+      </header>
       <div className="myvotes__body">
         {loading && <div className="myvotes__empty">{t('loading')}</div>}
         {!loading && votes.length === 0 && (

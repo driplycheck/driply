@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { ChevronLeft } from 'lucide-react'
 import { supabase } from './supabase.js'
 import { avatarTier } from './tiers.js'
 import { t } from './i18n.js'
@@ -21,9 +22,11 @@ export default function FollowList({ userId, mode, onClose, onOpenProfile }) {
 
   return (
     <div className="follist">
-      <header className="follist__top">
-        <button className="follist__close" onClick={onClose}>{t('back')}</button>
-        <span className="follist__spacer" />
+      <header className="scr-top">
+        <button className="scr-back" onClick={onClose} aria-label={t('back')}>
+          <ChevronLeft size={22} strokeWidth={2} />
+        </button>
+        <span className="scr-title" />
       </header>
 
       <div className="follist__tabs">

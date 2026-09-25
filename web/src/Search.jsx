@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { ChevronLeft } from 'lucide-react'
 import { supabase } from './supabase.js'
 import { avatarTier } from './tiers.js'
 import { t, styleName } from './i18n.js'
@@ -82,10 +83,12 @@ export default function Search({ onClose, onOpenProfile, onOpenPost, onOpenTop }
   if (itemView) {
     return (
       <div className="search">
-        <header className="search__top">
-          <button className="search__close" onClick={() => setItemView(null)}>{t('back')}</button>
-          <span className="search__title">{itemView.label}</span>
-          <span className="search__spacer" />
+        <header className="scr-top">
+          <button className="scr-back" onClick={() => setItemView(null)} aria-label={t('back')}>
+            <ChevronLeft size={22} strokeWidth={2} />
+          </button>
+          <span className="scr-title">{itemView.label}</span>
+          <span className="scr-spacer" />
         </header>
         <div className="search__body">
           {!itemView.posts ? (
@@ -103,7 +106,9 @@ export default function Search({ onClose, onOpenProfile, onOpenPost, onOpenTop }
   return (
     <div className="search">
       <header className="search__top">
-        <button className="search__close" onClick={onClose}>{t('back')}</button>
+        <button className="scr-back" onClick={onClose} aria-label={t('back')}>
+          <ChevronLeft size={22} strokeWidth={2} />
+        </button>
         <input
           className="search__input field"
           placeholder={t('search_placeholder')}
