@@ -47,6 +47,7 @@ const COVERS = [
   { id: 'u9-support', accent: LIME, kicker: 'поддержка', title: 'вопрос — прямо<br>из приложения', big: null },
   { id: 'u10-edit', accent: VIOLET, kicker: 'обновление', title: 'образ можно<br>поправить после поста', big: null },
   { id: 'u11-bigger', accent: LIME, kicker: 'обновление', title: 'образы стали<br>крупнее', big: null },
+  { id: 'u12-v3', accent: VIOLET, kicker: 'обновление', title: 'driply 3', big: '3' },
 ]
 
 function coverHtml(c) {

@@ -5,10 +5,10 @@ import { ChevronLeft, ChevronRight, UserRound, Palette, ShieldCheck, Languages, 
 import { t, LANGS } from './i18n.js'
 import { useTheme } from './theme/ThemeProvider.jsx'
 import DripCoin from './components/ui/DripCoin.jsx'
-import pkg from '../package.json'
 
-// версия — в package.json: заметный деплой +0.1, конец редизайна — 2.0
-const APP_VERSION = pkg.version.split('.').slice(0, 2).join('.')
+// Публичная версия — круглая: её видит человек, и «3.10» ему ничего не говорит.
+// В package.json счётчик продолжает расти (сейчас 3.10.0) — он нужен истории коммитов.
+const APP_VERSION = '3'
 
 // Иконка в плитке — единственное, что отличает строки друг от друга на беглый взгляд
 function Row({ icon, label, hint, accent, onClick, children }) {
