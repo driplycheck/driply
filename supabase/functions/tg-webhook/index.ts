@@ -252,6 +252,7 @@ Deno.serve(async (req) => {
       if (kind && AGENTS[kind]) {
         const thread = message.message_thread_id
         runInBackground((async () => {
+          try {
           await tg('sendChatAction', { chat_id: message.chat.id, message_thread_id: thread, action: 'typing' })
 
           // основной путь: агент работает в GitHub Actions с доступом к репозиторию,
@@ -278,6 +279,14 @@ Deno.serve(async (req) => {
             chat_id: message.chat.id, message_thread_id: thread,
             text: 'Запускать некому: не задан GH_TOKEN, агенты работают через GitHub Actions.',
           })
+          } catch (e) {
+            // без этого любая сетевая ошибка оборачивалась молчанием в чате
+            console.error('agent turn', String(e))
+            await tg('sendMessage', {
+              chat_id: message.chat.id, message_thread_id: thread,
+              text: `Сорвался по дороге: ${e instanceof Error ? e.message : String(e)}`,
+            }).catch(() => {})
+          }
         })())
         return new Response('ok')
       }
@@ -321,8 +330,22 @@ Deno.serve(async (req) => {
         return new Response('ok')
       }
 
-      // свои заметки в группе поддержки пересылать некуда
-      if (inSupportChat || message.chat.type !== 'private') return new Response('ok')
+      // Сообщение в рабочей группе, но не в теме агента и не ответ на обращение.
+      // Раньше это молча игнорировалось — человек писал и не получал ничего.
+      if (inSupportChat) {
+        if (fromTid && modTid && fromTid === modTid && message.message_thread_id) {
+          const { data: list } = await supabase.rpc('agent_topics_list')
+          const bound = (Array.isArray(list) ? list : []).map((r: { kind: string }) => AGENTS[r.kind]?.name || r.kind)
+          await tg('sendMessage', {
+            chat_id: message.chat.id, message_thread_id: message.message_thread_id,
+            text: bound.length
+              ? `Это не тема агента. Сейчас отвечают: ${bound.join(', ')}. Список и привязка — /agents.`
+              : 'Агенты ещё не заведены. Создай тему и отправь в ней /setup_agent tester.',
+          })
+        }
+        return new Response('ok')
+      }
+      if (message.chat.type !== 'private') return new Response('ok')
 
       // обычный человек написал боту — принимаем как обращение
       if (fromTid) {
