@@ -1,11 +1,25 @@
 import { useState } from 'react'
+import { X } from 'lucide-react'
 import './ui.css'
+
+// Карточка принимает пропорции снимка: так у вертикальных фото нет полей,
+// а слишком узкие и слишком широкие всё равно остаются в разумных рамках.
+const MIN_RATIO = 0.5   // уже — уже не покажем, иначе карточка не влезает в экран
+const MAX_RATIO = 0.82  // шире — начинает походить на пост, а не на образ
+const clampRatio = (w, h) => (w && h ? Math.min(MAX_RATIO, Math.max(MIN_RATIO, w / h)) : null)
 
 // Карточка образа: фото (одно или карусель до трёх) + тёмный скрим, всё поверх фото — on-photo токены.
 // Логика (голос, жалоба, тосты) живёт снаружи и приходит слотами.
 export default function OutfitCard({ images, imageUrl, badge, author, caption, tags, actions, children, priority = false }) {
   const photos = (images && images.length ? images : [imageUrl]).filter(Boolean)
   const [index, setIndex] = useState(0)
+  const [ratio, setRatio] = useState(null)
+  const [zoom, setZoom] = useState(false)
+
+  function onFirstLoad(e) {
+    const r = clampRatio(e.target.naturalWidth, e.target.naturalHeight)
+    if (r) setRatio(r)
+  }
 
   function onSlide(e) {
     const el = e.currentTarget
@@ -14,7 +28,7 @@ export default function OutfitCard({ images, imageUrl, badge, author, caption, t
   }
 
   return (
-    <article className="ocard">
+    <article className="ocard" style={ratio ? { aspectRatio: String(ratio) } : undefined}>
       {photos.length > 1 ? (
         <div className="ocard__slides" onScroll={onSlide}>
           {photos.map((src, i) => (
@@ -22,6 +36,8 @@ export default function OutfitCard({ images, imageUrl, badge, author, caption, t
               {/* подложка — то же фото, размытое: образ виден целиком, без чёрных полей */}
               <img className="ocard__blur" src={src} alt="" aria-hidden="true" decoding="async" />
               <img className="ocard__photo" src={src} alt=""
+                onLoad={i === 0 ? onFirstLoad : undefined}
+                onClick={() => setZoom(true)}
                 loading={i === 0 && priority ? 'eager' : 'lazy'}
                 fetchPriority={i === 0 && priority ? 'high' : 'auto'} decoding="async" />
             </div>
@@ -31,6 +47,8 @@ export default function OutfitCard({ images, imageUrl, badge, author, caption, t
         <>
           <img className="ocard__blur" src={photos[0]} alt="" aria-hidden="true" decoding="async" />
           <img className="ocard__img" src={photos[0]} alt=""
+            onLoad={onFirstLoad}
+            onClick={() => setZoom(true)}
             loading={priority ? 'eager' : 'lazy'}
             fetchPriority={priority ? 'high' : 'auto'} decoding="async" />
         </>
@@ -64,6 +82,16 @@ export default function OutfitCard({ images, imageUrl, badge, author, caption, t
         {actions && <div className="ocard__actions">{actions}</div>}
       </div>
       {children}
+
+      {/* во весь экран: образ разглядывают, а карточка ограничена высотой ленты */}
+      {zoom && (
+        <div className="photoview" onClick={() => setZoom(false)}>
+          <img src={photos[index]} alt="" />
+          <button className="photoview__close" aria-label="×" onClick={() => setZoom(false)}>
+            <X size={20} strokeWidth={2.4} />
+          </button>
+        </div>
+      )}
     </article>
   )
 }
