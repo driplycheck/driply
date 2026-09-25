@@ -373,3 +373,13 @@ input, textarea, select, .field { font-size: 16px; }
   cursor: pointer;
 }
 .ocard__zoom:active { transform: scale(0.92); }
+
+/* Открытый образ: карточка по центру экрана, а не прижата к верху.
+   Высоту, как и в ленте, задаёт само фото. */
+.postview {
+  display: grid;
+  place-items: center;
+  padding: calc(env(safe-area-inset-top) + 62px) var(--gutter)
+           calc(24px + max(var(--safe-bottom, 0px), env(safe-area-inset-bottom)));
+}
+.postview > .ocard { width: 100%; max-height: 100%; }

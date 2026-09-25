@@ -5,7 +5,7 @@ import { tg, haptic } from './telegram.js'
 import { ChevronLeft, Settings as SettingsIcon, Share, Grid3x3, Crown, Ban, Undo2, Flag, MessageCircle, Layers } from 'lucide-react'
 import { avatarTier, tierProgress } from './tiers.js'
 import Button from './components/ui/Button.jsx'
-import { t, activeLang } from './i18n.js'
+import { t, activeLang, plural } from './i18n.js'
 import DripCoin from './components/ui/DripCoin.jsx'
 import FollowList from './FollowList.jsx'
 import ReportModal from './ReportModal.jsx'
@@ -183,10 +183,10 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onEdi
           </div>
 
           <div className="pstats">
-            <div className="pstat"><b>{compact(posts.length)}</b><span>{t('stat_looks_short')}</span></div>
-            <button className="pstat" onClick={() => setListMode('followers')}><b>{compact(followers)}</b><span>{t('stat_followers')}</span></button>
-            <button className="pstat" onClick={() => setListMode('following')}><b>{compact(followingCount)}</b><span>{t('stat_following')}</span></button>
-            <div className="pstat pstat--drip"><b>{compact(user.style_score)}</b><span>{t('stat_drips')}</span></div>
+            <div className="pstat"><b>{compact(posts.length)}</b><span>{plural(posts.length, 'looks')}</span></div>
+            <button className="pstat" onClick={() => setListMode('followers')}><b>{compact(followers)}</b><span>{plural(followers, 'followers')}</span></button>
+            <button className="pstat" onClick={() => setListMode('following')}><b>{compact(followingCount)}</b><span>{plural(followingCount, 'following')}</span></button>
+            <div className="pstat pstat--drip"><b>{compact(user.style_score)}</b><span>{plural(user.style_score, 'drips')}</span></div>
           </div>
 
           <button className="rankcard" onClick={onOpenTop}>

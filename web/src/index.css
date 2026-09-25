@@ -166,3 +166,9 @@ body {
   letter-spacing: -0.01em;
 }
 .scr-spacer { width: 38px; flex: none; }
+
+/* Системное синее кольцо фокуса выбивалось из оформления: даём своё,
+   но не убираем совсем — по табу должно быть видно, где ты находишься. */
+input:focus, textarea:focus, select:focus { outline: none; }
+input:focus-visible, textarea:focus-visible, select:focus-visible,
+.field:focus-within { outline: 2px solid var(--primary); outline-offset: 1px; }

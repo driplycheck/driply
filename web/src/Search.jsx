@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { ChevronLeft } from 'lucide-react'
+import { ChevronLeft, Trophy, Tag } from 'lucide-react'
 import { supabase } from './supabase.js'
 import { avatarTier } from './tiers.js'
 import { t, styleName } from './i18n.js'
@@ -123,7 +123,7 @@ export default function Search({ onClose, onOpenProfile, onOpenPost, onOpenTop }
             <div className="ssection">
               <div className="ssection__h">{t('sec_rating')}</div>
               <button className="sresult" onClick={onOpenTop}>
-                <div className="sresult__icon">🏆</div>
+                <div className="sresult__icon"><Trophy size={18} strokeWidth={2} /></div>
                 <div className="sresult__text">
                   <div className="sresult__name">{t('top_style')}</div>
                   <div className="sresult__sub">{t('top_style_sub')}</div>
@@ -172,7 +172,7 @@ export default function Search({ onClose, onOpenProfile, onOpenPost, onOpenTop }
                 <div className="ssection__h">{t('sec_items')}</div>
                 {items.map((it) => (
                   <button className="sresult" key={it.id} onClick={() => openItem(it)}>
-                    <div className="sresult__icon">🔖</div>
+                    <div className="sresult__icon"><Tag size={18} strokeWidth={2} /></div>
                     <div className="sresult__text">
                       <div className="sresult__name">{it.brand} {it.name}</div>
                       <div className="sresult__sub">{it.category}</div>

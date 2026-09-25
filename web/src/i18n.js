@@ -495,8 +495,20 @@ export function timeAgo(iso) {
 
 // plural(5, 'place') → «мест»: русские формы 1 / 2–4 / 5+
 const FORMS = {
-  ru: { place: ['место', 'места', 'мест'] },
-  en: { place: ['place', 'places', 'places'] },
+  ru: {
+    place: ['место', 'места', 'мест'],
+    looks: ['образ', 'образа', 'образов'],
+    followers: ['подписчик', 'подписчика', 'подписчиков'],
+    following: ['подписка', 'подписки', 'подписок'],
+    drips: ['дрип', 'дрипа', 'дрипов'],
+  },
+  en: {
+    place: ['place', 'places', 'places'],
+    looks: ['look', 'looks', 'looks'],
+    followers: ['follower', 'followers', 'followers'],
+    following: ['following', 'following', 'following'],
+    drips: ['drip', 'drips', 'drips'],
+  },
 }
 export function plural(n, word) {
   const forms = (FORMS[active] || FORMS.ru)[word]
