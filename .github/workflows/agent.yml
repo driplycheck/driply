@@ -17,10 +17,15 @@ on:
         description: 'Тема в группе, куда отправить ответ'
         required: false
 
+# Один агент — одна очередь: два сообщения подряд не запускают две гонки за один репозиторий.
+concurrency:
+  group: agent-${{ github.event.inputs.kind || 'tester' }}
+  cancel-in-progress: false
+
 jobs:
   answer:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     permissions:
       contents: write
       pull-requests: write
@@ -28,6 +33,19 @@ jobs:
       id-token: write   # действие берёт OIDC-токен, без него падает до запуска
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # нужна история, чтобы проверить, не тронул ли агент main
+
+      # имя агента подставляется в путь к файлу роли — принимаем только известные
+      - name: проверить, кто запускается
+        env:
+          KIND: ${{ github.event.inputs.kind || 'tester' }}
+        run: |
+          case "$KIND" in
+            tester|analyst|dev|pr) echo "агент: $KIND" ;;
+            *) echo "::error::неизвестный агент «$KIND»"; exit 1 ;;
+          esac
+          echo "MAIN_BEFORE=$(git rev-parse origin/main)" >> "$GITHUB_ENV"
 
       - uses: actions/setup-node@v4
         with:
@@ -79,6 +97,19 @@ jobs:
           SHOTS_USER_ID: ${{ secrets.SHOTS_USER_ID }}
           TG_WEBHOOK_URL: ${{ secrets.TG_WEBHOOK_URL }}
 
+      # Агент работает в отдельной ветке. Если main всё-таки сдвинулся — это авария,
+      # и узнать о ней надо сразу, а не когда прод уедет.
+      - name: main не тронут
+        if: always()
+        run: |
+          git fetch -q origin main
+          AFTER=$(git rev-parse origin/main)
+          if [ "$AFTER" != "$MAIN_BEFORE" ]; then
+            echo "::error::агент изменил main ($MAIN_BEFORE → $AFTER)"
+            exit 1
+          fi
+          echo "main на месте"
+
       - name: отправить ответ в тему
         if: always()
         env:
@@ -87,4 +118,6 @@ jobs:
           CI_SECRET: ${{ secrets.CI_SECRET }}
           THREAD_ID: ${{ github.event.inputs.thread_id }}
           KIND: ${{ github.event.inputs.kind || 'tester' }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          JOB_STATUS: ${{ job.status }}
         run: node .github/scripts/report-agent.mjs

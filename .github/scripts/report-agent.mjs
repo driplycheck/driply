@@ -24,15 +24,21 @@ function textFrom(log) {
 let text = ''
 try {
   text = textFrom(JSON.parse(await readFile(file, 'utf8')))
-} catch (e) {
-  text = `Не смог прочитать лог выполнения: ${e.message}`
+} catch {
+  text = ''
 }
-if (!text.trim()) text = 'Отработал, но ответа не оставил. Загляни в прогон на GitHub.'
+// молчание — худший исход: если ответа нет, объясняем почему и куда смотреть
+if (!text.trim()) {
+  const status = process.env.JOB_STATUS || 'unknown'
+  text = status === 'success'
+    ? 'Отработал, но ответа не оставил. Прогон: ' + (process.env.RUN_URL || '—')
+    : `Не справился (${status}). Прогон: ${process.env.RUN_URL || '—'}`
+}
 
 const res = await fetch(`${hook}?report=${encodeURIComponent(secret)}`, {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ text: text.slice(0, 3500), thread_id: thread ? Number(thread) : null }),
+  body: JSON.stringify({ text: text.slice(0, 3500), thread_id: thread ? Number(thread) : null, kind }),
 })
 const json = await res.json().catch(() => ({}))
 console.log(json.ok ? `Ответ ${kind} отправлен.` : `Не отправил: ${json.error ?? res.status}`)

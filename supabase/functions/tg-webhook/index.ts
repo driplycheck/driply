@@ -464,6 +464,62 @@ Deno.serve(async (req) => {
         return new Response('ok')
       }
 
+      // Канал для публикаций: перешли сюда любой пост из канала и ответь на него этой командой,
+      // либо просто /setup_channel @имя_канала.
+      if (command === '/setup_channel') {
+        const supabase = db()
+        const { data: modTid } = await supabase.rpc('support_moderator_tid')
+        if (!modTid || message.from?.id !== modTid) return new Response('ok')
+
+        const forwarded = message.reply_to_message?.forward_from_chat?.id
+        const arg = (payload ?? '').trim()
+        let target: number | string | null = forwarded ?? (arg || null)
+        if (!target) {
+          await tg('sendMessage', {
+            chat_id: chatId, message_thread_id: message.message_thread_id,
+            text: 'Перешли сюда любой пост из канала и ответь на него /setup_channel — или напиши /setup_channel @имя_канала.',
+          })
+          return new Response('ok')
+        }
+
+        // проверяем, что бот действительно может туда писать
+        const probe = await tg('getChat', { chat_id: target })
+        if (!probe?.ok) {
+          await tg('sendMessage', {
+            chat_id: chatId, message_thread_id: message.message_thread_id,
+            text: `Не вижу такой канал: ${probe?.description ?? 'нет ответа'}. Добавь бота админом канала с правом публикации.`,
+          })
+          return new Response('ok')
+        }
+        const { error: saveErr } = await supabase.rpc('support_channel_set', { p_channel_id: probe.result.id })
+        await tg('sendMessage', {
+          chat_id: chatId, message_thread_id: message.message_thread_id,
+          text: saveErr ? `Не сохранил: ${saveErr.message}` : `✅ Канал «${probe.result.title}» подключён. Публиковать: ответь /publish на готовый пост.`,
+        })
+        return new Response('ok')
+      }
+
+      // Публикация согласованного поста: реплаем на текст, который хочешь отправить в канал.
+      if (command === '/publish') {
+        const supabase = db()
+        const { data: modTid } = await supabase.rpc('support_moderator_tid')
+        if (!modTid || message.from?.id !== modTid) return new Response('ok')
+
+        const source = message.reply_to_message?.text
+        const { data: routes } = await supabase.rpc('support_routing_get')
+        const route = Array.isArray(routes) ? routes[0] : routes
+        const reply = (t: string) => tg('sendMessage', { chat_id: chatId, message_thread_id: message.message_thread_id, text: t })
+
+        if (!route?.channel_id) { await reply('Канал не подключён. Сначала /setup_channel.'); return new Response('ok') }
+        if (!source) { await reply('Ответь этой командой на сообщение с готовым постом.'); return new Response('ok') }
+
+        // отрезаем служебный хвост агента после строки «—»: в канал он не нужен
+        const body = source.split(/\n\s*—\s*\n/)[0].trim()
+        const sent = await tg('sendMessage', { chat_id: route.channel_id, text: body, parse_mode: 'HTML' })
+        await reply(sent?.ok ? '📣 Опубликовано в канале.' : `Не опубликовал: ${sent?.description ?? 'нет ответа'}`)
+        return new Response('ok')
+      }
+
       // Передача работы между агентами. Запускает только основатель и только вручную:
       // текст жалобы — данные от постороннего человека, пускать их в автозапуск нельзя.
       if (command === '/check' || command === '/fix') {
