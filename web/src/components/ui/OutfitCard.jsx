@@ -18,15 +18,22 @@ export default function OutfitCard({ images, imageUrl, badge, author, caption, t
       {photos.length > 1 ? (
         <div className="ocard__slides" onScroll={onSlide}>
           {photos.map((src, i) => (
-            <img key={src + i} className="ocard__slide" src={src} alt=""
-              loading={i === 0 && priority ? 'eager' : 'lazy'}
-              fetchPriority={i === 0 && priority ? 'high' : 'auto'} decoding="async" />
+            <div className="ocard__slide" key={src + i}>
+              {/* подложка — то же фото, размытое: образ виден целиком, без чёрных полей */}
+              <img className="ocard__blur" src={src} alt="" aria-hidden="true" decoding="async" />
+              <img className="ocard__photo" src={src} alt=""
+                loading={i === 0 && priority ? 'eager' : 'lazy'}
+                fetchPriority={i === 0 && priority ? 'high' : 'auto'} decoding="async" />
+            </div>
           ))}
         </div>
       ) : (
-        <img className="ocard__img" src={photos[0]} alt=""
-          loading={priority ? 'eager' : 'lazy'}
-          fetchPriority={priority ? 'high' : 'auto'} decoding="async" />
+        <>
+          <img className="ocard__blur" src={photos[0]} alt="" aria-hidden="true" decoding="async" />
+          <img className="ocard__img" src={photos[0]} alt=""
+            loading={priority ? 'eager' : 'lazy'}
+            fetchPriority={priority ? 'high' : 'auto'} decoding="async" />
+        </>
       )}
       <div className="ocard__scrim" />
       {(badge || photos.length > 1) && (
