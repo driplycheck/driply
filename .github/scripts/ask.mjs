@@ -19,10 +19,11 @@ const urls = {
   stats: () => `${HOOK}?stats=${encodeURIComponent(SECRET)}&name=${encodeURIComponent(arg || 'funnel')}&days=${Number(num) || 30}`,
   health: () => `${HOOK}?health=${encodeURIComponent(SECRET)}`,
   history: () => `${HOOK}?history=${encodeURIComponent(SECRET)}&kind=${encodeURIComponent(arg || 'pr')}&limit=${Number(num) || 12}`,
+  published: () => `${HOOK}?published=${encodeURIComponent(SECRET)}&limit=${Number(arg) || 10}`,
 }
 
 if (!urls[what]) {
-  console.error('Что запросить: stats <срез> <дней> | health | history <агент> <сколько>')
+  console.error('Что запросить: stats <срез> <дней> | health | history <агент> <сколько> | published <сколько>')
   console.error('Срезы: funnel, exits, growth, retention, content, economy, errors')
   process.exit(1)
 }

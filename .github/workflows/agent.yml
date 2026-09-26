@@ -7,6 +7,7 @@ on:
     - cron: '0 9 * * *'
     - cron: '0 7 * * *'
     - cron: '0 15 * * *'
+    - cron: '0 6 * * 1'    # аналитик, итоги недели в 09:00 МСК
   workflow_dispatch:
     inputs:
       kind:
@@ -21,7 +22,7 @@ on:
 
 # Один агент — одна очередь: два сообщения подряд не запускают две гонки за один репозиторий.
 concurrency:
-  group: agent-${{ github.event.inputs.kind || (github.event.schedule == '0 9 * * *' && 'tester' || 'pr') }}
+  group: agent-${{ github.event.inputs.kind || github.event.schedule || 'chat' }}
   cancel-in-progress: false
 
 jobs:
@@ -49,7 +50,11 @@ jobs:
           KIND="$IN_KIND"
           TASK="$IN_TASK"
           if [ -z "$KIND" ]; then
-            if [ "$SCHEDULE" = '0 9 * * *' ]; then KIND=tester; else KIND=pr; fi
+            case "$SCHEDULE" in
+              '0 9 * * *') KIND=tester ;;
+              '0 6 * * 1') KIND=analyst ;;
+              *)           KIND=pr ;;
+            esac
           fi
           case "$KIND" in
             tester|analyst|dev|pr) echo "агент: $KIND" ;;
@@ -57,6 +62,9 @@ jobs:
           esac
           if [ -z "$TASK" ] && [ "$KIND" = "tester" ]; then
             TASK='Ежедневный аудит. Прогони полную проверку прода, контракты и линтер, посмотри срез errors за последние сутки. Отчитайся коротко: что работает, что сломано, что тревожит. Если всё чисто — скажи одной строкой.'
+          fi
+          if [ -z "$TASK" ] && [ "$KIND" = "analyst" ]; then
+            TASK='Итоги недели. Возьми срезы growth, funnel, retention, content, economy за 7 дней и сравни с предыдущей неделей. Коротко: что изменилось, что требует действия, а что шум малых чисел.'
           fi
           if [ -z "$TASK" ]; then
             TASK='Пришли один готовый пост для канала. Сначала посмотри, что уже присылал сам (срез history) и что уже написано в marketing/build-posts-page.mjs — не повторяйся ни темой, ни зачином. Чередуй жанры: обновление продукта, польза читателю, живая цифра из статистики, вопрос аудитории. Если повода для анонса нет, напиши пост, полезный сам по себе, а не выдумывай новость.'

@@ -214,6 +214,15 @@ Deno.serve(async (req) => {
     return Response.json({ ok: true, kind, messages: data })
   }
 
+  // Что из предложенного реально опубликовано — обратная связь для PR-менеджера.
+  if (url.searchParams.get('published')) {
+    if (!serviceKey(url.searchParams.get('published'))) return new Response('forbidden', { status: 403 })
+    const limit = Math.min(Number(url.searchParams.get('limit')) || 10, 50)
+    const { data, error } = await db().rpc('published_list', { p_limit: limit })
+    if (error) return Response.json({ ok: false, error: error.message }, { status: 400 })
+    return Response.json({ ok: true, posts: data })
+  }
+
   // Самопроверка: CI спрашивает, живы ли база, роутинг и сам бот.
   if (url.searchParams.get('health')) {
     if (!serviceKey(url.searchParams.get('health'))) return new Response('forbidden', { status: 403 })
@@ -526,6 +535,7 @@ Deno.serve(async (req) => {
         // отрезаем служебный хвост агента после строки «—»: в канал он не нужен
         const body = source.split(/\n\s*—\s*\n/)[0].trim()
         const sent = await tg('sendMessage', { chat_id: route.channel_id, text: body, parse_mode: 'HTML' })
+        if (sent?.ok) await supabase.rpc('post_published', { p_body: body })
         await reply(sent?.ok ? '📣 Опубликовано в канале.' : `Не опубликовал: ${sent?.description ?? 'нет ответа'}`)
         return new Response('ok')
       }
