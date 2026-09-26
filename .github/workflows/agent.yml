@@ -2,9 +2,11 @@
 name: Агент
 
 on:
-  # ежедневный аудит в 12:00 МСК, остальное — по запросу из Telegram
+  # По расписанию (время московское): аудит в 12:00, посты от PR-менеджера в 10:00 и 18:00.
   schedule:
     - cron: '0 9 * * *'
+    - cron: '0 7 * * *'
+    - cron: '0 15 * * *'
   workflow_dispatch:
     inputs:
       kind:
@@ -19,7 +21,7 @@ on:
 
 # Один агент — одна очередь: два сообщения подряд не запускают две гонки за один репозиторий.
 concurrency:
-  group: agent-${{ github.event.inputs.kind || 'tester' }}
+  group: agent-${{ github.event.inputs.kind || (github.event.schedule == '0 9 * * *' && 'tester' || 'pr') }}
   cancel-in-progress: false
 
 jobs:
@@ -36,16 +38,36 @@ jobs:
         with:
           fetch-depth: 0   # нужна история, чтобы проверить, не тронул ли агент main
 
-      # имя агента подставляется в путь к файлу роли — принимаем только известные
-      - name: проверить, кто запускается
+      # Кто запускается и с какой задачей. По расписанию задачу выбираем сами,
+      # из чата — берём присланную. Имя агента идёт в путь к файлу роли, поэтому проверяем.
+      - name: выбрать агента и задачу
         env:
-          KIND: ${{ github.event.inputs.kind || 'tester' }}
+          IN_KIND: ${{ github.event.inputs.kind }}
+          IN_TASK: ${{ github.event.inputs.message }}
+          SCHEDULE: ${{ github.event.schedule }}
         run: |
+          KIND="$IN_KIND"
+          TASK="$IN_TASK"
+          if [ -z "$KIND" ]; then
+            if [ "$SCHEDULE" = '0 9 * * *' ]; then KIND=tester; else KIND=pr; fi
+          fi
           case "$KIND" in
             tester|analyst|dev|pr) echo "агент: $KIND" ;;
             *) echo "::error::неизвестный агент «$KIND»"; exit 1 ;;
           esac
-          echo "MAIN_BEFORE=$(git rev-parse origin/main)" >> "$GITHUB_ENV"
+          if [ -z "$TASK" ] && [ "$KIND" = "tester" ]; then
+            TASK='Ежедневный аудит. Прогони полную проверку прода, контракты и линтер, посмотри срез errors за последние сутки. Отчитайся коротко: что работает, что сломано, что тревожит. Если всё чисто — скажи одной строкой.'
+          fi
+          if [ -z "$TASK" ]; then
+            TASK='Пришли один готовый пост для канала. Сначала посмотри, что уже присылал сам (срез history) и что уже написано в marketing/build-posts-page.mjs — не повторяйся ни темой, ни зачином. Чередуй жанры: обновление продукта, польза читателю, живая цифра из статистики, вопрос аудитории. Если повода для анонса нет, напиши пост, полезный сам по себе, а не выдумывай новость.'
+          fi
+          {
+            echo "KIND=$KIND"
+            echo "MAIN_BEFORE=$(git rev-parse origin/main)"
+            echo 'TASK<<AGENT_TASK_EOF'
+            echo "$TASK"
+            echo 'AGENT_TASK_EOF'
+          } >> "$GITHUB_ENV"
 
       - uses: actions/setup-node@v4
         with:
@@ -54,9 +76,6 @@ jobs:
       # задачу кладём файлом внутри репозитория: за его пределы агент не видит,
       # а текст из чата так не попадает в YAML и ничего не ломает
       - name: положить задачу в файл
-        env:
-          KIND: ${{ github.event.inputs.kind || 'tester' }}
-          TASK: "${{ github.event.inputs.message || 'Ежедневный аудит. Прогони полную проверку прода, контракты и линтер. Отчитайся коротко — что работает, что сломано, что тревожит. Если всё чисто, так и скажи одной строкой, не растекайся.' }}"
         run: |
           mkdir -p .agent
           printf '%s' "$TASK" > .agent/task.md
@@ -64,14 +83,12 @@ jobs:
 
       # правки кода уходят в отдельную ветку: в main агент попасть не может
       - name: ветка под правки
-        if: github.event.inputs.kind == 'dev'
+        if: env.KIND == 'dev'
         run: git checkout -b "agent/fix-${{ github.run_id }}"
 
       # список инструментов считаем заранее: длинное условие прямо в claude_args ломает разбор файла
       - name: список инструментов
         id: tools
-        env:
-          KIND: ${{ github.event.inputs.kind || 'tester' }}
         run: |
           if [ "$KIND" = "dev" ]; then
             echo 'list=Read,Glob,Grep,Edit,Write,Bash(npm:*),Bash(npx:*),Bash(node:*),Bash(git:*),Bash(gh pr:*)' >> "$GITHUB_OUTPUT"
@@ -117,7 +134,6 @@ jobs:
           HOOK: ${{ secrets.TG_WEBHOOK_URL }}
           CI_SECRET: ${{ secrets.CI_SECRET }}
           THREAD_ID: ${{ github.event.inputs.thread_id }}
-          KIND: ${{ github.event.inputs.kind || 'tester' }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           JOB_STATUS: ${{ job.status }}
         run: node .github/scripts/report-agent.mjs

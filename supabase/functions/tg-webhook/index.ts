@@ -204,6 +204,16 @@ Deno.serve(async (req) => {
     return Response.json({ ok: true, name, days, data })
   }
 
+  // Что агент писал в свою тему в последний раз — чтобы не повторяться на расписании.
+  if (url.searchParams.get('history')) {
+    if (!serviceKey(url.searchParams.get('history'))) return new Response('forbidden', { status: 403 })
+    const kind = url.searchParams.get('kind') ?? 'pr'
+    const limit = Math.min(Number(url.searchParams.get('limit')) || 10, 40)
+    const { data, error } = await db().rpc('agent_history', { p_kind: kind, p_limit: limit })
+    if (error) return Response.json({ ok: false, error: error.message }, { status: 400 })
+    return Response.json({ ok: true, kind, messages: data })
+  }
+
   // Самопроверка: CI спрашивает, живы ли база, роутинг и сам бот.
   if (url.searchParams.get('health')) {
     if (!serviceKey(url.searchParams.get('health'))) return new Response('forbidden', { status: 403 })
