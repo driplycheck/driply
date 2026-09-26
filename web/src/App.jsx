@@ -31,6 +31,9 @@ import Referral from './Referral.jsx'
 import Appearance from './Appearance.jsx'
 import Moderation from './Moderation.jsx'
 import Support from './Support.jsx'
+import Legal from './Legal.jsx'
+import Consent from './Consent.jsx'
+import { LEGAL_VERSION } from './legal/docs.js'
 import { setToastListener } from './toast.js'
 import TabBar from './components/ui/TabBar.jsx'
 import DripCoin from './components/ui/DripCoin.jsx'
@@ -142,6 +145,14 @@ export default function App() {
 
   if (profile === undefined) return <div className="state">{t('loading')}</div>
 
+  // Документы показываем один раз: новым — сразу после регистрации,
+  // остальным — когда версия поменялась.
+  if (profile && profile.terms_version !== LEGAL_VERSION) {
+    return (
+      <Consent onAccepted={(v) => setProfile((p) => ({ ...p, terms_version: v }))} />
+    )
+  }
+
   if (profile === null && tgUser?.id) {
     return (
       <Onboarding
@@ -233,6 +244,7 @@ export default function App() {
             onOpenAppearance={() => push('appearance')}
             onOpenModeration={() => push('moderation')}
             onOpenSupport={() => push('support')}
+            onOpenLegal={(doc) => push('legal', { doc })}
           />
         </Overlay>
       )}
@@ -248,6 +260,12 @@ export default function App() {
             onBalance={(n) => setProfile((p) => (p ? { ...p, daily_credits: n } : p))}
             onEdit={(post) => push('composer', { editPost: post })}
           />
+        </Overlay>
+      )}
+
+      {top?.type === 'legal' && (
+        <Overlay onClose={pop} leaving={top.leaving}>
+          <Legal doc={top.props.doc} onClose={pop} />
         </Overlay>
       )}
 

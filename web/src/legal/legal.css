@@ -1,0 +1,65 @@
+/* Длинный текст: узкая колонка и крупный межстрочный — иначе такое не читают */
+.legal {
+  position: fixed;
+  inset: 0;
+  z-index: 130;
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+.legal__body { padding: 8px 18px calc(40px + max(var(--safe-bottom, 0px), env(safe-area-inset-bottom))); }
+.legal__updated { margin: 6px 0 14px; font-size: 12px; color: var(--muted); }
+.legal__intro { margin: 0 0 8px; font-size: 15px; line-height: 1.5; color: var(--text); }
+.legal__sec { margin-top: 22px; }
+.legal__sec h2 {
+  margin: 0 0 8px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+}
+.legal__sec p { margin: 0 0 10px; font-size: 14px; line-height: 1.55; color: var(--text-2); }
+.legal__sec ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 8px; }
+.legal__sec li { font-size: 14px; line-height: 1.5; color: var(--text-2); }
+.legal__contact { margin-top: 28px; font-size: 13px; color: var(--muted); }
+
+/* Согласие: экран-препятствие, но не стена текста — сами документы открываются рядом */
+.consent {
+  position: fixed;
+  inset: 0;
+  z-index: 140;
+  background: var(--bg);
+  display: grid;
+  place-items: center;
+  padding: 24px 18px calc(24px + max(var(--safe-bottom, 0px), env(safe-area-inset-bottom)));
+}
+.consent__box { width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 14px; }
+.consent__title { font-family: var(--font-display); font-weight: 800; font-size: 24px; line-height: 1.15; letter-spacing: -0.02em; }
+.consent__text { font-size: 15px; line-height: 1.5; color: var(--text-2); }
+.consent__docs { display: flex; flex-direction: column; gap: 8px; }
+.consent__doc {
+  display: block; width: 100%; text-align: left;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 15px; font-weight: 600;
+  cursor: pointer;
+}
+.consent__doc:active { transform: scale(0.99); }
+.consent__age { font-size: 12px; line-height: 1.45; color: var(--muted); }
+.consent__btn {
+  margin-top: 4px;
+  padding: 16px;
+  border: none;
+  border-radius: 16px;
+  background: var(--primary);
+  color: var(--on-primary);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 16px;
+  cursor: pointer;
+}

@@ -41,6 +41,7 @@ async function validateInitData(initData, botToken) {
 const LIMITS = {
   create_post: [10, 3600],
   update_post: [30, 3600],
+  accept_terms: [10, 3600],
   cast_vote: [60, 3600],
   set_profile: [20, 3600],
   set_follow: [60, 3600],
@@ -180,6 +181,15 @@ Deno.serve(async (req) => {
     
 
       return jsonResponse({ ok: true }, 200)
+    }
+
+    // Согласие с документами: фиксируем версию и время в профиле
+    if (body.action === 'accept_terms') {
+      const { data, error } = await supabase.rpc('accept_terms', {
+        p_tid: tgUser.id, p_version: String(body.version ?? '').slice(0, 40),
+      })
+      if (error) return jsonResponse({ error: error.message }, 400)
+      return jsonResponse(data, 200)
     }
 
     // Модерация: право проверяет сама база (is_founder), тут только передаём telegram_id из подписи
