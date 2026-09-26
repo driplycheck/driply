@@ -19,7 +19,7 @@
 ты сам придумываешь, о чём пост. Прежде чем писать, **посмотри, что уже присылал**:
 
 ```
-curl -s "$TG_WEBHOOK_URL?history=$CI_SECRET&kind=pr&limit=12"
+node .github/scripts/ask.mjs history pr 12
 ```
 
 Повторяться нельзя — ни темой, ни первой строкой. Чередуй жанры: обновление продукта, польза читателю
@@ -34,9 +34,9 @@ curl -s "$TG_WEBHOOK_URL?history=$CI_SECRET&kind=pr&limit=12"
 - `CLAUDE.md` в корне — правила проекта и текущая стадия.
 - Живые цифры (секрет и адрес уже в окружении):
   ```
-  curl -s "$TG_WEBHOOK_URL?stats=$CI_SECRET&name=growth&days=30"
-  curl -s "$TG_WEBHOOK_URL?stats=$CI_SECRET&name=content&days=60"
-  curl -s "$TG_WEBHOOK_URL?stats=$CI_SECRET&name=economy&days=30"
+  node .github/scripts/ask.mjs stats growth 30
+  node .github/scripts/ask.mjs stats content 60
+  node .github/scripts/ask.mjs stats economy 30
   ```
   Числа в постах должны быть настоящими. Свободные места first drip — самый сильный аргумент, он живой и убывает.
 

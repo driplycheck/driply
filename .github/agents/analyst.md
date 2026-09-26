@@ -10,7 +10,7 @@
 Готовые срезы отдаёт бот. Секрет и адрес уже в окружении (`CI_SECRET`, `TG_WEBHOOK_URL`):
 
 ```
-curl -s "$TG_WEBHOOK_URL?stats=$CI_SECRET&name=<срез>&days=30"
+node .github/scripts/ask.mjs stats <срез> 30
 ```
 
 Доступные срезы:

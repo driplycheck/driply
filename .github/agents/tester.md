@@ -25,7 +25,7 @@
 Быстрая сводка состояния — у бота, секрет и адрес уже в окружении:
 
 ```
-curl -s "$TG_WEBHOOK_URL?health=$CI_SECRET"
+node .github/scripts/ask.mjs health
 ```
 
 Отдаёт: жив ли бот, стоит ли вебхук, копятся ли у него ошибки, привязаны ли темы, сколько мест first drip осталось.
@@ -35,7 +35,7 @@ curl -s "$TG_WEBHOOK_URL?health=$CI_SECRET"
 Приложение само сообщает о сбоях в браузере у пользователей. Посмотреть за последние дни:
 
 ```
-curl -s "$TG_WEBHOOK_URL?stats=$CI_SECRET&name=errors&days=7"
+node .github/scripts/ask.mjs stats errors 7
 ```
 
 Отдаёт сгруппированные ошибки: вид, текст, сколько раз и у скольких человек. В ежедневном аудите
