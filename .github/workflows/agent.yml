@@ -91,9 +91,10 @@ jobs:
         id: tools
         run: |
           if [ "$KIND" = "dev" ]; then
-            echo 'list=Read,Glob,Grep,Edit,Write,Bash(npm:*),Bash(npx:*),Bash(node:*),Bash(git:*),Bash(gh pr:*)' >> "$GITHUB_OUTPUT"
+            echo 'list=Read,Glob,Grep,Edit,Write,Bash(npm:*),Bash(npx:*),Bash(node:*),Bash(curl:*),Bash(git:*),Bash(gh pr:*)' >> "$GITHUB_OUTPUT"
           else
-            echo 'list=Read,Glob,Grep,Bash(npm:*),Bash(npx:*),Bash(node:*),Bash(git status:*),Bash(git log:*),Bash(git diff:*)' >> "$GITHUB_OUTPUT"
+            # curl обязателен: через него агенты берут статистику, здоровье и свою историю
+            echo 'list=Read,Glob,Grep,Bash(npm:*),Bash(npx:*),Bash(node:*),Bash(curl:*),Bash(git status:*),Bash(git log:*),Bash(git diff:*)' >> "$GITHUB_OUTPUT"
           fi
 
       - uses: anthropics/claude-code-action@v1
