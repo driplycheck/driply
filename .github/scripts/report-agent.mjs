@@ -35,10 +35,26 @@ if (!text.trim()) {
     : `Не справился (${status}). Прогон: ${process.env.RUN_URL || '—'}`
 }
 
+// Telegram понимает только простые теги. Разметку, которую агент всё-таки написал,
+// вычищаем здесь: правило в роли — просьба, а это гарантия.
+function forTelegram(raw) {
+  let out = String(raw)
+  out = out.replace(/```[a-z]*\n?/gi, '')            // блоки кода
+  out = out.replace(/`([^`]+)`/g, '$1')               // одиночные кавычки-код
+  out = out.replace(/^\s{0,3}#{1,6}\s+/gm, '')        // заголовки
+  out = out.replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>')  // жирный markdown → тег
+  out = out.replace(/(^|[\s(])\*([^*\n]+)\*(?=[\s).,!?:;]|$)/g, '$1$2') // курсив-звёздочки
+  out = out.replace(/^\s*[-*]\s+/gm, '— ')            // маркеры списка
+  // всё, что похоже на чужой тег, кроме разрешённых, показываем как текст
+  out = out.replace(/<(?!\/?(b|i|u|s|code|pre|a\s)[^>]*>)([^>]*)>/gi, '&lt;$2&gt;')
+  out = out.replace(/\n{3,}/g, '\n\n').trim()
+  return out
+}
+
 const res = await fetch(`${hook}?report=${encodeURIComponent(secret)}`, {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ text: text.slice(0, 3500), thread_id: thread ? Number(thread) : null, kind }),
+  body: JSON.stringify({ text: forTelegram(text).slice(0, 3500), thread_id: thread ? Number(thread) : null, kind }),
 })
 const json = await res.json().catch(() => ({}))
 console.log(json.ok ? `Ответ ${kind} отправлен.` : `Не отправил: ${json.error ?? res.status}`)

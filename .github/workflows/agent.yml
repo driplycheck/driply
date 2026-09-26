@@ -87,7 +87,10 @@ jobs:
         run: |
           mkdir -p .agent
           printf '%s' "$TASK" > .agent/task.md
-          cp ".github/agents/$KIND.md" .agent/role.md
+          # общие правила речи + роль: стиль один на всех, чтобы не расходился по файлам
+          cat .github/agents/_style.md > .agent/role.md
+          printf '\n\n' >> .agent/role.md
+          cat ".github/agents/$KIND.md" >> .agent/role.md
 
       # правки кода уходят в отдельную ветку: в main агент попасть не может
       - name: ветка под правки
