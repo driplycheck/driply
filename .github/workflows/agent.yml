@@ -113,17 +113,16 @@ jobs:
       - name: снимки экранов для тестировщика
         if: env.KIND == 'tester'
         continue-on-error: true
+        timeout-minutes: 8
         working-directory: web
         env:
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           SHOTS_TG_ID: ${{ secrets.SHOTS_TG_ID }}
           SHOTS_USER_ID: ${{ secrets.SHOTS_USER_ID }}
         run: |
           npm ci
           npx playwright install --with-deps chromium
-          npm run shots dark
-          ls -la .shots/*.png | head -20
+          node scripts/glance.mjs
+          ls -la .shots/*.png || true
 
       - uses: anthropics/claude-code-action@v1
         id: claude
