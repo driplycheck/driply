@@ -105,6 +105,23 @@ jobs:
             echo 'list=Read,Glob,Grep,Bash(npm:*),Bash(npx:*),Bash(node:*),Bash(curl:*),Bash(git status:*),Bash(git log:*),Bash(git diff:*)' >> "$GITHUB_OUTPUT"
           fi
 
+      # Экраны снимаем заранее: прогон скриншотов идёт минутами, инструмент уводит такую
+      # команду в фон, а ждать агенту некого — он заканчивает ответ и прогон закрывается.
+      - name: снимки экранов для тестировщика
+        if: env.KIND == 'tester'
+        continue-on-error: true
+        working-directory: web
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          SHOTS_TG_ID: ${{ secrets.SHOTS_TG_ID }}
+          SHOTS_USER_ID: ${{ secrets.SHOTS_USER_ID }}
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+          npm run shots dark
+          ls -la .shots/*.png | head -20
+
       - uses: anthropics/claude-code-action@v1
         id: claude
         with:
