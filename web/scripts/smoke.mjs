@@ -11,6 +11,7 @@ import { chromium } from 'playwright'
 import { loadEnv } from 'vite'
 import { fileURLToPath } from 'node:url'
 import { mkdir } from 'node:fs/promises'
+import { LEGAL_VERSION } from '../src/legal/docs.js'
 
 const root = fileURLToPath(new URL('..', import.meta.url))
 const env = { ...loadEnv('', root, ''), ...process.env }
@@ -48,6 +49,7 @@ const FAKE_READS = {
   my_profile: {
     id: USER_ID, display_name: 'smoke', avatar_url: null, bio: '', style_score: 0,
     hide_username: false, daily_credits: 200, is_founder: false, gender: null, allow_dm: true, notify_prefs: {},
+    terms_version: LEGAL_VERSION,
   },
   my_posts: [], my_votes: [], my_blocks: [],
   ref_stats: { invited: 0, earned: 0, my_id: USER_ID, ref_code: 'smoke' }, ref_invited_list: [],
