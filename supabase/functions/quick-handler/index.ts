@@ -42,6 +42,8 @@ const LIMITS = {
   create_post: [10, 3600],
   update_post: [30, 3600],
   accept_terms: [10, 3600],
+  export_data: [5, 3600],
+  delete_account: [3, 86400],
   cast_vote: [60, 3600],
   set_profile: [20, 3600],
   set_follow: [60, 3600],
@@ -183,12 +185,29 @@ Deno.serve(async (req) => {
       return jsonResponse({ ok: true }, 200)
     }
 
-    // Согласие с документами: фиксируем версию и время в профиле
+    // Три согласия по 152-ФЗ: соглашение, обработка, распространение — пишем раздельно
     if (body.action === 'accept_terms') {
-      const { data, error } = await supabase.rpc('accept_terms', {
-        p_tid: tgUser.id, p_version: String(body.version ?? '').slice(0, 40),
+      const { data, error } = await supabase.rpc('accept_consents', {
+        p_tid: tgUser.id,
+        p_version: String(body.version ?? '').slice(0, 40),
+        p_details: body.details ?? {},
       })
       if (error) return jsonResponse({ error: error.message }, 400)
+      return jsonResponse(data, 200)
+    }
+
+    // Копия своих данных (ст. 14 152-ФЗ)
+    if (body.action === 'export_data') {
+      const { data, error } = await supabase.rpc('export_my_data', { p_tid: tgUser.id })
+      if (error) return jsonResponse({ error: error.message }, 400)
+      return jsonResponse(data, 200)
+    }
+
+    // Удаление аккаунта самим человеком, без обращения в поддержку
+    if (body.action === 'delete_account') {
+      const { data, error } = await supabase.rpc('delete_my_account', { p_tid: tgUser.id })
+      if (error) return jsonResponse({ error: error.message }, 400)
+      runInBackground(sendTg(botToken, tgUser.id, 'Аккаунт Driply удалён. Образы, оценки и подписки стёрты. Если это ошибка — напиши сюда.'))
       return jsonResponse(data, 200)
     }
 

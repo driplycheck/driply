@@ -33,6 +33,7 @@ import Moderation from './Moderation.jsx'
 import Support from './Support.jsx'
 import Legal from './Legal.jsx'
 import Consent from './Consent.jsx'
+import MyData from './MyData.jsx'
 import { LEGAL_VERSION } from './legal/docs.js'
 import { setToastListener } from './toast.js'
 import TabBar from './components/ui/TabBar.jsx'
@@ -56,7 +57,7 @@ export default function App() {
   const [loadError, setLoadError] = useState(null)
   const toastTimer = useRef(null)
 
-  const { top, push, replace, pop, touch } = useOverlayStack()
+  const { top, push, replace, pop, touch, closeAll } = useOverlayStack()
   const { allowPreview } = useTheme()
 
   useEffect(() => {
@@ -245,6 +246,7 @@ export default function App() {
             onOpenModeration={() => push('moderation')}
             onOpenSupport={() => push('support')}
             onOpenLegal={(doc) => push('legal', { doc })}
+            onOpenData={(mode) => push('mydata', { mode })}
           />
         </Overlay>
       )}
@@ -259,6 +261,16 @@ export default function App() {
             onChanged={onPostDeleted}
             onBalance={(n) => setProfile((p) => (p ? { ...p, daily_credits: n } : p))}
             onEdit={(post) => push('composer', { editPost: post })}
+          />
+        </Overlay>
+      )}
+
+      {top?.type === 'mydata' && (
+        <Overlay onClose={pop} leaving={top.leaving}>
+          <MyData
+            mode={top.props.mode}
+            onClose={pop}
+            onDeleted={() => { closeAll(); setProfile(null); try { localStorage.removeItem(PROFILE_KEY) } catch { /* приватный режим */ } }}
           />
         </Overlay>
       )}

@@ -1,7 +1,7 @@
 import AboutApp from './AboutApp.jsx'
 import { callOrToast } from './api.js'
 import { useState } from 'react'
-import { ChevronLeft, ChevronRight, UserRound, Palette, ShieldCheck, Languages, Ban, Bell, UserPlus, Gift, Share2, LifeBuoy, Info, ScrollText, ShieldQuestion } from 'lucide-react'
+import { ChevronLeft, ChevronRight, UserRound, Palette, ShieldCheck, Languages, Ban, Bell, UserPlus, Gift, Share2, LifeBuoy, Info, ScrollText, ShieldQuestion, Download, Trash2 } from 'lucide-react'
 import { t, LANGS } from './i18n.js'
 import { useTheme } from './theme/ThemeProvider.jsx'
 import DripCoin from './components/ui/DripCoin.jsx'
@@ -35,7 +35,7 @@ function Toggle({ active, onClick, disabled, label }) {
   )
 }
 
-export default function Settings({ me, lang, onLang, onClose, onEditProfile, onChanged, onOpenBlocked, onOpenReferral, onOpenAppearance, onOpenModeration, onOpenSupport, onOpenLegal }) {
+export default function Settings({ me, lang, onLang, onClose, onEditProfile, onChanged, onOpenBlocked, onOpenReferral, onOpenAppearance, onOpenModeration, onOpenSupport, onOpenLegal, onOpenData }) {
   const { enabled: themesEnabled } = useTheme()
   const [prefs, setPrefs] = useState({
     all: me.notify_prefs?.all !== false,
@@ -122,6 +122,8 @@ export default function Settings({ me, lang, onLang, onClose, onEditProfile, onC
         <div className="sgroup">
           <Row icon={<ShieldQuestion {...ICON} />} label={t('privacy_policy')} onClick={() => onOpenLegal('privacy')} />
           <Row icon={<ScrollText {...ICON} />} label={t('terms_of_use')} onClick={() => onOpenLegal('terms')} />
+          <Row icon={<Download {...ICON} />} label={t('my_data')} onClick={() => onOpenData()} />
+          <Row icon={<Trash2 {...ICON} />} label={t('delete_account')} accent onClick={() => onOpenData('delete')} />
         </div>
 
         <div className="sfoot">

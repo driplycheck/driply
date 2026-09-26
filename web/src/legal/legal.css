@@ -63,3 +63,58 @@
   font-size: 16px;
   cursor: pointer;
 }
+
+/* Галочки согласий: не отмечены заранее, каждая ведёт в свой документ */
+.consent__boxes { display: flex; flex-direction: column; gap: 10px; }
+.cbox { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; }
+.cbox input { position: absolute; opacity: 0; width: 0; height: 0; }
+.cbox__mark {
+  flex: none; width: 22px; height: 22px; margin-top: 1px;
+  display: grid; place-items: center;
+  border-radius: 7px;
+  border: 1.5px solid var(--border);
+  background: var(--surface-2);
+  color: transparent;
+}
+.cbox input:checked + .cbox__mark { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+.cbox input:focus-visible + .cbox__mark { outline: 2px solid var(--primary); outline-offset: 2px; }
+.cbox__text { font-size: 14px; line-height: 1.45; color: var(--text); }
+.cbox__link {
+  border: none; background: none; padding: 0;
+  color: var(--drip); font: inherit; text-decoration: underline; cursor: pointer;
+}
+.cbox--small .cbox__mark { width: 18px; height: 18px; border-radius: 6px; }
+.cbox--small .cbox__text { font-size: 13px; color: var(--text-2); }
+.consent__opt { display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; border-radius: 14px; background: var(--surface-2); border: 1px solid var(--border); }
+.consent__opt-title { font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.consent__btn:disabled { opacity: 0.45; }
+
+/* Выгрузка данных и удаление аккаунта */
+.mydata__dump {
+  margin-top: 14px;
+  padding: 14px;
+  border-radius: 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-2);
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-x: auto;
+}
+.mydata__danger {
+  margin-top: 16px;
+  width: 100%;
+  padding: 16px;
+  border: none;
+  border-radius: 16px;
+  background: var(--danger);
+  color: #fff;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 16px;
+  cursor: pointer;
+}
+.mydata__danger:disabled { opacity: 0.4; }

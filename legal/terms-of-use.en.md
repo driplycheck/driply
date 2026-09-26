@@ -2,82 +2,52 @@
 
 _Updated: 26 September 2026 · 2026-09-26_
 
-The short rules Driply runs on. By using the service you agree to them.
+An agreement between the owner of Driply and you. In case of any discrepancy with the Russian version, the Russian version prevails.
 
-## 1. What Driply is
+## 1. Parties and acceptance
 
-Driply is a Telegram mini app where people publish their outfits and rate others with the in-app currency called drips.
+- Driply (the Telegram mini app and @Driplycheckbot) is operated by [ЗАПОЛНИТЬ: ФИО полностью / ИП ФИО], [ЗАПОЛНИТЬ: ИНН / ОГРНИП] (the “Administration”).
+- These Terms are a public offer under Russian law. You accept them in full by ticking the acceptance box at first launch. The service is free; any paid features would come with separate terms and your separate consent.
+- Personal data is handled under the Privacy Policy and the separate consents you give at sign-up.
 
-The service is provided as is. We keep developing it and may change features, reward amounts and appearance.
+## 2. Who may use Driply
 
-## 2. Who may use it
+- You must be at least 14. If you are 14–17, you use Driply with the consent of a parent or legal guardian, who may ask us to delete your account at any time.
+- Accounts of users under 14 are deleted with their data once we learn their age.
+- You need a Telegram account and must follow Telegram’s rules. One person — one account.
 
-- You are at least 13, and if under 18 you use the service with a parent’s consent.
-- You have a Telegram account and follow Telegram’s rules.
-- One person — one account. Accounts created to inflate ratings are removed.
+## 3. Your content and licence
 
-## 3. Your content
+- You keep all rights to your content.
+- By publishing, you grant a free, non-exclusive, worldwide licence to store, reproduce and display your content inside Driply (feed, profile, leaderboard, style collections, search, the story card you create) and to resize, compress or crop previews, for as long as the content is published plus up to 30 days to purge backups and caches. No sublicensing except to hosting providers acting on our behalf.
+- We do not use your content for advertising, sell it or use it to train AI models.
+- You confirm you own or may use the photos and that every recognisable person in them has agreed to publication.
+- You can delete any look at any time; copies other people already saved or shared are outside our control.
 
-- You keep the rights to your photos. We do not take them.
-- By publishing a look you allow us to show it in the app, in the leaderboard and in the story card — free of charge and until you delete it.
-- You are responsible for what you publish: for the rights to the photo and for the consent of people in the frame.
-- A deleted look disappears from the app immediately; cached copies and stories already shared may live longer — that is outside our control.
+## 4. Community rules
 
-## 4. What you may not publish
-
-- Explicit material or sexual nudity.
-- Other people’s photos passed off as yours, and photos of people without their consent.
-- Insults, harassment, threats, hate speech, comments about someone’s body rather than their clothes.
-- Advertising, spam, links to outside services, attempts to sell anything.
-- Anything breaking the law or Telegram’s rules.
-- Driply is about style. Everything else is out of place here.
+Prohibited: sexual content and nudity, any sexualised depiction of minors; other people’s photos passed off as yours or photos of people without consent; insults, harassment, threats, hate speech, comments on someone’s body instead of their clothes; content prohibited by Russian law; advertising, spam, selling anything including drips or accounts; other people’s personal data; manipulation, bots and interference with the service.
 
 ## 5. Drips
 
-- Drips are in-app points. They are not money, not a payment instrument and not a cryptocurrency.
-- Drips cannot be bought, sold, exchanged or withdrawn. They can only be earned in the app.
-- Drips have no monetary value and we are not obliged to compensate them with money under any circumstances.
-- We may change reward amounts and prices of actions. Drips obtained by fraud are cancelled together with the style score.
-- When an account is deleted, its drips are gone.
+- Drips are in-app accounting units. They are not money, e-money, digital currency, digital financial assets or securities.
+- Drips can only be earned in the app. They cannot be bought, sold, exchanged, transferred outside rating or withdrawn, and have no cash value — including on account deletion or shutdown of the service.
+- We may change reward amounts going forward. Drips and style score obtained by manipulation, multiple accounts or bugs are cancelled.
 
-## 6. Votes and leaderboard
+## 6. Ratings, leaderboard, statuses, invites
 
-- When you rate a look you give your drips to the author — this cannot be undone.
-- You can rate the same look once.
-- You may not rate your own looks or arrange mutual rating to climb the leaderboard.
-- The weekly leaderboard resets on Mondays, the monthly one at the start of the month. We may recalculate it if we find manipulation.
+Rating a look transfers your drips to the author and cannot be undone; one rating per look; no self-rating or rating rings. The weekly leaderboard resets on Mondays, the monthly one on the 1st (Moscow time); we may recalculate after manipulation. Limited statuses (e.g. first drip for the first 50 authors) are non-transferable and may be revoked. Invite rewards are credited after the friend’s first look; self-invites, empty accounts and spam invites are cancelled.
 
 ## 7. Reports and moderation
 
-- Any look or profile can be reported in the app. Reports are anonymous.
-- A human reviews reports. We may hide a look, hide all of an author’s looks, or restrict access to the service.
-- Repeat violations lead to restriction without warning.
-- If you think a decision is wrong, write to support and we will review it.
+Reports are anonymous and reviewed by a human. We may hide a look, hide all of a user’s looks, cancel drips or restrict access. You may appeal via support within 30 days; we reply within 10 business days. Rights holders and people depicted without consent can file a notice via support or [ЗАПОЛНИТЬ: e-mail]; the look is hidden on receipt and reviewed within 10 business days.
 
-## 8. Statuses and badges
+## 8. Termination, liability, changes, disputes
 
-Some statuses — such as first drip for the first 50 authors — are limited in number and are not transferable between accounts. We may remove a status obtained in breach of these rules.
-
-## 9. Invites
-
-- You earn drips for an invited friend once they publish their first look.
-- You may not invite yourself, create empty accounts or spam the link. Such rewards are cancelled.
-
-## 10. Ending access
-
-You can leave at any time: write to support and we will delete the account.
-
-We may restrict or end access if these rules or the law are broken. For minor breaches we warn first.
-
-## 11. Liability
-
-The service comes with no guarantee of uninterrupted operation. We try, but outages, bugs and data loss are possible.
-
-We are not responsible for content published by users or for arrangements between them.
-
-## 12. Changes
-
-The rules may change. We will announce material changes in the app and ask you to accept them again. The date of the last change is at the top.
+- You may delete your account at any time; data is deleted within 30 days. We may restrict or end access for breaches, without warning for serious or repeated ones. We give 14 days’ notice before shutting the service down.
+- The service is free and under development; we do not guarantee uninterrupted operation and are not liable for user content or for Telegram and other third-party outages, except where the law does not allow such limitation or for intentional breach.
+- New versions take effect 7 days after publication; material changes require your renewed acceptance.
+- These Terms are governed by Russian law. A written claim with a 30-day response period precedes court; consumers may sue at their place of residence.
 
 ---
 
