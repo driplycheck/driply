@@ -180,6 +180,27 @@ Deno.serve(async (req) => {
       if (row?.thread_id) byKind = Number(row.thread_id)
     }
     const thread = Number(body?.thread_id) || byKind || route.thread_reports
+
+    // Агент может прислать картинку вместе с текстом — тогда это пост с обложкой.
+    if (body?.photo) {
+      const bytes = Uint8Array.from(atob(String(body.photo)), (c) => c.charCodeAt(0))
+      const form = new FormData()
+      form.append('chat_id', String(route.chat_id))
+      if (thread) form.append('message_thread_id', String(thread))
+      form.append('photo', new Blob([bytes], { type: 'image/png' }), 'cover.png')
+      // подпись у фото ограничена 1024 символами: длинный текст шлём отдельным сообщением
+      const short = text.length <= 1000
+      if (short) { form.append('caption', text); form.append('parse_mode', 'HTML') }
+      const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, { method: 'POST', body: form })
+      const sentPhoto = await res.json().catch(() => ({}))
+      if (!short) {
+        await tg('sendMessage', {
+          chat_id: route.chat_id, text, parse_mode: 'HTML',
+          ...(thread ? { message_thread_id: thread } : {}),
+        })
+      }
+      return Response.json({ ok: Boolean(sentPhoto?.ok), description: sentPhoto?.description ?? null })
+    }
     // ответ пришёл в тему агента — кладём в его историю, иначе следующий вопрос будет без контекста
     if (Number(body?.thread_id)) {
       const { data: kind } = await db().rpc('agent_by_thread', {

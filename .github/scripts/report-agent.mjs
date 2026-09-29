@@ -51,10 +51,18 @@ function forTelegram(raw) {
   return out
 }
 
+// Обложка, если PR-менеджер её нарисовал: marketing/out/cover.png
+let photo = null
+try {
+  const buf = await readFile('marketing/out/cover.png')
+  if (buf.length < 4_000_000) photo = buf.toString('base64')
+  console.log(`обложка найдена: ${Math.round(buf.length / 1024)} КБ`)
+} catch { /* обложки нет — отправим просто текст */ }
+
 const res = await fetch(`${hook}?report=${encodeURIComponent(secret)}`, {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ text: forTelegram(text).slice(0, 3500), thread_id: thread ? Number(thread) : null, kind }),
+  body: JSON.stringify({ text: forTelegram(text).slice(0, 3500), thread_id: thread ? Number(thread) : null, kind, photo }),
 })
 const json = await res.json().catch(() => ({}))
 console.log(json.ok ? `Ответ ${kind} отправлен.` : `Не отправил: ${json.error ?? res.status}`)

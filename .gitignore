@@ -26,3 +26,4 @@ supabase/.temp/
 marketing/tg-pack/.uploaded.json
 web/.smoke/
 .agent/
+marketing/out/

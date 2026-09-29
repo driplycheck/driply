@@ -124,6 +124,16 @@ jobs:
           node scripts/glance.mjs
           ls -la .shots/*.png || true
 
+      # PR-менеджер рисует обложку в браузере — ставим его заранее
+      - name: браузер для обложек
+        if: env.KIND == 'pr'
+        continue-on-error: true
+        timeout-minutes: 6
+        working-directory: web
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
       - uses: anthropics/claude-code-action@v1
         id: claude
         with:
