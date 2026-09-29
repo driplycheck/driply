@@ -103,6 +103,9 @@ jobs:
         run: |
           if [ "$KIND" = "dev" ]; then
             echo 'list=Read,Glob,Grep,Edit,Write,Bash(npm:*),Bash(npx:*),Bash(node:*),Bash(curl:*),Bash(git:*),Bash(gh pr:*)' >> "$GITHUB_OUTPUT"
+          elif [ "$KIND" = "pr" ]; then
+            # PR-менеджер рисует обложку: ему нужно создавать файлы, но не трогать git
+            echo 'list=Read,Glob,Grep,Edit,Write,Bash(npm:*),Bash(npx:*),Bash(node:*),Bash(mkdir:*),Bash(ls:*),Bash(cat:*)' >> "$GITHUB_OUTPUT"
           else
             # curl обязателен: через него агенты берут статистику, здоровье и свою историю
             echo 'list=Read,Glob,Grep,Bash(npm:*),Bash(npx:*),Bash(node:*),Bash(curl:*),Bash(git status:*),Bash(git log:*),Bash(git diff:*)' >> "$GITHUB_OUTPUT"
