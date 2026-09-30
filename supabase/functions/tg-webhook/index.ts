@@ -545,7 +545,10 @@ Deno.serve(async (req) => {
         const { data: modTid } = await supabase.rpc('support_moderator_tid')
         if (!modTid || message.from?.id !== modTid) return new Response('ok')
 
-        const source = message.reply_to_message?.text
+        // пост с обложкой приходит фото: текст лежит в подписи, а не в text
+        const replied = message.reply_to_message
+        const cover = replied?.photo?.length ? replied.photo[replied.photo.length - 1].file_id : null
+        const source = replied?.text ?? replied?.caption
         const { data: routes } = await supabase.rpc('support_routing_get')
         const route = Array.isArray(routes) ? routes[0] : routes
         const reply = (t: string) => tg('sendMessage', { chat_id: chatId, message_thread_id: message.message_thread_id, text: t })
@@ -555,7 +558,14 @@ Deno.serve(async (req) => {
 
         // отрезаем служебный хвост агента после строки «—»: в канал он не нужен
         const body = source.split(/\n\s*—\s*\n/)[0].trim()
-        const sent = await tg('sendMessage', { chat_id: route.channel_id, text: body, parse_mode: 'HTML' })
+        let sent
+        if (cover) {
+          // подпись у фото — обычный текст с entities, поэтому режем их по длине тела
+          const entities = (replied.caption_entities ?? []).filter((e: { offset: number; length: number }) => e.offset + e.length <= body.length)
+          sent = await tg('sendPhoto', { chat_id: route.channel_id, photo: cover, caption: body, caption_entities: entities })
+        } else {
+          sent = await tg('sendMessage', { chat_id: route.channel_id, text: body, parse_mode: 'HTML' })
+        }
         if (sent?.ok) await supabase.rpc('post_published', { p_body: body })
         await reply(sent?.ok ? '📣 Опубликовано в канале.' : `Не опубликовал: ${sent?.description ?? 'нет ответа'}`)
         return new Response('ok')
