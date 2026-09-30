@@ -153,7 +153,14 @@ async function uiChecks() {
     for (let attempt = 1; attempt <= 3; attempt++) {
       try {
         await page.goto(URL_APP, { waitUntil: 'commit', timeout: 45000 })
-        await page.locator('.ui-tabbar').waitFor({ timeout: 25000 })
+        // экран «Правила и данные»: у подделанного профиля нет принятой версии, ставим три галочки
+        await page.locator('.ui-tabbar, .consent').first().waitFor({ timeout: 25000 })
+        if (await page.locator('.consent').count()) {
+          const boxes = page.locator('.consent__boxes input[type=checkbox]')
+          for (let i = 0; i < await boxes.count(); i++) await boxes.nth(i).check({ force: true })
+          await page.locator('.consent__btn').click({ timeout: 8000 })
+          await page.locator('.ui-tabbar').waitFor({ timeout: 15000 })
+        }
         return
       } catch (e) {
         last = e
