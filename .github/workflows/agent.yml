@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
     inputs:
       kind:
-        description: 'Кто отвечает: tester, analyst, support, dev'
+        description: 'Кто отвечает: tester, analyst, dev, pr, designer'
         required: true
       message:
         description: 'Что нужно сделать'
@@ -56,11 +56,14 @@ jobs:
             esac
           fi
           case "$KIND" in
-            tester|analyst|dev|pr) echo "агент: $KIND" ;;
+            tester|analyst|dev|pr|designer) echo "агент: $KIND" ;;
             *) echo "::error::неизвестный агент «$KIND»"; exit 1 ;;
           esac
           if [ -z "$TASK" ] && [ "$KIND" = "tester" ]; then
             TASK='Ежедневный аудит. Прогони полную проверку прода, контракты и линтер, посмотри срез errors за последние сутки. Отчитайся коротко: что работает, что сломано, что тревожит. Если всё чисто — скажи одной строкой.'
+          fi
+          if [ -z "$TASK" ] && [ "$KIND" = "designer" ]; then
+            TASK='Посмотри на снятые экраны и скажи, что выглядит плохо. Начни с короткого экрана и светлой темы. Не больше трёх замечаний, самое заметное первым.'
           fi
           if [ -z "$TASK" ] && [ "$KIND" = "analyst" ]; then
             TASK='Итоги недели. Возьми срезы growth, funnel, retention, content, economy за 7 дней и сравни с предыдущей неделей. Коротко: что изменилось, что требует действия, а что шум малых чисел.'
@@ -112,8 +115,8 @@ jobs:
 
       # Экраны снимаем заранее: прогон скриншотов идёт минутами, инструмент уводит такую
       # команду в фон, а ждать агенту некого — он заканчивает ответ и прогон закрывается.
-      - name: снимки экранов для тестировщика
-        if: env.KIND == 'tester'
+      - name: снимки экранов
+        if: env.KIND == 'tester' || env.KIND == 'designer'
         continue-on-error: true
         timeout-minutes: 8
         working-directory: web
@@ -150,6 +153,9 @@ jobs:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           CI_SECRET: ${{ secrets.CI_SECRET }}
+          # без этого `gh pr create` падает на авторизации, и разработчик
+          # мог запушить ветку, но не мог открыть пулл-реквест
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SHOTS_TG_ID: ${{ secrets.SHOTS_TG_ID }}
           SHOTS_USER_ID: ${{ secrets.SHOTS_USER_ID }}
           TG_WEBHOOK_URL: ${{ secrets.TG_WEBHOOK_URL }}

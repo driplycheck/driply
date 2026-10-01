@@ -84,6 +84,33 @@ function left(n: number) {
   return `осталось ${n} ${tail}`
 }
 
+// Срез статистики человеческим текстом. Ключи в базе уже по-русски, поэтому
+// отдельного перевода не нужно — только убрать подчёркивания и разложить по строкам.
+function renderStats(value: unknown, depth = 0): string {
+  const pad = '  '.repeat(depth)
+  const nice = (k: string) => k.replace(/_/g, ' ')
+  if (value === null || value === undefined) return `${pad}—`
+  if (Array.isArray(value)) {
+    return value.map((row) => {
+      if (row && typeof row === 'object') {
+        const parts = Object.entries(row as Record<string, unknown>)
+          .map(([k, v]) => `${nice(k)} ${v ?? '—'}`)
+        return `${pad}• ${parts.join(', ')}`
+      }
+      return `${pad}• ${row}`
+    }).join('\n')
+  }
+  if (typeof value === 'object') {
+    return Object.entries(value as Record<string, unknown>).map(([k, v]) => {
+      if (v && typeof v === 'object') return `${pad}<b>${nice(k)}</b>\n${renderStats(v, depth + 1)}`
+      return `${pad}${nice(k)}: <b>${v ?? '—'}</b>`
+    }).join('\n')
+  }
+  return `${pad}${value}`
+}
+
+const STATS_NAMES = ['funnel', 'exits', 'growth', 'retention', 'content', 'economy', 'errors']
+
 async function tg(method: string, body: unknown) {
   const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/${method}`, {
     method: 'POST',
@@ -181,6 +208,19 @@ Deno.serve(async (req) => {
     }
     const thread = Number(body?.thread_id) || byKind || route.thread_reports
 
+    // Ответ пишем в историю агента до отправки и для любого вида сообщения.
+    // Раньше посты с обложкой сюда не попадали: ветка с картинкой выходила раньше,
+    // и PR-менеджер каждый раз видел пустую историю, то есть повторялся.
+    const logKind = body?.kind && AGENTS[String(body.kind)]
+      ? String(body.kind)
+      : (Number(body?.thread_id)
+        ? (await db().rpc('agent_by_thread', { p_chat_id: route.chat_id, p_thread_id: Number(body.thread_id) })).data
+        : null)
+    if (logKind) {
+      const { error: logErr } = await db().rpc('agent_log', { p_kind: logKind, p_role: 'assistant', p_body: text })
+      if (logErr) console.error('agent_log', logErr.message)
+    }
+
     // Агент может прислать картинку вместе с текстом — тогда это пост с обложкой.
     if (body?.photo) {
       const bytes = Uint8Array.from(atob(String(body.photo)), (c) => c.charCodeAt(0))
@@ -200,13 +240,6 @@ Deno.serve(async (req) => {
         })
       }
       return Response.json({ ok: Boolean(sentPhoto?.ok), description: sentPhoto?.description ?? null })
-    }
-    // ответ пришёл в тему агента — кладём в его историю, иначе следующий вопрос будет без контекста
-    if (Number(body?.thread_id)) {
-      const { data: kind } = await db().rpc('agent_by_thread', {
-        p_chat_id: route.chat_id, p_thread_id: Number(body.thread_id),
-      })
-      if (kind) await db().rpc('agent_log', { p_kind: kind, p_role: 'assistant', p_body: text })
     }
     const sent = await tg('sendMessage', {
       chat_id: route.chat_id, text, parse_mode: 'HTML',
@@ -284,12 +317,22 @@ Deno.serve(async (req) => {
     const text: string = message?.text ?? ''
 
     // Тема агента: пишем ему — он отвечает здесь же.
+    // Запускать может только основатель: каждый запуск съедает прогон подписки,
+    // и любой человек, добавленный в группу, иначе тратил бы её одним сообщением.
     if (message?.chat?.id && text && !text.startsWith('/') && message.message_thread_id) {
       const supabase = db()
       const { data: kind } = await supabase.rpc('agent_by_thread', {
         p_chat_id: message.chat.id, p_thread_id: message.message_thread_id,
       })
       if (kind && AGENTS[kind]) {
+        const { data: ownerTid } = await supabase.rpc('support_moderator_tid')
+        if (!ownerTid || message.from?.id !== ownerTid) {
+          await tg('sendMessage', {
+            chat_id: message.chat.id, message_thread_id: message.message_thread_id,
+            text: 'Эта тема только для основателя: сюда ставят задачи агенту.',
+          })
+          return new Response('ok')
+        }
         const thread = message.message_thread_id
         runInBackground((async () => {
           try {
@@ -539,25 +582,40 @@ Deno.serve(async (req) => {
         return new Response('ok')
       }
 
-      // Публикация согласованного поста: реплаем на текст, который хочешь отправить в канал.
+      // Публикация согласованного поста: реплаем на пост, который хочешь отправить в канал.
+      // Пост может быть и картинкой с подписью — тогда в канал уходит картинка, а не только текст.
       if (command === '/publish') {
         const supabase = db()
         const { data: modTid } = await supabase.rpc('support_moderator_tid')
         if (!modTid || message.from?.id !== modTid) return new Response('ok')
 
-        const source = message.reply_to_message?.text
+        const src = message.reply_to_message
+        // У поста с обложкой текст лежит в caption, а не в text. Раньше читали только text,
+        // и поэтому ни один оформленный пост опубликовать было нельзя.
+        const source: string = src?.text ?? src?.caption ?? ''
+        const hasPhoto = Array.isArray(src?.photo) && src.photo.length > 0
         const { data: routes } = await supabase.rpc('support_routing_get')
         const route = Array.isArray(routes) ? routes[0] : routes
         const reply = (t: string) => tg('sendMessage', { chat_id: chatId, message_thread_id: message.message_thread_id, text: t })
 
         if (!route?.channel_id) { await reply('Канал не подключён. Сначала /setup_channel.'); return new Response('ok') }
-        if (!source) { await reply('Ответь этой командой на сообщение с готовым постом.'); return new Response('ok') }
+        if (!source && !hasPhoto) { await reply('Ответь этой командой на сообщение с готовым постом.'); return new Response('ok') }
 
         // отрезаем служебный хвост агента после строки «—»: в канал он не нужен
         const body = source.split(/\n\s*—\s*\n/)[0].trim()
-        const sent = await tg('sendMessage', { chat_id: route.channel_id, text: body, parse_mode: 'HTML' })
-        if (sent?.ok) await supabase.rpc('post_published', { p_body: body })
-        await reply(sent?.ok ? '📣 Опубликовано в канале.' : `Не опубликовал: ${sent?.description ?? 'нет ответа'}`)
+        // Обложку переносим копией: файл уже у Telegram, заново загружать нечего.
+        const sent = hasPhoto
+          ? await tg('copyMessage', {
+              chat_id: route.channel_id,
+              from_chat_id: chatId,
+              message_id: src.message_id,
+              ...(body ? { caption: body, parse_mode: 'HTML' } : {}),
+            })
+          : await tg('sendMessage', { chat_id: route.channel_id, text: body, parse_mode: 'HTML' })
+        if (sent?.ok && body) await supabase.rpc('post_published', { p_body: body })
+        await reply(sent?.ok
+          ? (hasPhoto ? '📣 Опубликовано в канале вместе с обложкой.' : '📣 Опубликовано в канале.')
+          : `Не опубликовал: ${sent?.description ?? 'нет ответа'}`)
         return new Response('ok')
       }
 
@@ -631,7 +689,23 @@ Deno.serve(async (req) => {
         const bound = new Map((Array.isArray(list) ? list : []).map((r: Record<string, number>) => [r.kind, r.thread_id]))
         const lines = Object.entries(AGENTS).map(([kind, a]) =>
           `${bound.has(kind) ? '✅' : '⬜️'} ${a.name} — ${kind}${bound.has(kind) ? ` (тема ${bound.get(kind)})` : ' не заведён'}`)
-        await tg('sendMessage', { chat_id: chatId, text: `${lines.join('\n')}\n\nЗавести: создай тему и отправь в ней /setup_agent <кто>.` })
+        // заодно шпаргалка: иначе команды живут только в коде и о них никто не помнит
+        const cheat = [
+          '',
+          '<b>Поставить задачу</b> — напиши в тему агента.',
+          '<b>Завести</b> — создай тему и отправь в ней /setup_agent &lt;кто&gt;.',
+          '',
+          '<b>Без запуска агента, отвечаю сразу:</b>',
+          '/stats &lt;срез&gt; [дней] — цифры',
+          '/health — живы ли бот, вебхук, темы',
+          '/posts — что уже опубликовано в канале',
+          '',
+          '<b>Передать работу:</b>',
+          '/check — реплаем на жалобу, отдать тестировщику',
+          '/fix — реплаем на разбор, отдать разработчику',
+          '/publish — реплаем на пост, отправить в канал',
+        ]
+        await tg('sendMessage', { chat_id: chatId, parse_mode: 'HTML', text: `${lines.join('\n')}\n${cheat.join('\n')}` })
         return new Response('ok')
       }
 
@@ -651,6 +725,68 @@ Deno.serve(async (req) => {
           chat_id: chatId,
           text: `Группа ${route.chat_id}\n\n${lines.join('\n')}\n\nПерепривязать: зайди в нужную тему и отправь /setup_support <тип>. Лишние темы удали руками через меню темы.`,
         })
+        return new Response('ok')
+      }
+
+      // Цифры и состояние отвечает сам бот, за секунду и бесплатно.
+      // До этого единственным способом узнать числа был запуск аналитика — целый прогон
+      // подписки и три минуты ожидания ради одной строки.
+      if (command === '/stats' || command === '/health' || command === '/posts') {
+        const supabase = db()
+        const { data: modTid } = await supabase.rpc('support_moderator_tid')
+        if (!modTid || message.from?.id !== modTid) return new Response('ok')
+        const reply = (t: string) => tg('sendMessage', {
+          chat_id: chatId, message_thread_id: message.message_thread_id,
+          text: t.slice(0, 3800), parse_mode: 'HTML',
+        })
+
+        if (command === '/stats') {
+          const [name, days] = (payload ?? '').trim().split(/\s+/)
+          if (!name || !STATS_NAMES.includes(name)) {
+            await reply(`Какой срез? ${STATS_NAMES.join(', ')}\n\nНапример: /stats growth 7`)
+            return new Response('ok')
+          }
+          const span = Math.min(Math.max(Number(days) || 30, 1), 180)
+          const { data, error } = await supabase.rpc('agent_stats', { p_name: name, p_days: span })
+          await reply(error
+            ? `Не посчитал: ${error.message}`
+            : `<b>${name}</b> · ${span} дн.\n\n${renderStats(data)}`)
+          return new Response('ok')
+        }
+
+        if (command === '/posts') {
+          const { data, error } = await supabase.rpc('published_list', { p_limit: 10 })
+          const rows = Array.isArray(data) ? data : []
+          if (error) { await reply(`Не достал: ${error.message}`); return new Response('ok') }
+          if (!rows.length) { await reply('В канале пока ничего из предложенного не опубликовано.'); return new Response('ok') }
+          const lines = rows.map((p: { created_at?: string; body?: string }) => {
+            const day = String(p.created_at ?? '').slice(0, 10)
+            const head = String(p.body ?? '').split('\n')[0].slice(0, 70)
+            return `${day} — ${head}`
+          })
+          await reply(`<b>Опубликовано</b>\n\n${lines.join('\n')}`)
+          return new Response('ok')
+        }
+
+        // /health — то же, что видит тестировщик, только сразу и человеческим текстом
+        const me = await tg('getMe', {})
+        const hook = await tg('getWebhookInfo', {})
+        const { data: routes } = await supabase.rpc('support_routing_get')
+        const route = Array.isArray(routes) ? routes[0] : routes
+        const { data: list } = await supabase.rpc('agent_topics_list')
+        const bound = (Array.isArray(list) ? list : []).map((r: { kind: string }) => AGENTS[r.kind]?.name ?? r.kind)
+        const { data: slots } = await supabase.rpc('first_drip_left')
+        const err = hook?.result?.last_error_message
+        const lines = [
+          `${me?.ok ? '✅' : '❌'} бот: ${me?.ok ? '@' + me.result.username : me?.description ?? 'не отвечает'}`,
+          `${hook?.result?.url ? '✅' : '❌'} вебхук: ${hook?.result?.url ? 'на месте' : 'не установлен'}`,
+          `${err ? '⚠️' : '✅'} ошибки вебхука: ${err ?? 'нет'}`,
+          `${hook?.result?.pending_update_count ? '⚠️' : '✅'} необработанных сообщений: ${hook?.result?.pending_update_count ?? 0}`,
+          `${route?.channel_id ? '✅' : '⬜️'} канал: ${route?.channel_id ? 'подключён' : 'не подключён'}`,
+          `${bound.length ? '✅' : '⬜️'} агенты: ${bound.length ? bound.join(', ') : 'ни один не заведён'}`,
+          `💧 мест first drip: ${slots ?? '—'}`,
+        ]
+        await reply(lines.join('\n'))
         return new Response('ok')
       }
 

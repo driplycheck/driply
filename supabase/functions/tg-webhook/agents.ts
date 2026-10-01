@@ -6,4 +6,5 @@ export const AGENTS: Record<string, { name: string; topic: string }> = {
   analyst: { name: 'Аналитик', topic: '📊 Аналитик' },
   dev: { name: 'Разработчик', topic: '🔧 Разработчик' },
   pr: { name: 'PR-менеджер', topic: '📣 PR-менеджер' },
+  designer: { name: 'Дизайнер', topic: '🎨 Дизайнер' },
 }
