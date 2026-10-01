@@ -45,6 +45,7 @@ jobs:
           IN_KIND: ${{ github.event.inputs.kind }}
           IN_TASK: ${{ github.event.inputs.message }}
           SCHEDULE: ${{ github.event.schedule }}
+          SB_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: |
           KIND="$IN_KIND"
           TASK="$IN_TASK"
@@ -71,8 +72,12 @@ jobs:
           if [ -z "$TASK" ]; then
             TASK='Пришли один готовый пост для канала. Сначала посмотри, что уже присылал сам (срез history) и что уже написано в marketing/build-posts-page.mjs — не повторяйся ни темой, ни зачином. Чередуй жанры: обновление продукта, польза читателю, живая цифра из статистики, вопрос аудитории. Если повода для анонса нет, напиши пост, полезный сам по себе, а не выдумывай новость.'
           fi
+          # есть ли ключ от Supabase — от этого зависит, может ли разработчик чинить бота
+          if [ -n "$SB_TOKEN" ]; then HAS_SUPABASE=true; else HAS_SUPABASE=false; fi
+          echo "починка бота доступна: $HAS_SUPABASE"
           {
             echo "KIND=$KIND"
+            echo "HAS_SUPABASE=$HAS_SUPABASE"
             echo "MAIN_BEFORE=$(git rev-parse origin/main)"
             echo 'TASK<<AGENT_TASK_EOF'
             echo "$TASK"
@@ -97,17 +102,24 @@ jobs:
           printf '\n\n' >> .agent/role.md
           cat ".github/agents/$KIND.md" >> .agent/role.md
 
-      # правки кода уходят в отдельную ветку: в main агент попасть не может
-      - name: ветка под правки
+      # Разработчик пушит в main — как человек локально, но только через ship.mjs:
+      # контракты, сборка, Vercel и проверка живого прода, с откатом при провале.
+      # Ветки и пулл-реквесты он больше не делает: семь штук уже сгнили неслитыми,
+      # и всё это время прод-проверки были сломаны правкой, лежавшей в одной из них.
+      - name: кем подписывать правки
         if: env.KIND == 'dev'
-        run: git checkout -b "agent/fix-${{ github.run_id }}"
+        run: |
+          git config user.name 'driply-dev-agent'
+          git config user.email 'noreply@anthropic.com'
 
       # список инструментов считаем заранее: длинное условие прямо в claude_args ломает разбор файла
       - name: список инструментов
         id: tools
         run: |
           if [ "$KIND" = "dev" ]; then
-            echo 'list=Read,Glob,Grep,Edit,Write,Bash(npm:*),Bash(npx:*),Bash(node:*),Bash(curl:*),Bash(git:*),Bash(gh pr:*)' >> "$GITHUB_OUTPUT"
+            # git нужен для разбора («что менялось в этом файле»), но отправляет правку
+            # только ship.mjs: он единственный, кто проверяет сборку и умеет откатить
+            echo 'list=Read,Glob,Grep,Edit,Write,Bash(npm:*),Bash(npx:*),Bash(node:*),Bash(curl:*),Bash(git:*),Bash(supabase functions:*)' >> "$GITHUB_OUTPUT"
           elif [ "$KIND" = "pr" ]; then
             # PR-менеджер рисует обложку: ему нужно создавать файлы, но не трогать git
             echo 'list=Read,Glob,Grep,Edit,Write,Bash(npm:*),Bash(npx:*),Bash(node:*),Bash(mkdir:*),Bash(ls:*),Bash(cat:*)' >> "$GITHUB_OUTPUT"
@@ -131,6 +143,26 @@ jobs:
           npx playwright install --with-deps chromium
           node scripts/glance.mjs
           ls -la .shots/*.png || true
+
+      # Чтобы разработчик мог чинить не только приложение, но и бота.
+      # Без секрета SUPABASE_ACCESS_TOKEN шаг просто ничего не делает, и агенту
+      # в роли сказано: edge-функции тогда не твои, опиши словами и остановись.
+      - name: инструмент для бота
+        if: env.KIND == 'dev' && env.HAS_SUPABASE == 'true'
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      # Разработчику браузер нужен, чтобы ship.mjs мог проверить живой прод после деплоя:
+      # без него правка уезжала бы к людям непроверенной.
+      - name: браузер для проверки прода
+        if: env.KIND == 'dev'
+        continue-on-error: true
+        timeout-minutes: 8
+        working-directory: web
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
 
       # PR-менеджер рисует обложку в браузере — ставим его заранее
       - name: браузер для обложек
@@ -156,25 +188,34 @@ jobs:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           CI_SECRET: ${{ secrets.CI_SECRET }}
-          # без этого `gh pr create` падает на авторизации, и разработчик
-          # мог запушить ветку, но не мог открыть пулл-реквест
+          # им ship.mjs спрашивает у GitHub, собрал ли Vercel прод:
+          # без ответа правку не на чем проверять, и она уедет к людям вслепую
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # ключ от Supabase: с ним разработчик может перезалить бота, без него — нет
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: chnvpnbnqvugsbwelmoq
+          HAS_SUPABASE: ${{ env.HAS_SUPABASE }}
           SHOTS_TG_ID: ${{ secrets.SHOTS_TG_ID }}
           SHOTS_USER_ID: ${{ secrets.SHOTS_USER_ID }}
           TG_WEBHOOK_URL: ${{ secrets.TG_WEBHOOK_URL }}
 
-      # Агент работает в отдельной ветке. Если main всё-таки сдвинулся — это авария,
-      # и узнать о ней надо сразу, а не когда прод уедет.
-      - name: main не тронут
+      # Трогать main разрешено только разработчику и только через ship.mjs.
+      # Для всех остальных сдвинувшийся main — авария, и узнать о ней надо сразу,
+      # а не когда прод уедет.
+      - name: кто тронул main
         if: always()
         run: |
           git fetch -q origin main
           AFTER=$(git rev-parse origin/main)
-          if [ "$AFTER" != "$MAIN_BEFORE" ]; then
-            echo "::error::агент изменил main ($MAIN_BEFORE → $AFTER)"
+          if [ "$AFTER" = "$MAIN_BEFORE" ]; then
+            echo "main на месте"
+          elif [ "$KIND" = "dev" ]; then
+            echo "разработчик отправил правку: $MAIN_BEFORE → $AFTER"
+            git log --oneline "$MAIN_BEFORE..$AFTER" || true
+          else
+            echo "::error::агент «$KIND» изменил main ($MAIN_BEFORE → $AFTER), а права на это у него нет"
             exit 1
           fi
-          echo "main на месте"
 
       - name: отправить ответ в тему
         if: always()
