@@ -1,11 +1,12 @@
 {
   "name": "driply-web",
   "private": true,
-  "version": "3.14.0",
+  "version": "3.15.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "check": "node scripts/check-contracts.mjs",
+    "check:schema": "node scripts/check-schema.mjs",
     "prebuild": "npm run check",
     "build": "vite build",
     "preview": "vite preview",

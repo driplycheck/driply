@@ -389,6 +389,15 @@ Deno.serve(async (req) => {
     return Response.json({ ok: true, name, days, data })
   }
 
+  // Перепись объектов базы: что в проде есть на самом деле. Сравнивать с репозиторием
+  // умеет web/scripts/check-schema.mjs. Наружу уходят только имена, без тел и данных.
+  if (url.searchParams.get('schema')) {
+    if (!serviceKey(url.searchParams.get('schema'))) return new Response('forbidden', { status: 403 })
+    const { data, error } = await db().rpc('schema_objects')
+    if (error) return Response.json({ ok: false, error: error.message }, { status: 400 })
+    return Response.json({ ok: true, ...data })
+  }
+
   // Что агент писал в свою тему в последний раз — чтобы не повторяться на расписании.
   if (url.searchParams.get('history')) {
     if (!serviceKey(url.searchParams.get('history'))) return new Response('forbidden', { status: 403 })
