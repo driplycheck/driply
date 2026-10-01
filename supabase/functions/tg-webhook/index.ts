@@ -40,6 +40,16 @@ function runInBackground(task: Promise<unknown>) {
 
 const serviceKey = (key: string | null) => Boolean(key) && (key === CI_SECRET || key === WEBHOOK_SECRET)
 
+// Кто имеет право командовать ботом. Основателей может быть несколько, поэтому
+// сверяем по флагу в базе, а не с одним-единственным telegram_id: раньше права были
+// ровно у того, кто завёлся первым, и второй основатель не мог ничего.
+async function isStaff(tid?: number | null) {
+  if (!tid) return false
+  const { data, error } = await db().rpc('is_moderator', { p_tid: tid })
+  if (error) { console.error('is_moderator', error.message); return false }
+  return data === true
+}
+
 // Темы в группе поддержки: имя топика ↔ колонка в support_routing
 const SUPPORT_TOPICS = [
   { kind: 'bug', col: 'thread_bug', name: '🛠 Не работает', icon: 0x6FB9F0 },
@@ -169,6 +179,7 @@ async function setGroupCommands(chatId: number) {
       { command: 'stats', description: 'Цифры: /stats growth 7' },
       { command: 'posts', description: 'Что уже опубликовано в канале' },
       { command: 'agents', description: 'Кто в команде и где живёт' },
+      { command: 'staff', description: 'Кто имеет права: /staff add реплаем' },
       { command: 'topics', description: 'Какая тема за что отвечает' },
       { command: 'publish', description: 'Реплаем на пост — отправить в канал' },
       { command: 'check', description: 'Реплаем на жалобу — отдать тестировщику' },
@@ -463,12 +474,11 @@ Deno.serve(async (req) => {
       const thread = src?.message_thread_id ?? null
       const data: string = cq.data ?? ''
       const supabase = db()
-      const { data: modTid } = await supabase.rpc('support_moderator_tid')
 
       const close = (t?: string) => tg('answerCallbackQuery', {
         callback_query_id: cq.id, ...(t ? { text: t.slice(0, 190), show_alert: false } : {}),
       })
-      if (!modTid || cq.from?.id !== modTid) { await close('Кнопки только для основателя'); return new Response('ok') }
+      if (!await isStaff(cq.from?.id)) { await close('Кнопки только для основателей'); return new Response('ok') }
       if (!chatId) { await close(); return new Response('ok') }
 
       const say = (t: string) => tg('sendMessage', {
@@ -549,8 +559,7 @@ Deno.serve(async (req) => {
         p_chat_id: message.chat.id, p_thread_id: message.message_thread_id,
       })
       if (kind && AGENTS[kind]) {
-        const { data: ownerTid } = await supabase.rpc('support_moderator_tid')
-        if (!ownerTid || message.from?.id !== ownerTid) {
+        if (!await isStaff(message.from?.id)) {
           await tg('sendMessage', {
             chat_id: message.chat.id, message_thread_id: message.message_thread_id,
             text: 'Эта тема только для основателя: сюда ставят задачи агенту.',
@@ -611,8 +620,7 @@ Deno.serve(async (req) => {
         && Number(route.thread_reports) === message.message_thread_id
 
       if (isMeeting) {
-        const { data: ownerTid } = await supabase.rpc('support_moderator_tid')
-        if (!ownerTid || message.from?.id !== ownerTid) return new Response('ok')
+        if (!await isStaff(message.from?.id)) return new Response('ok')
 
         const thread = message.message_thread_id
         const kinds = parseMentions(text)
@@ -675,7 +683,10 @@ Deno.serve(async (req) => {
     if (message?.chat?.id && text && !text.startsWith('/')) {
       const supabase = db()
       const fromTid = message.from?.id
+      // modTid нужен только как запасной адрес, если группа ещё не настроена;
+      // право отвечать людям проверяем по флагу — основателей теперь несколько
       const { data: modTid } = await supabase.rpc('support_moderator_tid')
+      const staff = await isStaff(fromTid)
       const { data: routes } = await supabase.rpc('support_routing_get')
       const route = Array.isArray(routes) ? routes[0] : routes
       const replyTo = message.reply_to_message?.message_id
@@ -683,7 +694,7 @@ Deno.serve(async (req) => {
 
       // ответ реплаем на пересланное обращение → отправляем человеку
       // (в группе поддержки или в личке основателя — в группе бот видит только реплаи на свои сообщения)
-      if (replyTo && (inSupportChat || (fromTid && modTid && fromTid === modTid))) {
+      if (replyTo && (inSupportChat || staff)) {
         const { data: found } = await supabase.rpc('support_by_message', { p_msg_id: replyTo })
         let src = Array.isArray(found) ? found[0] : found
         // запасной путь: адресат всегда написан в шапке пересланного сообщения («· id 12345»),
@@ -711,7 +722,7 @@ Deno.serve(async (req) => {
       // Сообщение в рабочей группе, но не в теме агента и не ответ на обращение.
       // Раньше это молча игнорировалось — человек писал и не получал ничего.
       if (inSupportChat) {
-        if (fromTid && modTid && fromTid === modTid && message.message_thread_id) {
+        if (staff && message.message_thread_id) {
           const { data: list } = await supabase.rpc('agent_topics_list')
           const bound = (Array.isArray(list) ? list : []).map((r: { kind: string }) => AGENTS[r.kind]?.name || r.kind)
           await tg('sendMessage', {
@@ -760,8 +771,7 @@ Deno.serve(async (req) => {
       // Бот сам создаёт три топика и запоминает их — руками id копировать не нужно.
       if (command === '/setup_support') {
         const supabase = db()
-        const { data: modTid } = await supabase.rpc('support_moderator_tid')
-        if (!modTid || message.from?.id !== modTid) return new Response('ok')
+        if (!await isStaff(message.from?.id)) return new Response('ok')
 
         if (message.chat.type !== 'supergroup' || !message.chat.is_forum) {
           await tg('sendMessage', { chat_id: chatId, text: 'Нужна супергруппа с включёнными темами: настройки группы → Темы.' })
@@ -846,8 +856,7 @@ Deno.serve(async (req) => {
       // либо просто /setup_channel @имя_канала.
       if (command === '/setup_channel') {
         const supabase = db()
-        const { data: modTid } = await supabase.rpc('support_moderator_tid')
-        if (!modTid || message.from?.id !== modTid) return new Response('ok')
+        if (!await isStaff(message.from?.id)) return new Response('ok')
 
         const forwarded = message.reply_to_message?.forward_from_chat?.id
         const arg = (payload ?? '').trim()
@@ -881,8 +890,7 @@ Deno.serve(async (req) => {
       // Пост может быть и картинкой с подписью — тогда в канал уходит картинка, а не только текст.
       if (command === '/publish') {
         const supabase = db()
-        const { data: modTid } = await supabase.rpc('support_moderator_tid')
-        if (!modTid || message.from?.id !== modTid) return new Response('ok')
+        if (!await isStaff(message.from?.id)) return new Response('ok')
 
         const src = message.reply_to_message
         const { data: routes } = await supabase.rpc('support_routing_get')
@@ -903,8 +911,7 @@ Deno.serve(async (req) => {
       // текст жалобы — данные от постороннего человека, пускать их в автозапуск нельзя.
       if (command === '/check' || command === '/fix') {
         const supabase = db()
-        const { data: modTid } = await supabase.rpc('support_moderator_tid')
-        if (!modTid || message.from?.id !== modTid) return new Response('ok')
+        if (!await isStaff(message.from?.id)) return new Response('ok')
 
         const source = message.reply_to_message?.text ?? ''
         const extra = (payload ?? '').trim()
@@ -934,8 +941,7 @@ Deno.serve(async (req) => {
       // Тема под агента: команда отправляется внутри нужной темы.
       if (command === '/setup_agent') {
         const supabase = db()
-        const { data: modTid } = await supabase.rpc('support_moderator_tid')
-        if (!modTid || message.from?.id !== modTid) return new Response('ok')
+        if (!await isStaff(message.from?.id)) return new Response('ok')
 
         const kind = (payload ?? '').trim().toLowerCase()
         const known = Object.keys(AGENTS)
@@ -961,10 +967,44 @@ Deno.serve(async (req) => {
         return new Response('ok')
       }
 
+      // Кто имеет право командовать ботом. Добавляем ответом на сообщение человека:
+      // так telegram_id берётся из самого сообщения и ошибиться в нём невозможно.
+      if (command === '/staff') {
+        const supabase = db()
+        if (!await isStaff(message.from?.id)) return new Response('ok')
+        const reply = (t: string) => tg('sendMessage', {
+          chat_id: chatId, message_thread_id: message.message_thread_id, text: t, parse_mode: 'HTML',
+        })
+        const arg = (payload ?? '').trim().toLowerCase()
+
+        if (arg === 'add' || arg === 'remove') {
+          const target = message.reply_to_message?.from?.id
+          if (!target) { await reply('Ответь этой командой на сообщение человека, которого добавляешь или убираешь.'); return new Response('ok') }
+          if (arg === 'remove' && target === message.from?.id) { await reply('Себя убрать нельзя — иначе останемся без хозяина.'); return new Response('ok') }
+          const { data, error } = await supabase.rpc('support_staff_set', { p_tid: target, p_on: arg === 'add' })
+          const res = Array.isArray(data) ? data[0] : data
+          if (error || !res?.ok) {
+            await reply(res?.error === 'not_found'
+              ? 'Его нет в приложении. Пусть сначала откроет Driply, потом выдадим права.'
+              : `Не вышло: ${error?.message ?? res?.error ?? 'неизвестно'}`)
+            return new Response('ok')
+          }
+          await reply(arg === 'add'
+            ? `✅ ${res.name} теперь в штабе: может командовать ботом и агентами.`
+            : `Права у ${res.name} сняты.`)
+          return new Response('ok')
+        }
+
+        const { data: list } = await supabase.rpc('support_staff_list')
+        const rows = (Array.isArray(list) ? list : []).map((s: { name: string; username?: string }) =>
+          `• ${s.name}${s.username ? ' @' + s.username : ''}`)
+        await reply(`<b>Штаб</b>\n${rows.join('\n') || 'пусто'}\n\nДобавить: ответь на сообщение человека /staff add\nУбрать: /staff remove`)
+        return new Response('ok')
+      }
+
       if (command === '/agents') {
         const supabase = db()
-        const { data: modTid } = await supabase.rpc('support_moderator_tid')
-        if (!modTid || message.from?.id !== modTid) return new Response('ok')
+        if (!await isStaff(message.from?.id)) return new Response('ok')
         const { data: list } = await supabase.rpc('agent_topics_list')
         const bound = new Map((Array.isArray(list) ? list : []).map((r: Record<string, number>) => [r.kind, r.thread_id]))
         const lines = Object.entries(AGENTS).map(([kind, a]) =>
@@ -982,6 +1022,7 @@ Deno.serve(async (req) => {
           '/stats &lt;срез&gt; [дней] — цифры',
           '/health — живы ли бот, вебхук, темы',
           '/posts — что уже опубликовано в канале',
+          '/staff — у кого есть права на бота',
           '',
           '<b>Передать работу:</b>',
           '/check — реплаем на жалобу, отдать тестировщику',
@@ -995,8 +1036,7 @@ Deno.serve(async (req) => {
       // Что куда привязано: без этого непонятно, какая из одинаковых тем настоящая.
       if (command === '/topics') {
         const supabase = db()
-        const { data: modTid } = await supabase.rpc('support_moderator_tid')
-        if (!modTid || message.from?.id !== modTid) return new Response('ok')
+        if (!await isStaff(message.from?.id)) return new Response('ok')
         const { data: routes } = await supabase.rpc('support_routing_get')
         const route = Array.isArray(routes) ? routes[0] : routes
         if (!route?.chat_id) {
@@ -1016,8 +1056,7 @@ Deno.serve(async (req) => {
       // подписки и три минуты ожидания ради одной строки.
       if (command === '/stats' || command === '/health' || command === '/posts') {
         const supabase = db()
-        const { data: modTid } = await supabase.rpc('support_moderator_tid')
-        if (!modTid || message.from?.id !== modTid) return new Response('ok')
+        if (!await isStaff(message.from?.id)) return new Response('ok')
         const reply = (t: string) => tg('sendMessage', {
           chat_id: chatId, message_thread_id: message.message_thread_id,
           text: t.slice(0, 3800), parse_mode: 'HTML',
@@ -1045,8 +1084,7 @@ Deno.serve(async (req) => {
       // Telegram настраивает его только на весь чат.
       if (command === '/menu') {
         const supabase = db()
-        const { data: modTid } = await supabase.rpc('support_moderator_tid')
-        if (!modTid || message.from?.id !== modTid) return new Response('ok')
+        if (!await isStaff(message.from?.id)) return new Response('ok')
         // заодно обновляем меню «/» этой группы: список команд живёт у Telegram,
         // и после правок в коде его надо переустановить, иначе он остаётся старым
         await setGroupCommands(chatId)
