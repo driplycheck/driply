@@ -45,7 +45,6 @@ jobs:
           IN_KIND: ${{ github.event.inputs.kind }}
           IN_TASK: ${{ github.event.inputs.message }}
           SCHEDULE: ${{ github.event.schedule }}
-          SB_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: |
           KIND="$IN_KIND"
           TASK="$IN_TASK"
@@ -72,12 +71,8 @@ jobs:
           if [ -z "$TASK" ]; then
             TASK='Пришли один готовый пост для канала. Сначала посмотри, что уже присылал сам (срез history) и что уже написано в marketing/build-posts-page.mjs — не повторяйся ни темой, ни зачином. Чередуй жанры: обновление продукта, польза читателю, живая цифра из статистики, вопрос аудитории. Если повода для анонса нет, напиши пост, полезный сам по себе, а не выдумывай новость.'
           fi
-          # есть ли ключ от Supabase — от этого зависит, может ли разработчик чинить бота
-          if [ -n "$SB_TOKEN" ]; then HAS_SUPABASE=true; else HAS_SUPABASE=false; fi
-          echo "починка бота доступна: $HAS_SUPABASE"
           {
             echo "KIND=$KIND"
-            echo "HAS_SUPABASE=$HAS_SUPABASE"
             echo "MAIN_BEFORE=$(git rev-parse origin/main)"
             echo 'TASK<<AGENT_TASK_EOF'
             echo "$TASK"
@@ -119,7 +114,7 @@ jobs:
           if [ "$KIND" = "dev" ]; then
             # git нужен для разбора («что менялось в этом файле»), но отправляет правку
             # только ship.mjs: он единственный, кто проверяет сборку и умеет откатить
-            echo 'list=Read,Glob,Grep,Edit,Write,Bash(npm:*),Bash(npx:*),Bash(node:*),Bash(curl:*),Bash(git:*),Bash(supabase functions:*)' >> "$GITHUB_OUTPUT"
+            echo 'list=Read,Glob,Grep,Edit,Write,Bash(npm:*),Bash(npx:*),Bash(node:*),Bash(curl:*),Bash(git:*)' >> "$GITHUB_OUTPUT"
           elif [ "$KIND" = "pr" ]; then
             # PR-менеджер рисует обложку: ему нужно создавать файлы, но не трогать git
             echo 'list=Read,Glob,Grep,Edit,Write,Bash(npm:*),Bash(npx:*),Bash(node:*),Bash(mkdir:*),Bash(ls:*),Bash(cat:*)' >> "$GITHUB_OUTPUT"
@@ -143,15 +138,6 @@ jobs:
           npx playwright install --with-deps chromium
           node scripts/glance.mjs
           ls -la .shots/*.png || true
-
-      # Чтобы разработчик мог чинить не только приложение, но и бота.
-      # Без секрета SUPABASE_ACCESS_TOKEN шаг просто ничего не делает, и агенту
-      # в роли сказано: edge-функции тогда не твои, опиши словами и остановись.
-      - name: инструмент для бота
-        if: env.KIND == 'dev' && env.HAS_SUPABASE == 'true'
-        uses: supabase/setup-cli@v1
-        with:
-          version: latest
 
       # Разработчику браузер нужен, чтобы ship.mjs мог проверить живой прод после деплоя:
       # без него правка уезжала бы к людям непроверенной.
@@ -191,10 +177,6 @@ jobs:
           # им ship.mjs спрашивает у GitHub, собрал ли Vercel прод:
           # без ответа правку не на чем проверять, и она уедет к людям вслепую
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # ключ от Supabase: с ним разработчик может перезалить бота, без него — нет
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-          SUPABASE_PROJECT_REF: chnvpnbnqvugsbwelmoq
-          HAS_SUPABASE: ${{ env.HAS_SUPABASE }}
           SHOTS_TG_ID: ${{ secrets.SHOTS_TG_ID }}
           SHOTS_USER_ID: ${{ secrets.SHOTS_USER_ID }}
           TG_WEBHOOK_URL: ${{ secrets.TG_WEBHOOK_URL }}
