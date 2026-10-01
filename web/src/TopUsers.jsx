@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { ChevronLeft, Crown, ArrowRight, X, ArrowUp, ArrowDown } from 'lucide-react'
 import { supabase } from './supabase.js'
 import { avatarTier } from './tiers.js'
-import { t, plural, styleName } from './i18n.js'
+import { t, plural, styleName, activeLang } from './i18n.js'
 import { tg } from './telegram.js'
 import DripCoin from './components/ui/DripCoin.jsx'
 import './leaderboard.css'
@@ -73,6 +73,14 @@ function EarnSheet({ onClose }) {
 const PERIODS = ['week', 'month', 'all']
 
 // «2 д 14 ч» / «5 ч 20 мин» до сброса периода
+// «1 октября» — дата начала периода. Нужна только в пустом состоянии,
+// чтобы человек видел, что таблица не сломалась, а период только начался.
+function sinceDay(iso) {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ''
+  return d.toLocaleDateString(activeLang() === 'en' ? 'en-US' : 'ru-RU', { day: 'numeric', month: 'long' })
+}
+
 function resetIn(iso) {
   const ms = new Date(iso).getTime() - Date.now()
   if (!Number.isFinite(ms) || ms <= 0) return null
@@ -169,7 +177,16 @@ export default function TopUsers({ me, onClose, onOpenProfile, initialMode }) {
               </div>
             )}
             {users.length === 0 ? (
-              <div className="lb__state">{t(mode === 'given' ? 'given_empty' : 'period_empty')}</div>
+              // Пусто в периоде и пусто вообще — разные вещи. В первый день месяца
+              // таблица законно пуста, и без даты это выглядит как поломка.
+              <div className="lb__state">
+                {board?.since
+                  ? t(mode === 'given' ? 'empty_since_given' : 'empty_since_received', { d: sinceDay(board.since) })
+                  : t(mode === 'given' ? 'given_empty' : 'period_empty')}
+                {board?.since && period !== 'all' && (
+                  <button className="lb__state-btn" onClick={() => setPeriod('all')}>{t('show_all_time')}</button>
+                )}
+              </div>
             ) : (
               <div className="lb__list">
                 {rest.map((u) => (
