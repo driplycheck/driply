@@ -31,6 +31,39 @@ async function dispatchAgent(kind: string, message: string, threadId: number | n
   return res.ok ? { ok: true } : { ok: false, error: (await res.text()).slice(0, 200) }
 }
 
+// Остановить работающих агентов. Нужна, когда в тему агента написали случайно:
+// прогон идёт до получаса, тратит подписку, а разработчик ещё и правит код.
+// Имя прогона задано в agent.yml как «Агент — <кто>», по нему и отличаем, кого гасить.
+async function cancelRuns(kind?: string | null) {
+  if (!GH_TOKEN) return { ok: false, error: 'нет GH_TOKEN', stopped: [] as string[] }
+  const head = {
+    Authorization: `Bearer ${GH_TOKEN}`,
+    Accept: 'application/vnd.github+json',
+    'User-Agent': 'driply-agents',
+  }
+  const list = await fetch(
+    `https://api.github.com/repos/${GH_REPO}/actions/workflows/agent.yml/runs?per_page=30`,
+    { headers: head },
+  )
+  if (!list.ok) return { ok: false, error: (await list.text()).slice(0, 160), stopped: [] }
+  const json = await list.json()
+  const LIVE = ['queued', 'in_progress', 'requested', 'waiting', 'pending']
+  const runs = (json.workflow_runs ?? [])
+    .filter((r: { status: string }) => LIVE.includes(r.status))
+    .filter((r: { name?: string; display_title?: string }) =>
+      !kind || `${r.display_title ?? ''} ${r.name ?? ''}`.includes(kind))
+
+  const stopped: string[] = []
+  for (const r of runs) {
+    const res = await fetch(`https://api.github.com/repos/${GH_REPO}/actions/runs/${r.id}/cancel`, {
+      method: 'POST', headers: head,
+    })
+    // 202 — принято; 409 означает, что прогон уже закончился сам
+    if (res.ok || res.status === 409) stopped.push(String(r.display_title ?? r.id))
+  }
+  return { ok: true, stopped, error: null }
+}
+
 // ответ Claude идёт дольше, чем Telegram готов ждать: отвечаем 200 сразу, работаем следом
 function runInBackground(task: Promise<unknown>) {
   // @ts-ignore EdgeRuntime есть только в проде
@@ -180,6 +213,7 @@ async function setGroupCommands(chatId: number) {
       { command: 'posts', description: 'Что уже опубликовано в канале' },
       { command: 'agents', description: 'Кто в команде и где живёт' },
       { command: 'staff', description: 'Кто имеет права: /staff add реплаем' },
+      { command: 'stop', description: 'Остановить работающих агентов' },
       { command: 'topics', description: 'Какая тема за что отвечает' },
       { command: 'publish', description: 'Реплаем на пост — отправить в канал' },
       { command: 'check', description: 'Реплаем на жалобу — отдать тестировщику' },
@@ -486,6 +520,22 @@ Deno.serve(async (req) => {
         text: t.slice(0, 3800), parse_mode: 'HTML',
       })
 
+      // Остановить. Гасим прогон, а не прячем сообщение: агент иначе доработает
+      // до конца, потратит подписку, а разработчик ещё и отправит правку в прод.
+      if (data.startsWith('stop:')) {
+        const who = data.slice(5)
+        await close(who ? `Останавливаю: ${AGENTS[who]?.name ?? who}` : 'Останавливаю всех')
+        runInBackground((async () => {
+          const res = await cancelRuns(who || null)
+          await say(res.ok
+            ? (res.stopped.length
+              ? `⛔ Остановлено: ${res.stopped.length === 1 ? (AGENTS[who]?.name ?? res.stopped[0]) : res.stopped.length + ' прогона'}.`
+              : 'Останавливать нечего — все уже закончили.')
+            : `Не вышло остановить: ${res.error}`)
+        })())
+        return new Response('ok')
+      }
+
       // Запустить агента готовой задачей.
       if (data.startsWith('run:')) {
         const [, kind, preset] = data.split(':')
@@ -495,9 +545,13 @@ Deno.serve(async (req) => {
         runInBackground((async () => {
           const started = await dispatchAgent(kind, task, thread)
           await supabase.rpc('agent_log', { p_kind: kind, p_role: 'user', p_body: task })
-          await say(started.ok
-            ? `🛠 ${AGENTS[kind].name} взял в работу, вернётся через пару минут.`
-            : `Не смог запустить: ${started.error}`)
+          await tg('sendMessage', {
+            chat_id: chatId, ...(thread ? { message_thread_id: thread } : {}), parse_mode: 'HTML',
+            text: started.ok
+              ? `🛠 ${AGENTS[kind].name} взял в работу, вернётся через пару минут.`
+              : `Не смог запустить: ${started.error}`,
+            ...(started.ok ? { reply_markup: markup([[{ text: '⛔ Остановить', data: `stop:${kind}` }]]) } : {}),
+          })
         })())
         return new Response('ok')
       }
@@ -587,6 +641,8 @@ Deno.serve(async (req) => {
             await tg('sendMessage', {
               chat_id: message.chat.id, message_thread_id: thread,
               text: started.ok ? '🛠 Взял в работу, вернусь через пару минут.' : `Не смог запуститься: ${started.error}`,
+              // кнопка рядом с подтверждением: написал случайно — остановил одним тапом
+              ...(started.ok ? { reply_markup: markup([[{ text: '⛔ Остановить', data: `stop:${kind}` }]]) } : {}),
             })
             return
           }
@@ -666,9 +722,13 @@ Deno.serve(async (req) => {
             }
 
             await supabase.rpc('agent_log', { p_kind: MEETING_KIND, p_role: 'user', p_body: text })
-            await say(failed.length
-              ? `Раздал: ${team}.\nНе запустились — ${failed.join('; ')}`
-              : `Раздал: ${team}. ${kinds.length === 1 ? 'Ответит' : 'Ответят'} здесь же.${kinds.length > 2 ? `\n\nЭто ${kinds.length} прогона подписки за раз.` : ''}`)
+            await tg('sendMessage', {
+              chat_id: message.chat.id, message_thread_id: thread, parse_mode: 'HTML',
+              text: failed.length
+                ? `Раздал: ${team}.\nНе запустились — ${failed.join('; ')}`
+                : `Раздал: ${team}. ${kinds.length === 1 ? 'Ответит' : 'Ответят'} здесь же.${kinds.length > 2 ? `\n\nЭто ${kinds.length} прогона подписки за раз.` : ''}`,
+              ...(failed.length < kinds.length ? { reply_markup: markup([[{ text: '⛔ Остановить всех', data: 'stop:' }]]) } : {}),
+            })
           } catch (e) {
             console.error('meeting', String(e))
             await say(`Сорвался по дороге: ${e instanceof Error ? e.message : String(e)}`).catch(() => {})
@@ -967,6 +1027,27 @@ Deno.serve(async (req) => {
         return new Response('ok')
       }
 
+      // Экстренная остановка. Без аргумента гасит всех, с именем — одного.
+      if (command === '/stop') {
+        if (!await isStaff(message.from?.id)) return new Response('ok')
+        const arg = (payload ?? '').trim().toLowerCase()
+        const who = arg ? AGENT_ALIASES[arg] ?? null : null
+        const reply = (t: string) => tg('sendMessage', {
+          chat_id: chatId, message_thread_id: message.message_thread_id, text: t,
+        })
+        if (arg && !who) {
+          await reply(`Кого остановить? ${Object.keys(AGENTS).map((k) => AGENTS[k].name.toLowerCase()).join(', ')} — или просто /stop, чтобы всех.`)
+          return new Response('ok')
+        }
+        const res = await cancelRuns(who)
+        await reply(res.ok
+          ? (res.stopped.length
+            ? `⛔ Остановлено прогонов: ${res.stopped.length}.`
+            : 'Сейчас никто не работает — останавливать нечего.')
+          : `Не вышло остановить: ${res.error}`)
+        return new Response('ok')
+      }
+
       // Кто имеет право командовать ботом. Добавляем ответом на сообщение человека:
       // так telegram_id берётся из самого сообщения и ошибиться в нём невозможно.
       if (command === '/staff') {
@@ -1023,6 +1104,7 @@ Deno.serve(async (req) => {
           '/health — живы ли бот, вебхук, темы',
           '/posts — что уже опубликовано в канале',
           '/staff — у кого есть права на бота',
+          '/stop — остановить агентов (или /stop дизайнер)',
           '',
           '<b>Передать работу:</b>',
           '/check — реплаем на жалобу, отдать тестировщику',
