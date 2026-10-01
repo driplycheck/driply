@@ -89,8 +89,11 @@ jobs:
         run: |
           mkdir -p .agent
           printf '%s' "$TASK" > .agent/task.md
-          # общие правила речи + роль: стиль один на всех, чтобы не расходился по файлам
+          # общее для всех — речь и состав команды, потом личная роль.
+          # Так стиль и знание о коллегах не расходятся по пяти файлам.
           cat .github/agents/_style.md > .agent/role.md
+          printf '\n\n' >> .agent/role.md
+          cat .github/agents/_team.md >> .agent/role.md
           printf '\n\n' >> .agent/role.md
           cat ".github/agents/$KIND.md" >> .agent/role.md
 

@@ -25,6 +25,7 @@ const urls = {
 if (!urls[what]) {
   console.error('Что запросить: stats <срез> <дней> | health | history <агент> <сколько> | published <сколько>')
   console.error('Срезы: funnel, exits, growth, retention, content, economy, errors')
+  console.error('Агенты: tester, designer, dev, analyst, pr, а также meeting — журнал совещаний')
   process.exit(1)
 }
 

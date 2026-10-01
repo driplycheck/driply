@@ -1,7 +1,7 @@
 // Бот целиком на Edge Function: Telegram шлёт апдейты вебхуком, отдельный процесс не нужен.
 // Секреты: BOT_TOKEN, WEBAPP_URL, TG_WEBHOOK_SECRET (+ SUPABASE_* для аналитики, они уже есть).
 import { createClient } from 'npm:@supabase/supabase-js@2'
-import { AGENTS } from './agents.ts'
+import { AGENTS, AGENT_ALIASES, MEETING_KIND, MENTION_ALL } from './agents.ts'
 
 function db() {
   return createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
@@ -44,7 +44,8 @@ const SUPPORT_TOPICS = [
   { kind: 'bug', col: 'thread_bug', name: '🛠 Не работает', icon: 0x6FB9F0 },
   { kind: 'idea', col: 'thread_idea', name: '💡 Идеи', icon: 0xFFD67E },
   { kind: 'partner', col: 'thread_partner', name: '🤝 Сотрудничество', icon: 0xCB86DB },
-  { kind: 'reports', col: 'thread_reports', name: '🤖 Отчёты проверок', icon: 0x8EEE98 },
+  // Эта тема — ещё и переговорка: сюда падают отчёты и отсюда раздаются общие задачи.
+  { kind: 'reports', col: 'thread_reports', name: '🤖 Совещание и отчёты', icon: 0x8EEE98 },
 ]
 const SUPPORT_LABEL: Record<string, string> = {
   bug: '🛠 <b>Не работает</b>', idea: '💡 <b>Идея</b>', partner: '🤝 <b>Сотрудничество</b>',
@@ -110,6 +111,27 @@ function renderStats(value: unknown, depth = 0): string {
 }
 
 const STATS_NAMES = ['funnel', 'exits', 'growth', 'retention', 'content', 'economy', 'errors']
+
+// Кого позвали в переговорке. «@все» — всю команду, иначе по именам.
+// Чужие упоминания вроде @Driplycheckbot сюда не попадут: их нет в списке ролей.
+function parseMentions(text: string) {
+  if (MENTION_ALL.test(text)) return Object.keys(AGENTS)
+  const kinds: string[] = []
+  for (const m of text.matchAll(/@([A-Za-zА-Яа-яЁё_-]+)/g)) {
+    const kind = AGENT_ALIASES[m[1].toLowerCase()]
+    if (kind && AGENTS[kind] && !kinds.includes(kind)) kinds.push(kind)
+  }
+  return kinds
+}
+
+// Журнал переговорки для передачи агенту. Ответы агентов уже подписаны именем,
+// поэтому их отдаём как есть, а реплики основателя помечаем.
+function meetingLog(rows: unknown) {
+  const list = Array.isArray(rows) ? [...rows].reverse() : []
+  return list
+    .map((m: { role: string; body: string }) => (m.role === 'user' ? `Основатель: ${m.body}` : m.body))
+    .join('\n\n')
+}
 
 async function tg(method: string, body: unknown) {
   const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/${method}`, {
@@ -219,6 +241,12 @@ Deno.serve(async (req) => {
     if (logKind) {
       const { error: logErr } = await db().rpc('agent_log', { p_kind: logKind, p_role: 'assistant', p_body: text })
       if (logErr) console.error('agent_log', logErr.message)
+    }
+    // Ответ пришёл в переговорку — кладём его и в общий журнал, подписав именем.
+    // Без этого следующий агент не узнает, что коллега уже сказал по той же задаче.
+    if (route.thread_reports && thread === Number(route.thread_reports)) {
+      const who = logKind && AGENTS[logKind] ? AGENTS[logKind].name : 'Агент'
+      await db().rpc('agent_log', { p_kind: MEETING_KIND, p_role: 'assistant', p_body: `${who}: ${text}` })
     }
 
     // Агент может прислать картинку вместе с текстом — тогда это пост с обложкой.
@@ -369,6 +397,71 @@ Deno.serve(async (req) => {
               chat_id: message.chat.id, message_thread_id: thread,
               text: `Сорвался по дороге: ${e instanceof Error ? e.message : String(e)}`,
             }).catch(() => {})
+          }
+        })())
+        return new Response('ok')
+      }
+    }
+
+    // Переговорка — тема отчётов. Сюда основатель пишет общую задачу и зовёт исполнителей
+    // через @имя. Все реплики и все ответы складываются в один журнал, который каждый агент
+    // читает перед работой: так они знают, что сказали друг другу, а не работают вслепую.
+    if (message?.chat?.id && text && !text.startsWith('/') && message.message_thread_id) {
+      const supabase = db()
+      const { data: routes } = await supabase.rpc('support_routing_get')
+      const route = Array.isArray(routes) ? routes[0] : routes
+      const isMeeting = Boolean(route?.chat_id)
+        && message.chat.id === Number(route.chat_id)
+        && Number(route.thread_reports) === message.message_thread_id
+
+      if (isMeeting) {
+        const { data: ownerTid } = await supabase.rpc('support_moderator_tid')
+        if (!ownerTid || message.from?.id !== ownerTid) return new Response('ok')
+
+        const thread = message.message_thread_id
+        const kinds = parseMentions(text)
+        const say = (t: string) => tg('sendMessage', {
+          chat_id: message.chat.id, message_thread_id: thread, text: t, parse_mode: 'HTML',
+        })
+
+        if (!kinds.length) {
+          const roster = Object.entries(AGENTS).map(([k, a]) => `@${a.name.toLowerCase()} — ${k}`).join('\n')
+          await say(`Кому задача? Напиши имя через собачку:\n\n${roster}\n@все — всей команде\n\nНапример: <i>@дизайнер @тестировщик посмотрите экран ленты на коротком телефоне</i>`)
+          return new Response('ok')
+        }
+
+        runInBackground((async () => {
+          try {
+            await tg('sendChatAction', { chat_id: message.chat.id, message_thread_id: thread, action: 'typing' })
+            if (!GH_TOKEN) { await say('Запускать некому: не задан GH_TOKEN.'); return }
+
+            const { data: past } = await supabase.rpc('agent_history', { p_kind: MEETING_KIND, p_limit: 12 })
+            const log = meetingLog(past)
+            const team = kinds.map((k) => AGENTS[k].name).join(', ')
+
+            const failed: string[] = []
+            for (const kind of kinds) {
+              // каждому говорим, кто ещё в деле: иначе двое сделают одну и ту же работу
+              const others = kinds.filter((k) => k !== kind).map((k) => AGENTS[k].name)
+              const task = [
+                'Это общая задача из темы совещаний, а не личная просьба в твоей теме.',
+                others.length ? `Над ней же работают: ${others.join(', ')}. Делай свою часть, чужую не дублируй.` : '',
+                log ? `\nЧто уже сказано на совещании:\n${log}` : '',
+                `\nЗадача от основателя:\n${text}`,
+                '\nОтвечай только по своей части. Если задача не про тебя — скажи это одной строкой и ничего не выдумывай.',
+              ].filter(Boolean).join('\n')
+
+              const started = await dispatchAgent(kind, task, thread)
+              if (!started.ok) failed.push(`${AGENTS[kind].name}: ${started.error}`)
+            }
+
+            await supabase.rpc('agent_log', { p_kind: MEETING_KIND, p_role: 'user', p_body: text })
+            await say(failed.length
+              ? `Раздал: ${team}.\nНе запустились — ${failed.join('; ')}`
+              : `Раздал: ${team}. ${kinds.length === 1 ? 'Ответит' : 'Ответят'} здесь же.${kinds.length > 2 ? `\n\nЭто ${kinds.length} прогона подписки за раз.` : ''}`)
+          } catch (e) {
+            console.error('meeting', String(e))
+            await say(`Сорвался по дороге: ${e instanceof Error ? e.message : String(e)}`).catch(() => {})
           }
         })())
         return new Response('ok')
@@ -692,7 +785,10 @@ Deno.serve(async (req) => {
         // заодно шпаргалка: иначе команды живут только в коде и о них никто не помнит
         const cheat = [
           '',
-          '<b>Поставить задачу</b> — напиши в тему агента.',
+          '<b>Задача одному</b> — напиши в его тему.',
+          '<b>Задача нескольким</b> — напиши в «Совещание и отчёты» и позови через собачку:',
+          '<i>@дизайнер @тестировщик посмотрите ленту на коротком экране</i>',
+          'Там же @все — всей команде. Они видят, что сказали друг другу.',
           '<b>Завести</b> — создай тему и отправь в ней /setup_agent &lt;кто&gt;.',
           '',
           '<b>Без запуска агента, отвечаю сразу:</b>',
