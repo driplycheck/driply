@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { X, Expand } from 'lucide-react'
+import { Expand } from 'lucide-react'
+import PhotoView from './PhotoView.jsx'
 import './ui.css'
 
 // Карточка принимает пропорции снимка: так у вертикальных фото нет полей,
@@ -85,15 +86,9 @@ export default function OutfitCard({ images, imageUrl, badge, author, caption, t
       </div>
       {children}
 
-      {/* во весь экран: образ разглядывают, а карточка ограничена высотой ленты */}
-      {zoom && (
-        <div className="photoview" onClick={() => setZoom(false)}>
-          <img src={photos[index]} alt="" />
-          <button className="photoview__close" aria-label="×" onClick={() => setZoom(false)}>
-            <X size={20} strokeWidth={2.4} />
-          </button>
-        </div>
-      )}
+      {/* во весь экран: образ разглядывают, а карточка ограничена высотой ленты.
+          Там же щипок и двойное касание — детали вещей иначе не рассмотреть */}
+      {zoom && <PhotoView src={photos[index]} onClose={() => setZoom(false)} />}
     </article>
   )
 }
