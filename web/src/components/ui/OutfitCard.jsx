@@ -88,7 +88,7 @@ export default function OutfitCard({ images, imageUrl, badge, author, caption, t
 
       {/* во весь экран: образ разглядывают, а карточка ограничена высотой ленты.
           Там же щипок и двойное касание — детали вещей иначе не рассмотреть */}
-      {zoom && <PhotoView src={photos[index]} onClose={() => setZoom(false)} />}
+      {zoom && <PhotoView photos={photos} start={index} onClose={() => setZoom(false)} />}
     </article>
   )
 }

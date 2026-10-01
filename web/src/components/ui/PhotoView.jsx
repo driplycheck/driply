@@ -1,48 +1,57 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { X } from 'lucide-react'
 
-// Просмотр фото во весь экран с приближением.
+// Просмотр фото во весь экран: приближение и листание между снимками образа.
 //
 // Зум свой, а не браузерный: в мини-аппе страница объявлена user-scalable=no,
 // иначе Telegram вместе с фото тянул бы всю вёрстку. Поэтому масштаб и сдвиг
-// мы считаем сами и применяем трансформацией к одной картинке.
+// мы считаем сами и применяем трансформацией.
 //
 // Жесты: щипок двумя пальцами, перетаскивание одним (когда приближено),
-// двойное касание — приблизить к точке и обратно. На компьютере — колесо.
+// двойное касание — приблизить к точке и обратно, смахивание вбок — соседнее фото.
+// Листаем только в исходном масштабе: иначе непонятно, тянут фото или перелистывают.
 
 const MAX_SCALE = 4
 const DOUBLE_TAP_SCALE = 2.5
-const TAP_MS = 250      // дольше — это уже удержание, а не касание
-const TAP_SLOP = 10     // сдвиг в пределах пальца, касание всё ещё считается точным
+const TAP_MS = 250        // дольше — это уже удержание, а не касание
+const TAP_SLOP = 10       // сдвиг в пределах пальца, касание всё ещё считается точным
 const DOUBLE_TAP_MS = 300
+const SWIPE_PART = 0.22   // доля экрана, после которой смахивание засчитано
+const EDGE_PULL = 0.35    // сопротивление на краях: дальше первого и последнего фото не уехать
 
-export default function PhotoView({ src, alt = '', onClose }) {
+export default function PhotoView({ photos, start = 0, alt = '', onClose }) {
+  const list = (Array.isArray(photos) ? photos : [photos]).filter(Boolean)
   const boxRef = useRef(null)
-  const imgRef = useRef(null)
+  const trackRef = useRef(null)
+  const imgs = useRef([])
   // живое состояние жеста держим в ref: перерисовывать React на каждый кадр незачем
   const view = useRef({ scale: 1, x: 0, y: 0 })
   const pointers = useRef(new Map())
   const pinch = useRef(null)
+  const swipe = useRef({ active: false, dx: 0 })
   const tap = useRef({ time: 0, x: 0, y: 0, moved: false, last: 0 })
+  const [index, setIndex] = useState(Math.min(Math.max(0, start), Math.max(0, list.length - 1)))
+  const idx = useRef(index)
   const [zoomed, setZoomed] = useState(false)
+
+  const curImg = () => imgs.current[idx.current]
 
   // Насколько картинка видна на экране при масштабе 1 — от этого считаются границы сдвига,
   // иначе фото можно утащить за край и остаться с пустым чёрным полем.
   //
   // Размеры берём прямо у картинки, а не из события загрузки: браузер знает их раньше,
   // чем файл дочитан до конца, а из кэша событие загрузки может не прийти вовсе.
-  // Пока размеров нет, сдвиг остаётся нулевым — и протяжка не работала бы молча.
-  const fitted = useCallback(() => {
+  function fitted() {
     const box = boxRef.current
-    const img = imgRef.current
+    const img = curImg()
     if (!box || !img?.naturalWidth || !img.naturalHeight) return null
     const cw = box.clientWidth
     const ch = box.clientHeight
     const k = Math.min(cw / img.naturalWidth, ch / img.naturalHeight)
     return { cw, ch, w: img.naturalWidth * k, h: img.naturalHeight * k }
-  }, [])
+  }
 
-  const clamp = useCallback((v) => {
+  function clamp(v) {
     const f = fitted()
     v.scale = Math.min(MAX_SCALE, Math.max(1, v.scale))
     if (!f) { v.x = 0; v.y = 0; return v }
@@ -51,20 +60,29 @@ export default function PhotoView({ src, alt = '', onClose }) {
     v.x = Math.min(maxX, Math.max(-maxX, v.x))
     v.y = Math.min(maxY, Math.max(-maxY, v.y))
     return v
-  }, [fitted])
+  }
 
-  const apply = useCallback((animate = false) => {
-    const el = imgRef.current
-    if (!el) return
+  function apply(animate = false) {
+    const img = curImg()
+    if (!img) return
     const v = clamp(view.current)
-    el.style.transition = animate ? 'transform 0.22s cubic-bezier(0.22, 0.61, 0.36, 1)' : 'none'
-    el.style.transform = `translate3d(${v.x}px, ${v.y}px, 0) scale(${v.scale})`
+    img.style.transition = animate ? 'transform 0.22s cubic-bezier(0.22, 0.61, 0.36, 1)' : 'none'
+    img.style.transform = `translate3d(${v.x}px, ${v.y}px, 0) scale(${v.scale})`
     setZoomed(v.scale > 1.01)
-  }, [clamp])
+  }
+
+  // Лента кадров: сдвигаем всю дорожку, а не каждый снимок по отдельности.
+  function applyTrack(animate = false, extra = 0) {
+    const track = trackRef.current
+    const box = boxRef.current
+    if (!track || !box) return
+    track.style.transition = animate ? 'transform 0.26s cubic-bezier(0.22, 0.61, 0.36, 1)' : 'none'
+    track.style.transform = `translate3d(${-idx.current * box.clientWidth + extra}px, 0, 0)`
+  }
 
   // Приближение к точке: точка под пальцем должна остаться на месте,
   // иначе фото «прыгает» из-под пальца и попасть в деталь невозможно.
-  const zoomTo = useCallback((nextScale, px, py, animate) => {
+  function zoomTo(nextScale, px, py, animate) {
     const box = boxRef.current
     if (!box) return
     const r = box.getBoundingClientRect()
@@ -76,15 +94,24 @@ export default function PhotoView({ src, alt = '', onClose }) {
     v.y = cy - (cy - v.y) * k
     v.scale = nextScale
     apply(animate)
-  }, [apply])
+  }
 
-  const reset = useCallback((animate) => {
+  function reset(animate) {
     view.current = { scale: 1, x: 0, y: 0 }
     apply(animate)
-  }, [apply])
+  }
 
-  // Открываем всегда в исходном виде: остаться в чужом приближении от прошлого фото — неожиданно.
-  useEffect(() => { reset(false) }, [src, reset])
+  function goTo(next, animate = true) {
+    const clamped = Math.min(list.length - 1, Math.max(0, next))
+    if (clamped !== idx.current) {
+      // уходим с кадра — возвращаем его в исходный вид, чтобы не вернуться в чужое приближение
+      reset(false)
+      idx.current = clamped
+      setIndex(clamped)
+    }
+    applyTrack(animate)
+    reset(false)
+  }
 
   function onPointerDown(e) {
     // захват указателя — удобство, а не обязанность: он умеет бросать исключение
@@ -99,8 +126,10 @@ export default function PhotoView({ src, alt = '', onClose }) {
         mx: (a.x + b.x) / 2,
         my: (a.y + b.y) / 2,
       }
+      swipe.current = { active: false, dx: 0 }
     } else if (pointers.current.size === 1) {
       tap.current = { ...tap.current, time: Date.now(), x: e.clientX, y: e.clientY, moved: false }
+      swipe.current = { active: false, dx: 0 }
     }
   }
 
@@ -120,24 +149,47 @@ export default function PhotoView({ src, alt = '', onClose }) {
       }
       return
     }
+    if (pointers.current.size !== 1) return
 
-    // одним пальцем двигаем только приближённое фото: иначе жест ничего не делает
-    if (pointers.current.size === 1 && view.current.scale > 1.01) {
+    // приближённое фото двигаем, не приближённое — листаем
+    if (view.current.scale > 1.01) {
       view.current.x += e.clientX - prev.x
       view.current.y += e.clientY - prev.y
       tap.current.moved = true
       apply(false)
       return
     }
-    if (Math.hypot(e.clientX - tap.current.x, e.clientY - tap.current.y) > TAP_SLOP) tap.current.moved = true
+
+    const dx = e.clientX - tap.current.x
+    const dy = e.clientY - tap.current.y
+    if (!swipe.current.active && Math.abs(dx) > TAP_SLOP && Math.abs(dx) > Math.abs(dy)) {
+      swipe.current.active = list.length > 1
+    }
+    if (Math.hypot(dx, dy) > TAP_SLOP) tap.current.moved = true
+    if (!swipe.current.active) return
+
+    // за первым и последним кадром тянется туго: видно, что дальше ничего нет
+    const atEdge = (dx > 0 && idx.current === 0) || (dx < 0 && idx.current === list.length - 1)
+    swipe.current.dx = atEdge ? dx * EDGE_PULL : dx
+    applyTrack(false, swipe.current.dx)
   }
 
   function onPointerUp(e) {
     pointers.current.delete(e.pointerId)
     if (pointers.current.size < 2) pinch.current = null
-    // после щипка масштаб мог уйти ниже единицы — возвращаем мягко
-    if (pointers.current.size === 0 && view.current.scale < 1.01) reset(true)
     if (pointers.current.size !== 0) return
+
+    // после щипка масштаб мог уйти ниже единицы — возвращаем мягко
+    if (view.current.scale < 1.01) reset(true)
+
+    if (swipe.current.active) {
+      const w = boxRef.current?.clientWidth || 1
+      const moved = swipe.current.dx
+      swipe.current = { active: false, dx: 0 }
+      if (Math.abs(moved) > w * SWIPE_PART) goTo(idx.current + (moved < 0 ? 1 : -1))
+      else applyTrack(true)
+      return
+    }
 
     const quick = Date.now() - tap.current.time < TAP_MS
     if (!quick || tap.current.moved) return
@@ -157,24 +209,38 @@ export default function PhotoView({ src, alt = '', onClose }) {
     }
   }
 
-  useEffect(() => {
-    const onKey = (e) => { if (e.key === 'Escape') onClose() }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [onClose])
-
-  // колесо вешаем вручную: React делает такой обработчик пассивным, и preventDefault в нём не работает
-  useEffect(() => {
-    const box = boxRef.current
-    if (!box) return
-    const handler = (e) => {
+  // Колесо и клавиши держим в ref: иначе обработчик пришлось бы переподключать
+  // на каждую перерисовку, а он должен видеть свежее состояние жеста.
+  const live = useRef(null)
+  live.current = {
+    wheel(e) {
       e.preventDefault()
       const next = view.current.scale * (e.deltaY < 0 ? 1.15 : 1 / 1.15)
       zoomTo(Math.min(MAX_SCALE, Math.max(1, next)), e.clientX, e.clientY, false)
+    },
+    key(e) {
+      if (e.key === 'Escape') onClose()
+      else if (e.key === 'ArrowRight') goTo(idx.current + 1)
+      else if (e.key === 'ArrowLeft') goTo(idx.current - 1)
+    },
+    resize() { applyTrack(false); apply(false) },
+  }
+
+  useEffect(() => {
+    const box = boxRef.current
+    const wheel = (e) => live.current.wheel(e)
+    const key = (e) => live.current.key(e)
+    const resize = () => live.current.resize()
+    box?.addEventListener('wheel', wheel, { passive: false })
+    window.addEventListener('keydown', key)
+    window.addEventListener('resize', resize)
+    applyTrack(false)
+    return () => {
+      box?.removeEventListener('wheel', wheel)
+      window.removeEventListener('keydown', key)
+      window.removeEventListener('resize', resize)
     }
-    box.addEventListener('wheel', handler, { passive: false })
-    return () => box.removeEventListener('wheel', handler)
-  }, [zoomTo])
+  }, [])
 
   return (
     <div
@@ -185,7 +251,20 @@ export default function PhotoView({ src, alt = '', onClose }) {
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerUp}
     >
-      <img ref={imgRef} src={src} alt={alt} draggable="false" />
+      <div className="photoview__track" ref={trackRef}>
+        {list.map((src, i) => (
+          <div className="photoview__slide" key={src + i}>
+            <img ref={(el) => { imgs.current[i] = el }} src={src} alt={i === index ? alt : ''} draggable="false" />
+          </div>
+        ))}
+      </div>
+
+      {list.length > 1 && (
+        <span className="photoview__dots" aria-label={`${index + 1} / ${list.length}`}>
+          {list.map((_, i) => <i key={i} className={i === index ? 'on' : ''} />)}
+        </span>
+      )}
+
       <button className="photoview__close" aria-label="×"
         onPointerDown={(e) => e.stopPropagation()}
         onClick={(e) => { e.stopPropagation(); onClose() }}>

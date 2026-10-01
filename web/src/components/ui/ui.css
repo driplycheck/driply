@@ -209,12 +209,35 @@
   overflow: hidden;
   overscroll-behavior: contain;
 }
+/* дорожка кадров: листаем сдвигом всей ленты, по экрану на снимок */
+.photoview__track { display: flex; width: 100%; height: 100%; will-change: transform; }
+.photoview__slide {
+  flex: 0 0 100%;
+  width: 100%; height: 100%;
+  display: grid; place-items: center;
+  overflow: hidden;
+}
 .photoview img {
   max-width: 100%; max-height: 100%; object-fit: contain; display: block;
   transform-origin: center center;
   will-change: transform;
   user-select: none; -webkit-user-select: none; -webkit-user-drag: none;
 }
+/* точки — единственный намёк, что у образа есть ещё кадры */
+.photoview__dots {
+  position: absolute;
+  left: 0; right: 0;
+  bottom: calc(env(safe-area-inset-bottom) + 18px);
+  display: flex; justify-content: center; gap: 6px;
+  pointer-events: none;
+}
+.photoview__dots i {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.35);
+  transition: background-color 0.2s, width 0.2s;
+}
+.photoview__dots i.on { width: 18px; border-radius: 3px; background: #fff; }
 /* приближённое фото тянут пальцем — курсор на компьютере должен об этом говорить */
 .photoview--zoomed { cursor: grab; }
 .photoview--zoomed:active { cursor: grabbing; }
