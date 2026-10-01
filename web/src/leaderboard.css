@@ -220,6 +220,11 @@
   transition: background-color 0.2s, color 0.2s;
 }
 .lb-seg__opt--on { background: var(--primary); color: var(--on-primary); }
+/* Переключатель оси стоит над периодами и отличается от них: это не «когда», а «что меряем».
+   Поэтому заливка приглушённая — иначе две одинаковые полосы подряд читаются как одна. */
+.lb-seg--mode { margin-top: 14px; }
+.lb-seg--mode + .lb-seg { margin-top: 8px; }
+.lb-seg--mode .lb-seg__opt--on { background: var(--surface-2); color: var(--text); }
 
 .lrow__who { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .lrow__who .lrow__name { flex: none; }

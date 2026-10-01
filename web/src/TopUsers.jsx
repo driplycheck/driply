@@ -93,9 +93,12 @@ function Delta({ value }) {
   )
 }
 
-export default function TopUsers({ me, onClose, onOpenProfile }) {
+export default function TopUsers({ me, onClose, onOpenProfile, initialMode }) {
   const selfId = me?.id
   const [period, setPeriod] = useState('week')
+  // две оси рейтинга: кого поддержали и кто поддержал. Вторая нужна, чтобы отдавать
+  // дрипы было видно: иначе самый щедрый человек стоит в таблице последним.
+  const [mode, setMode] = useState(initialMode === 'given' ? 'given' : 'received')
   const [board, setBoard] = useState(null)
   const [earnOpen, setEarnOpen] = useState(false)
 
@@ -103,14 +106,14 @@ export default function TopUsers({ me, onClose, onOpenProfile }) {
     let active = true
     setBoard(null)
     const tid = tg?.initDataUnsafe?.user?.id ?? 0
-    supabase.rpc('leaderboard', { p_period: period, p_tid: tid, p_limit: 50 })
+    supabase.rpc('leaderboard', { p_period: period, p_tid: tid, p_limit: 50, p_mode: mode })
       .then(({ data, error }) => {
         if (!active) return
         if (error) { console.error('leaderboard', error); setBoard({ items: [], me: null }); return }
         setBoard(data || { items: [], me: null })
       })
     return () => { active = false }
-  }, [period])
+  }, [period, mode])
 
   const users = board?.items ?? null
   const mine = board?.me ?? null
@@ -126,8 +129,19 @@ export default function TopUsers({ me, onClose, onOpenProfile }) {
       <div className="lb__body">
         <h1 className="lb__title">{t('leaderboard')}</h1>
         <p className="lb__sub">
-          {t('period_' + period)}{left ? ' · ' + t('reset_in', { t: left }) : ' · ' + t('leaderboard_sub_all')}
+          {mode === 'given'
+            ? t('period_' + period) + ' · ' + t('lb_sub_given')
+            : t('period_' + period) + (left ? ' · ' + t('reset_in', { t: left }) : ' · ' + t('leaderboard_sub_all'))}
         </p>
+
+        <div className="lb-seg lb-seg--mode" role="tablist">
+          {['received', 'given'].map((id) => (
+            <button key={id} role="tab" aria-selected={mode === id}
+              className={`lb-seg__opt ${mode === id ? 'lb-seg__opt--on' : ''}`} onClick={() => setMode(id)}>
+              {t('mode_' + id)}
+            </button>
+          ))}
+        </div>
 
         <div className="lb-seg" role="tablist">
           {PERIODS.map((id) => (
@@ -155,7 +169,7 @@ export default function TopUsers({ me, onClose, onOpenProfile }) {
               </div>
             )}
             {users.length === 0 ? (
-              <div className="lb__state">{t('period_empty')}</div>
+              <div className="lb__state">{t(mode === 'given' ? 'given_empty' : 'period_empty')}</div>
             ) : (
               <div className="lb__list">
                 {rest.map((u) => (

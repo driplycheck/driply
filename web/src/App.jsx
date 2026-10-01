@@ -224,7 +224,7 @@ export default function App() {
             onOpenReferral={() => push('referral')}
             onOpenArchive={() => push('archive')}
             onOpenVotes={() => push('votes')}
-            onOpenTop={() => push('top')}
+            onOpenTop={(mode) => push('top', { mode })}
             onOpenPost={(id) => push('postView', { postId: id })}
             onFollowChanged={onFollowChanged}
           />
@@ -323,7 +323,8 @@ export default function App() {
 
       {top?.type === 'top' && (
         <Overlay onClose={pop} leaving={top.leaving}>
-          <TopUsers me={profile} onClose={pop} onOpenProfile={(id) => replace('profile', { userId: id })} />
+          <TopUsers me={profile} initialMode={top.props?.mode} onClose={pop}
+            onOpenProfile={(id) => replace('profile', { userId: id })} />
         </Overlay>
       )}
 

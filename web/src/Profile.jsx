@@ -20,13 +20,17 @@ async function fetchRelations(userId, selfId) {
 async function fetchProfileData(userId, selfId) {
   const { data: user } = await supabase
     .from('users')
-    .select('id, username, display_name, avatar_url, bio, style_score, hide_username, allow_dm, badge')
+    .select('id, username, display_name, avatar_url, bio, style_score, given_score, hide_username, allow_dm, badge')
     .eq('id', userId).maybeSingle()
 
   if (!user) return { user: null }
 
   const requests = [
     supabase.from('users').select('id', { count: 'exact', head: true }).gt('style_score', user.style_score),
+    // место по щедрости считаем только тем, кто вообще отдавал: «первый среди нулей» — не место
+    user.given_score > 0
+      ? supabase.from('users').select('id', { count: 'exact', head: true }).gt('given_score', user.given_score)
+      : Promise.resolve({ count: null }),
     supabase.from('posts').select('id, media_url, extra_media, score')
       .eq('user_id', userId).eq('hidden', false).order('created_at', { ascending: false }),
     fetchRelations(userId, selfId),
@@ -36,10 +40,11 @@ async function fetchProfileData(userId, selfId) {
     requests.push(supabase.rpc('is_blocked', { p_a: selfId, p_b: userId }).then(({ data }) => data))
   }
 
-  const [higherResult, postsResult, relations, blocked] = await Promise.all(requests)
+  const [higherResult, giveResult, postsResult, relations, blocked] = await Promise.all(requests)
   return {
     user,
     rank: (higherResult.count ?? 0) + 1,
+    givenRank: giveResult.count === null ? null : giveResult.count + 1,
     posts: postsResult.data || [],
     relations,
     blocked: !!blocked,
@@ -49,6 +54,7 @@ async function fetchProfileData(userId, selfId) {
 export default function Profile({ userId, selfId, onClose, onOpenSettings, onEditProfile, onOpenReferral, onOpenPost, onOpenProfile, onOpenArchive, onOpenVotes, onOpenTop, onFollowChanged }) {
   const [user, setUser] = useState(null)
   const [rank, setRank] = useState(null)
+  const [givenRank, setGivenRank] = useState(null)
   const [posts, setPosts] = useState([])
   const [loading, setLoading] = useState(true)
   const [reportOpen, setReportOpen] = useState(false)
@@ -67,6 +73,7 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onEdi
       if (!active) return
       setUser(profile.user)
       setRank(profile.rank ?? null)
+      setGivenRank(profile.givenRank ?? null)
       setPosts(profile.posts || [])
       setBlocked(profile.blocked || false)
       if (profile.relations) {
@@ -189,7 +196,24 @@ export default function Profile({ userId, selfId, onClose, onOpenSettings, onEdi
             <div className="pstat pstat--drip"><b>{compact(user.style_score)}</b><span>{plural(user.style_score, 'drips')}</span></div>
           </div>
 
-          <button className="rankcard" onClick={onOpenTop}>
+          {/* Отданное — отдельной строкой, а не пятой ячейкой: пять подписей в ряд не помещаются
+              на узком экране. Здесь же место по щедрости, иначе число ни с чем не сравнить. */}
+          <button className="pgive" onClick={() => onOpenTop('given')}>
+            <span className="pgive__left">
+              <DripCoin size={16} />
+              <span className="pgive__label">{t('given_label')}</span>
+            </span>
+            {user.given_score > 0 ? (
+              <span className="pgive__right">
+                <b>{compact(user.given_score)}</b>
+                {givenRank && <span className="pgive__rank">{t('given_rank', { n: givenRank })}</span>}
+              </span>
+            ) : (
+              <span className="pgive__empty">{isSelf ? t('given_none_self') : t('given_none')}</span>
+            )}
+          </button>
+
+          <button className="rankcard" onClick={() => onOpenTop()}>
             <span className="rankcard__label">{t('rank_label')} · {t('rank_place', { n: rank })}</span>
             <span className="rankcard__row">
               <span className="rankcard__tier">{t('tier_' + progress.tier)}</span>
