@@ -16,10 +16,18 @@ export default function EditProfile({ me, onClose, onSaved }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
   const fileRef = useRef(null)
+  const bioRef = useRef(null)
 
   useEffect(() => () => {
     if (preview && preview !== me?.avatar_url) URL.revokeObjectURL(preview)
   }, [preview, me?.avatar_url])
+
+  useEffect(() => {
+    const el = bioRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${el.scrollHeight}px`
+  }, [bio])
 
   function onPickFile(e) {
     const f = e.target.files?.[0]
@@ -82,7 +90,7 @@ export default function EditProfile({ me, onClose, onSaved }) {
         </label>
         <label className="pfield">
           <span className="pfield__label">{t('bio_label')}</span>
-          <textarea className="pfield__input" placeholder={t('bio_placeholder')} maxLength={160} rows={3}
+          <textarea ref={bioRef} className="pfield__input" placeholder={t('bio_placeholder')} maxLength={160} rows={3}
             value={bio} onChange={(e) => setBio(e.target.value)} />
           <span className="pfield__count">{bio.length} / 160</span>
         </label>
