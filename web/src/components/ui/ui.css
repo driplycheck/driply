@@ -111,7 +111,7 @@
   cursor: pointer;
 }
 .ocard__ava { flex: none; width: 42px; height: 42px; border-radius: 50%; object-fit: cover; }
-.ocard__ava--empty { background: var(--glass-bg); border: 1px solid var(--glass-border); }
+.ocard__ava--empty { background: var(--glass-bg); border: 1px solid var(--glass-border); display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; }
 .ocard__who { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .ocard__name { font: 600 15px/1.2 var(--font-body); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ocard__meta { font: 400 12px/1.2 var(--font-body); color: var(--on-photo-muted); }

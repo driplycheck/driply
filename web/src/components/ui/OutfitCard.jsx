@@ -16,6 +16,7 @@ export default function OutfitCard({ images, imageUrl, badge, author, caption, t
   const [index, setIndex] = useState(0)
   const [ratio, setRatio] = useState(null)
   const [zoom, setZoom] = useState(false)
+  const [avaBroken, setAvaBroken] = useState(false)
 
   function onFirstLoad(e) {
     const r = clampRatio(e.target.naturalWidth, e.target.naturalHeight)
@@ -71,9 +72,9 @@ export default function OutfitCard({ images, imageUrl, badge, author, caption, t
       <div className="ocard__bottom">
         {author && (
           <button className="ocard__author" onClick={author.onClick}>
-            {author.avatarUrl
-              ? <img className={`ocard__ava ${author.tierClass || ''}`} src={author.avatarUrl} alt="" />
-              : <span className="ocard__ava ocard__ava--empty" />}
+            {author.avatarUrl && !avaBroken
+              ? <img className={`ocard__ava ${author.tierClass || ''}`} src={author.avatarUrl} alt="" onError={() => setAvaBroken(true)} />
+              : <span className="ocard__ava ocard__ava--empty">{String(author.name || '').replace('@', '').slice(0, 1).toUpperCase()}</span>}
             <span className="ocard__who">
               <span className="ocard__name">{author.name}</span>
               {author.meta && <span className="ocard__meta">{author.meta}</span>}
